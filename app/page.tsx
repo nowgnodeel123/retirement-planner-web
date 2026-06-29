@@ -45,7 +45,7 @@ export default function Home() {
     setLoading(true);
     try {
       const res = await fetch(
-        "http://localhost:8080/api/v1/simulation/calculate",
+        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/simulation/calculate`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
