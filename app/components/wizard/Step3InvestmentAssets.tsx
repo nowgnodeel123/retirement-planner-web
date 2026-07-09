@@ -1,0 +1,108 @@
+// Step3InvestmentAssets.tsx
+import { RetirementFormState } from "./types";
+import {
+  ErrorBanner,
+  Hint,
+  NumberInput,
+  PrimaryButton,
+  ProgressBar,
+  SecondaryButton,
+  SectionCard,
+  SmallField,
+  WizardCard,
+} from "./Ui";
+
+interface Props {
+  form: RetirementFormState;
+  onChange: <K extends keyof RetirementFormState>(
+    key: K,
+    value: RetirementFormState[K],
+  ) => void;
+  onSubmit: () => void;
+  onBack: () => void;
+  submitting: boolean;
+  error: string | null;
+}
+
+export default function Step3InvestmentAssets({
+  form,
+  onChange,
+  onSubmit,
+  onBack,
+  submitting,
+  error,
+}: Props) {
+  return (
+    <WizardCard>
+      <ProgressBar step={2} total={3} />
+
+      <SectionCard>
+        <p className="text-lg font-semibold text-neutral-800 mb-1">
+          투자 자산을 입력해주세요
+        </p>
+        <p className="text-sm text-neutral-400 mb-5">
+          나이 제한 없이 언제든 꺼내 쓸 수 있는 자산이에요. 조기은퇴의
+          핵심이에요.
+        </p>
+
+        <p className="text-sm font-semibold text-neutral-700 mb-2.5">
+          주식 / ETF
+        </p>
+
+        <div className="grid grid-cols-2 gap-2.5 mb-1.5">
+          <SmallField label="월 납입액" unit="만원">
+            <NumberInput
+              value={form.stockEtfMonthlyContribution}
+              onChange={(v) => onChange("stockEtfMonthlyContribution", v)}
+              placeholder="예) 50"
+              small
+              ariaLabel="주식 ETF 월 납입액"
+            />
+          </SmallField>
+          <SmallField label="기대 수익률" unit="%">
+            <NumberInput
+              value={form.stockEtfReturnRate}
+              onChange={(v) => onChange("stockEtfReturnRate", v)}
+              placeholder="예) 7"
+              allowDecimal
+              maxDigits={2}
+              small
+              ariaLabel="주식 ETF 기대 수익률"
+            />
+          </SmallField>
+        </div>
+        <div className="mb-3.5">
+          <Hint>모르겠다면 연 7% 정도가 무난해요.</Hint>
+        </div>
+
+        <SmallField label="현재 잔액" unit="만원">
+          <NumberInput
+            value={form.stockEtfCurrentBalance}
+            onChange={(v) => onChange("stockEtfCurrentBalance", v)}
+            placeholder="예) 3,000"
+            small
+            ariaLabel="주식 ETF 현재 잔액"
+          />
+        </SmallField>
+      </SectionCard>
+
+      {/* WHY: 검증/서버 에러를 버튼 바로 위, 현재 화면에 즉시 표시한다.
+          화면 이동이나 스크롤 없이 무엇이 문제인지 바로 보인다. */}
+      {error && <ErrorBanner message={error} />}
+
+      <div className="flex gap-2.5">
+        <SecondaryButton onClick={onBack} className="w-[35%]">
+          이전
+        </SecondaryButton>
+        <PrimaryButton
+          onClick={onSubmit}
+          disabled={submitting}
+          loading={submitting}
+          className="w-[65%]"
+        >
+          결과 보기
+        </PrimaryButton>
+      </div>
+    </WizardCard>
+  );
+}
