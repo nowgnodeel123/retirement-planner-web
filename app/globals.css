@@ -1,19 +1,24 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 
-  /* 자산 카테고리 색상 (D-073 채도 상향 절충안) — M9 대시보드 도넛차트와 동일 팔레트 공유 */
   --category-domestic-stock: #a78bfa;
   --category-foreign-stock: #2dd4bf;
   --category-fund: #fbbf24;
   --category-cash: #94a3b8;
   --category-crypto: #e879a8;
 
-  /* 국내 금융앱 관례: 빨강=이득, 파랑=손실 (서구권과 반대) */
   --gain: #ef4444;
   --loss: #2563eb;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -21,13 +26,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
