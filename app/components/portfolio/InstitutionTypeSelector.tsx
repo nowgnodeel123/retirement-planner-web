@@ -40,8 +40,8 @@ function InstitutionIcon({
   }
   return (
     <svg {...common}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M8.5 14.5 12 8l3.5 6.5" />
+      <path d="M7 4v16M7 4h6.5a3.5 3.5 0 0 1 0 7H7m0 0h7a3.5 3.5 0 0 1 0 7H7" />
+      <path d="M10 3v2.5M13 3v2.5M10 18.5V21M13 18.5V21" />
     </svg>
   );
 }

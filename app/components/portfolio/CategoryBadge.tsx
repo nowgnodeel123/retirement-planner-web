@@ -7,7 +7,10 @@ export function CategoryBadge({
   category: TradableAssetCategory;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-neutral-500">
+    <span
+      className="inline-flex items-center gap-1.5 text-[12px] font-medium"
+      style={{ color: "var(--text-sub)" }}
+    >
       <span
         className="w-2 h-2 rounded-full flex-shrink-0"
         style={{ backgroundColor: categoryColor[category] }}

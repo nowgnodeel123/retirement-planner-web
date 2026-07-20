@@ -18,14 +18,17 @@ const SECTION_ORDER: InstitutionType[] = ["BANK", "SECURITIES", "EXCHANGE"];
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center text-center pt-20 px-6">
-      <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-4">
+    <div className="flex flex-col items-center text-center pt-20 px-6 rise-in">
+      <div
+        className="w-16 h-16 rounded-3xl flex items-center justify-center mb-5"
+        style={{ background: "var(--accent-soft)" }}
+      >
         <svg
-          width="26"
-          height="26"
+          width="28"
+          height="28"
           viewBox="0 0 24 24"
           fill="none"
-          stroke="#3B82F6"
+          stroke="var(--accent)"
           strokeWidth={1.8}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -34,17 +37,24 @@ function EmptyState() {
           <path d="M16 13h.01" />
         </svg>
       </div>
-      <p className="text-[15px] font-semibold text-neutral-800 mb-1.5">
+      <p
+        className="text-[16px] font-bold mb-1.5"
+        style={{ color: "var(--text-strong)" }}
+      >
         등록된 계좌가 없어요
       </p>
-      <p className="text-[13px] text-neutral-400 leading-relaxed mb-6">
+      <p
+        className="text-[13px] leading-relaxed mb-7"
+        style={{ color: "var(--text-sub)" }}
+      >
         은행, 증권사, 거래소 계좌를 등록하고
         <br />
-        자산을 정리해보세요.
+        자산을 한곳에 정리해보세요
       </p>
       <Link
         href="/portfolio/accounts/new"
-        className="rounded-2xl bg-blue-500 text-white px-6 py-3 text-[14px] font-semibold shadow-[0_4px_14px_rgba(59,130,246,0.3)] hover:bg-blue-600 active:scale-[0.98] transition-all"
+        className="pressable rounded-2xl text-white px-6 py-3.5 text-[15px] font-semibold"
+        style={{ background: "var(--accent)" }}
       >
         첫 계좌 등록하기
       </Link>
@@ -98,19 +108,25 @@ export default function PortfolioPage() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="max-w-[420px] mx-auto px-5 pt-6">
-      <div className="flex items-center justify-between mb-5">
-        <h1 className="text-[20px] font-bold text-neutral-800">포트폴리오</h1>
+    <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
+      <div className="flex items-center justify-between mb-6">
+        <h1
+          className="text-[22px] font-bold"
+          style={{ color: "var(--text-strong)" }}
+        >
+          포트폴리오
+        </h1>
         <div className="flex items-center gap-1">
           {accounts && accounts.length > 0 && (
             <button
               type="button"
               onClick={() => setEditing((v) => !v)}
-              className={`text-[13px] font-medium px-2.5 py-1.5 rounded-lg transition-colors ${
+              className="text-[13px] font-medium px-2.5 py-1.5 rounded-lg transition-colors"
+              style={
                 editing
-                  ? "text-blue-500 bg-blue-50"
-                  : "text-neutral-400 hover:bg-neutral-100"
-              }`}
+                  ? { color: "var(--accent)", background: "var(--accent-soft)" }
+                  : { color: "var(--text-sub)" }
+              }
             >
               {editing ? "완료" : "관리"}
             </button>
@@ -118,7 +134,8 @@ export default function PortfolioPage() {
           <Link
             href="/portfolio/accounts/new"
             aria-label="계좌 추가"
-            className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 transition-colors"
+            className="p-2 rounded-lg transition-colors"
+            style={{ color: "var(--text-sub)" }}
           >
             <svg
               width="20"
@@ -139,21 +156,38 @@ export default function PortfolioPage() {
       {error && <ErrorBanner message={error} />}
 
       {accounts === null && !error && (
-        <div className="flex justify-center pt-16">
-          <div className="w-6 h-6 rounded-full border-2 border-neutral-200 border-t-blue-500 animate-spin" />
+        <div className="space-y-2.5">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="card px-4 py-4 flex items-center gap-3 animate-pulse"
+            >
+              <div
+                className="w-10 h-10 rounded-full"
+                style={{ background: "var(--border)" }}
+              />
+              <div
+                className="w-28 h-4 rounded"
+                style={{ background: "var(--border)" }}
+              />
+            </div>
+          ))}
         </div>
       )}
 
       {accounts !== null && accounts.length === 0 && <EmptyState />}
 
       {accounts !== null && accounts.length > 0 && (
-        <div className="space-y-6">
+        <div className="space-y-7 rise-in">
           {grouped.map((section) => (
             <div key={section.type}>
-              <p className="text-[12px] font-semibold text-neutral-400 mb-2 px-1">
+              <p
+                className="text-[13px] font-semibold mb-2.5 px-1"
+                style={{ color: "var(--text-sub)" }}
+              >
                 {institutionLabel[section.type]}
               </p>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {section.items.map((account) => (
                   <AccountCard
                     key={account.id}

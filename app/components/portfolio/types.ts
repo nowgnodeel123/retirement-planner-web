@@ -33,6 +33,15 @@ export interface AssetHoldingResponse {
   currency: string;
   quantity: number;
   averagePrice: number;
+  // M4(뒤늦은 프론트 반영): 시세 조회 실패 시 null — D-058, 화면은 그대로 정상 렌더
+  currentPrice: number | null;
+  evaluationAmount: number | null;
+  profitAmount: number | null;
+  profitRate: number | null;
+  // M5: 해외주식만 값 존재(D-063), 그 외 카테고리는 항상 null
+  exchangeRate: number | null;
+  krwEvaluationAmount: number | null;
+  exchangeRateBaseDate: string | null;
 }
 
 export interface AssetBuyRequest {

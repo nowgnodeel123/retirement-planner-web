@@ -1,35 +1,120 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ─────────────────────────────────────────────
+   디자인 토큰 — 토스/뱅크샐러드 계열 그레이스케일.
+   컴포넌트는 반드시 이 토큰만 사용한다(neutral-* 직접 사용 금지).
+   다크모드는 토큰 값만 뒤집혀서 컴포넌트 코드에 dark: 분기가 거의 필요 없다.
+   ───────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 배경 위계: 페이지 < 카드 < 눌린 카드 */
+  --bg: #f2f4f6;
+  --surface: #ffffff;
+  --surface-pressed: #f8f9fa;
 
+  /* 텍스트 위계 */
+  --text-strong: #191f28;
+  --text: #333d4b;
+  --text-sub: #6b7684;
+  --text-faint: #b0b8c1;
+
+  --border: #f2f4f6;
+  --accent: #3182f6;
+  --accent-soft: #e8f3ff;
+
+  /* 손익 — 토스 계열 팔레트 (D-049: 빨강=이득/파랑=손실) */
+  --gain: #f04452;
+  --loss: #3182f6;
+
+  /* 카테고리 (D-073 채도 상향 절충안 유지) */
   --category-domestic-stock: #a78bfa;
   --category-foreign-stock: #2dd4bf;
   --category-fund: #fbbf24;
   --category-cash: #94a3b8;
   --category-crypto: #e879a8;
 
-  --gain: #ef4444;
-  --loss: #2563eb;
+  --background: var(--bg);
+  --foreground: var(--text);
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --bg: #101013;
+  --surface: #1b1c1f;
+  --surface-pressed: #242528;
+
+  --text-strong: #f2f4f6;
+  --text: #d1d6db;
+  --text-sub: #8b95a1;
+  --text-faint: #4e5968;
+
+  --border: #26282c;
+  --accent: #4593fc;
+  --accent-soft: rgba(49, 130, 246, 0.12);
+
+  --gain: #ff6b76;
+  --loss: #5c9eff;
+
+  --background: var(--bg);
+  --foreground: var(--text);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    "Pretendard Variable",
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Apple SD Gothic Neo",
+    "Segoe UI",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+  transition: background-color 0.2s ease;
+}
+
+/* 금액 숫자 — 고정폭 숫자로 자릿수 흔들림 방지 + 살짝 좁힌 자간 (토스 숫자 느낌의 핵심) */
+.amount {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* 카드 — 테두리 없이 배경 대비로만 띄운다 */
+.card {
+  background: var(--surface);
+  border-radius: 20px;
+}
+
+/* 탭 가능한 카드의 눌림 피드백 */
+.pressable {
+  transition:
+    transform 0.12s ease,
+    background-color 0.12s ease;
+}
+.pressable:active {
+  transform: scale(0.98);
+  background: var(--surface-pressed);
+}
+
+/* 목록 진입 애니메이션 */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise-in {
+  animation: rise-in 0.25s ease both;
 }
