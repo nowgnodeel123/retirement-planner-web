@@ -1,5 +1,6 @@
 // app/portfolio/accounts/[accountId]/page.tsx — 계좌 상세: 총 평가금액 요약 + 보유 자산 목록
 // D-049 손익 + D-058 전일종가 라벨 + D-063 원화환산. 디자인 토큰 기반.
+// M6: 보유자산 카드 → 자산 상세(매도/거래내역) 화면 링크 추가.
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -270,7 +271,11 @@ export default function AccountDetailPage() {
             const isGain = (h.profitAmount ?? 0) >= 0;
 
             return (
-              <div key={h.assetId} className="card px-4 py-4">
+              <Link
+                key={h.assetId}
+                href={`/portfolio/accounts/${accountId}/assets/${h.assetId}`}
+                className="card px-4 py-4 block active:scale-[0.99] transition-transform"
+              >
                 <div className="flex items-start justify-between gap-3">
                   {/* 좌: 종목 정보 */}
                   <div className="min-w-0">
@@ -355,7 +360,7 @@ export default function AccountDetailPage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
