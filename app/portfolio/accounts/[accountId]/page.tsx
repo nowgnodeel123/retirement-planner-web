@@ -1,6 +1,9 @@
 // app/portfolio/accounts/[accountId]/page.tsx — 계좌 상세: 총 평가금액 요약 + 보유 자산 목록
 // D-049 손익 + D-058 전일종가 라벨 + D-063 원화환산. 디자인 토큰 기반.
 // M6: 보유자산 카드 → 자산 상세(매도/거래내역) 화면 링크 추가.
+// M7: D-054 정렬(모달 팝업) + D-069 관련 "정리한 자산"(전량매도) 섹션 분리.
+// quantity===0인 자산은 보유목록에서 제외하고 하단 접이식 섹션으로 뺀다 — 백엔드는 그대로
+// 전체를 내려주므로(GET /api/assets) 이 구분은 프론트 전용이며 API 변경 없음.
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -9,6 +12,11 @@ import { useParams, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
+import {
+  HoldingSortKey,
+  SortDirection,
+  SortModal,
+} from "@/app/components/portfolio/SortModal";
 import {
   AccountResponse,
   AssetHoldingResponse,
@@ -36,6 +44,35 @@ function formatKrw(value: number) {
 
 function signed(value: number, formatted: string) {
   return `${value >= 0 ? "+" : "-"}${formatted.replace(/^-/, "")}`;
+}
+
+// M7: 정렬 기준값 추출. 해외주식은 원화환산 평가금액을 기준으로 삼아 카테고리가 섞여도
+// 비교가 성립하게 한다(D-063/D-087 이중표시 원칙과 일관).
+function getSortValue(h: AssetHoldingResponse, key: HoldingSortKey): number | null {
+  if (key === "profitRate") return h.profitRate;
+  if (h.category === "FOREIGN_STOCK") return h.krwEvaluationAmount;
+  return h.evaluationAmount;
+}
+
+function sortHoldings(
+  list: AssetHoldingResponse[],
+  key: HoldingSortKey,
+  dir: SortDirection,
+): AssetHoldingResponse[] {
+  return [...list].sort((a, b) => {
+    if (key === "name") {
+      const cmp = a.name.localeCompare(b.name, "ko");
+      return dir === "asc" ? cmp : -cmp;
+    }
+    const av = getSortValue(a, key);
+    const bv = getSortValue(b, key);
+    // 시세 조회 실패 등으로 값이 없는 자산은 정렬 방향과 무관하게 항상 맨 뒤로 —
+    // "내림차순인데 알 수 없는 값이 위로 온다" 같은 혼란을 막는다.
+    if (av === null && bv === null) return 0;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    return dir === "asc" ? av - bv : bv - av;
+  });
 }
 
 function SkeletonCard() {
@@ -77,6 +114,14 @@ export default function AccountDetailPage() {
   );
   const [holdings, setHoldings] = useState<AssetHoldingResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // M7: 정렬(D-054) — 기본값은 평가금액 내림차순(비중 큰 자산부터).
+  const [sortKey, setSortKey] = useState<HoldingSortKey>("value");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  const [sortModalOpen, setSortModalOpen] = useState(false);
+
+  // M7: 정리한 자산(전량매도) 섹션 — 기본 접힘.
+  const [clearedOpen, setClearedOpen] = useState(false);
 
   useEffect(() => {
     // 단건 조회 API가 없어 목록에서 찾는다 — GET /api/accounts/{id}는 백로그 후보.
@@ -120,6 +165,21 @@ export default function AccountDetailPage() {
     const profitRate = cost > 0 ? (profitKrw / cost) * 100 : 0;
     return { totalKrw, profitKrw, profitRate, excluded };
   }, [holdings]);
+
+  // M7: quantity===0(전량매도)은 "정리한 자산"으로 분리. 요약(summary)은 위에서
+  // holdings 전체를 그대로 쓰므로(평가금액 없는 자산은 자연히 0으로 반영) 영향 없음.
+  const activeHoldings = useMemo(
+    () => (holdings ?? []).filter((h) => h.quantity > 0),
+    [holdings],
+  );
+  const clearedHoldings = useMemo(
+    () => (holdings ?? []).filter((h) => h.quantity <= 0),
+    [holdings],
+  );
+  const sortedActiveHoldings = useMemo(
+    () => sortHoldings(activeHoldings, sortKey, sortDir),
+    [activeHoldings, sortKey, sortDir],
+  );
 
   if (account === null) {
     return (
@@ -230,13 +290,37 @@ export default function AccountDetailPage() {
         >
           보유 자산
         </p>
-        <Link
-          href={`/portfolio/accounts/${accountId}/assets/new`}
-          className="text-[12px] font-semibold px-2 py-1 rounded-lg"
-          style={{ color: "var(--accent)" }}
-        >
-          + 자산 추가
-        </Link>
+        <div className="flex items-center gap-1">
+          {activeHoldings.length >= 2 && (
+            <button
+              type="button"
+              onClick={() => setSortModalOpen(true)}
+              className="flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg"
+              style={{ color: "var(--text-sub)" }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 6h18M6 12h12M10 18h4" />
+              </svg>
+              정렬
+            </button>
+          )}
+          <Link
+            href={`/portfolio/accounts/${accountId}/assets/new`}
+            className="text-[12px] font-semibold px-2 py-1 rounded-lg"
+            style={{ color: "var(--accent)" }}
+          >
+            + 자산 추가
+          </Link>
+        </div>
       </div>
 
       {error && <ErrorBanner message={error} />}
@@ -263,9 +347,26 @@ export default function AccountDetailPage() {
         </div>
       )}
 
-      {holdings !== null && holdings.length > 0 && (
+      {/* M7: 자산은 있었지만 전부 정리(전량매도)한 경우 — 아래 "정리한 자산" 섹션으로 안내 */}
+      {holdings !== null &&
+        holdings.length > 0 &&
+        activeHoldings.length === 0 && (
+          <div className="card px-4 py-9 text-center">
+            <p
+              className="text-[13px] mb-1"
+              style={{ color: "var(--text-sub)" }}
+            >
+              현재 보유 중인 자산이 없어요.
+            </p>
+            <p className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+              정리한 자산 {clearedHoldings.length}건은 아래에서 볼 수 있어요.
+            </p>
+          </div>
+        )}
+
+      {activeHoldings.length > 0 && (
         <div className="space-y-2.5 rise-in">
-          {holdings.map((h) => {
+          {sortedActiveHoldings.map((h) => {
             const category = h.category as TradableAssetCategory;
             const priceUnavailable = h.quantity > 0 && h.currentPrice === null;
             const isGain = (h.profitAmount ?? 0) >= 0;
@@ -364,6 +465,94 @@ export default function AccountDetailPage() {
             );
           })}
         </div>
+      )}
+
+      {/* M7: D-069 관련 — 정리한 자산(전량매도). 기본 접힘, 개수만 노출. */}
+      {clearedHoldings.length > 0 && (
+        <div className="mt-7">
+          <button
+            type="button"
+            onClick={() => setClearedOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-1 mb-2.5"
+          >
+            <p
+              className="text-[13px] font-semibold"
+              style={{ color: "var(--text-sub)" }}
+            >
+              정리한 자산 ({clearedHoldings.length})
+            </p>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                color: "var(--text-faint)",
+                transform: clearedOpen ? "rotate(180deg)" : "none",
+                transition: "transform 0.15s ease",
+              }}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          {clearedOpen && (
+            <div className="space-y-2 rise-in">
+              {clearedHoldings.map((h) => {
+                const category = h.category as TradableAssetCategory;
+                return (
+                  <Link
+                    key={h.assetId}
+                    href={`/portfolio/accounts/${accountId}/assets/${h.assetId}`}
+                    className="card px-4 py-3.5 flex items-center justify-between gap-3 active:scale-[0.99] transition-transform"
+                    style={{ opacity: 0.75 }}
+                  >
+                    <div className="min-w-0">
+                      <p
+                        className="text-[14px] font-semibold truncate"
+                        style={{ color: "var(--text)" }}
+                      >
+                        {h.name}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2 flex-wrap">
+                        <CategoryBadge category={category} />
+                        <span
+                          className="text-[11px]"
+                          style={{ color: "var(--text-faint)" }}
+                        >
+                          전량 매도
+                        </span>
+                      </div>
+                    </div>
+                    <p
+                      className="amount text-[12px] flex-shrink-0"
+                      style={{ color: "var(--text-faint)" }}
+                    >
+                      평단 {formatMoney(h.averagePrice, h.currency)}
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {sortModalOpen && (
+        <SortModal
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onApply={(key, dir) => {
+            setSortKey(key);
+            setSortDir(dir);
+            setSortModalOpen(false);
+          }}
+          onClose={() => setSortModalOpen(false)}
+        />
       )}
     </div>
   );
