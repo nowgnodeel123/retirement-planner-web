@@ -1,21 +1,26 @@
 // Ui.tsx — 위저드 공용 UI 컴포넌트
 // WHY: 입력 검증(음수/문자/앞자리 0)과 스타일을 입력창마다 반복하면
 //      반드시 한 곳이 누락된다. NumberInput 하나로 모든 숫자 입력을 통일한다.
+//
+// 다크모드: neutral-*/blue-*/red-* 같은 Tailwind 고정 색상 대신
+// globals.css의 디자인 토큰(--surface, --border, --text-* 등)만 사용한다.
+// Tailwind 임의값 문법(`bg-[var(--surface)]`)으로 참조해서 hover/focus/placeholder
+// 의사 클래스까지 그대로 살리면서 라이트/다크 전환이 자동으로 따라오게 한다.
 import React, { useState } from "react";
 
 export const inputClass =
-  "w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-3 text-base " +
-  "text-neutral-800 transition-all " +
-  "focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 " +
-  "hover:border-neutral-300 " +
-  "placeholder:text-neutral-300";
+  "w-full rounded-xl border px-3.5 py-3 text-base transition-all " +
+  "border-[var(--border)] bg-[var(--surface)] text-[var(--text-strong)] " +
+  "placeholder:text-[var(--text-faint)] " +
+  "focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/10 focus:border-[var(--accent)] " +
+  "hover:border-[var(--text-faint)]";
 
 export const smallInputClass =
-  "w-full rounded-lg border border-neutral-200 bg-white px-2.5 py-2.5 text-base " +
-  "text-neutral-800 transition-all " +
-  "focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-400 " +
-  "hover:border-neutral-300 " +
-  "placeholder:text-neutral-300";
+  "w-full rounded-lg border px-2.5 py-2.5 text-base transition-all " +
+  "border-[var(--border)] bg-[var(--surface)] text-[var(--text-strong)] " +
+  "placeholder:text-[var(--text-faint)] " +
+  "focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/10 focus:border-[var(--accent)] " +
+  "hover:border-[var(--text-faint)]";
 
 /**
  * 문자열을 안전한 숫자 문자열로 정리한다.
@@ -115,16 +120,16 @@ export function NumberInput({
 /** 위저드 전체를 감싸는 최상위 카드. 은은한 그림자로 배경과 분리한다. */
 export function WizardCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="max-w-[420px] mx-auto bg-white rounded-3xl p-6 shadow-[0_2px_24px_rgba(15,23,42,0.06)] border border-neutral-100">
+    <div className="max-w-[420px] mx-auto bg-[var(--surface)] rounded-3xl p-6 shadow-[0_2px_24px_rgba(15,23,42,0.06)] border border-[var(--border)]">
       {children}
     </div>
   );
 }
 
-/** 입력 필드 묶음을 감싸는 섹션 카드. 옅은 회색 배경으로 흰 배경과 구분한다. */
+/** 입력 필드 묶음을 감싸는 섹션 카드. 옅은 배경으로 카드 배경과 구분한다. */
 export function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-neutral-50/70 rounded-2xl border border-neutral-100 p-5 mb-5">
+    <div className="bg-[var(--surface-pressed)]/70 rounded-2xl border border-[var(--border)] p-5 mb-5">
       {children}
     </div>
   );
@@ -138,12 +143,12 @@ export function ProgressBar({ step, total }: { step: number; total: number }) {
           <div
             key={i}
             className={`flex-1 h-1.5 rounded-full transition-all duration-300 ${
-              i <= step ? "bg-blue-500" : "bg-neutral-100"
+              i <= step ? "bg-[var(--accent)]" : "bg-[var(--border)]"
             }`}
           />
         ))}
       </div>
-      <p className="text-[11px] text-neutral-400 mt-2 text-right font-medium">
+      <p className="text-[11px] text-[var(--text-faint)] mt-2 text-right font-medium">
         {step + 1} / {total} 단계
       </p>
     </div>
@@ -161,10 +166,12 @@ export function Field({
 }) {
   return (
     <div className="mb-4 last:mb-0">
-      <label className="text-sm text-neutral-500 font-medium">{label}</label>
+      <label className="text-sm text-[var(--text-sub)] font-medium">
+        {label}
+      </label>
       <div className="flex items-center gap-2 mt-1.5">
         {children}
-        <span className="text-sm text-neutral-400 whitespace-nowrap">
+        <span className="text-sm text-[var(--text-faint)] whitespace-nowrap">
           {unit}
         </span>
       </div>
@@ -183,10 +190,12 @@ export function SmallField({
 }) {
   return (
     <div>
-      <label className="text-xs text-neutral-500 font-medium">{label}</label>
+      <label className="text-xs text-[var(--text-sub)] font-medium">
+        {label}
+      </label>
       <div className="flex items-center gap-1.5 mt-1">
         {children}
-        <span className="text-xs text-neutral-400 whitespace-nowrap">
+        <span className="text-xs text-[var(--text-faint)] whitespace-nowrap">
           {unit}
         </span>
       </div>
@@ -196,7 +205,9 @@ export function SmallField({
 
 export function Hint({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[13px] text-neutral-400 leading-relaxed">{children}</p>
+    <p className="text-[13px] text-[var(--text-faint)] leading-relaxed">
+      {children}
+    </p>
   );
 }
 
@@ -218,10 +229,10 @@ export function PrimaryButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`relative rounded-2xl bg-blue-500 text-white py-3.5 text-[15px] font-semibold
-        shadow-[0_4px_14px_rgba(59,130,246,0.3)]
+      className={`relative rounded-2xl bg-[var(--accent)] text-white py-3.5 text-[15px] font-semibold
+        shadow-[0_4px_14px_rgba(49,130,246,0.3)]
         transition-all duration-150
-        hover:bg-blue-600 active:scale-[0.98] active:bg-blue-700
+        hover:brightness-110 active:scale-[0.98] active:brightness-95
         disabled:opacity-40 disabled:shadow-none disabled:active:scale-100 ${className}`}
     >
       <span className={loading ? "opacity-0" : ""}>{children}</span>
@@ -247,8 +258,8 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border border-neutral-200 bg-white py-3.5 text-[15px] font-medium text-neutral-600
-        transition-all duration-150 hover:bg-neutral-50 hover:border-neutral-300 active:scale-[0.98] ${className}`}
+      className={`rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3.5 text-[15px] font-medium text-[var(--text)]
+        transition-all duration-150 hover:bg-[var(--surface-pressed)] hover:border-[var(--text-faint)] active:scale-[0.98] ${className}`}
     >
       {children}
     </button>
@@ -282,9 +293,9 @@ function Spinner() {
  */
 export function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 mb-3">
+    <div className="flex items-start gap-2 rounded-xl border border-[var(--error)]/25 bg-[var(--error-soft)] px-4 py-3 mb-3">
       <svg
-        className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0"
+        className="w-4 h-4 text-[var(--error)] mt-0.5 flex-shrink-0"
         viewBox="0 0 20 20"
         fill="currentColor"
       >
@@ -294,7 +305,7 @@ export function ErrorBanner({ message }: { message: string }) {
           clipRule="evenodd"
         />
       </svg>
-      <p className="text-sm text-red-600 leading-relaxed">{message}</p>
+      <p className="text-sm text-[var(--error)] leading-relaxed">{message}</p>
     </div>
   );
 }
