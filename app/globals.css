@@ -28,6 +28,10 @@
   --gain: #f04452;
   --loss: #3182f6;
 
+  /* 에러 배너 전용 — --gain(빨강)과 값은 같아 보여도 의미가 달라 별도 토큰으로 분리 */
+  --error: #f04452;
+  --error-soft: #fef2f2;
+
   /* 카테고리 (D-073 채도 상향 절충안 유지) */
   --category-domestic-stock: #a78bfa;
   --category-foreign-stock: #2dd4bf;
@@ -55,6 +59,9 @@
 
   --gain: #ff6b76;
   --loss: #5c9eff;
+
+  --error: #ff6b76;
+  --error-soft: rgba(240, 68, 82, 0.14);
 
   --background: var(--bg);
   --foreground: var(--text);
