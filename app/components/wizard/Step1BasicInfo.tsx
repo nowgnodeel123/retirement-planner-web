@@ -25,10 +25,13 @@ export default function Step1BasicInfo({ form, onChange, onNext }: Props) {
       <ProgressBar step={0} total={3} />
 
       <SectionCard>
-        <p className="text-lg font-semibold text-neutral-800 mb-1">
+        <p
+          className="text-lg font-semibold mb-1"
+          style={{ color: "var(--text-strong)" }}
+        >
           기본 정보를 입력해주세요
         </p>
-        <p className="text-sm text-neutral-400 mb-5">
+        <p className="text-sm mb-5" style={{ color: "var(--text-faint)" }}>
           몇 살에 은퇴할 수 있는지 계산의 출발점이 돼요.
         </p>
 

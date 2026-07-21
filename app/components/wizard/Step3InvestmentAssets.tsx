@@ -37,15 +37,21 @@ export default function Step3InvestmentAssets({
       <ProgressBar step={2} total={3} />
 
       <SectionCard>
-        <p className="text-lg font-semibold text-neutral-800 mb-1">
+        <p
+          className="text-lg font-semibold mb-1"
+          style={{ color: "var(--text-strong)" }}
+        >
           투자 자산을 입력해주세요
         </p>
-        <p className="text-sm text-neutral-400 mb-5">
+        <p className="text-sm mb-5" style={{ color: "var(--text-faint)" }}>
           나이 제한 없이 언제든 꺼내 쓸 수 있는 자산이에요. 조기은퇴의
           핵심이에요.
         </p>
 
-        <p className="text-sm font-semibold text-neutral-700 mb-2.5">
+        <p
+          className="text-sm font-semibold mb-2.5"
+          style={{ color: "var(--text)" }}
+        >
           주식 / ETF
         </p>
 

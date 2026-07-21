@@ -1,4 +1,6 @@
 // IncomeTimelineChart.tsx
+// 다크모드: 그래프 데이터 색상(COLORS)은 의도적으로 고정 유지(데이터 시각화 팔레트는
+// 라이트/다크 공통이 관례). 배경·테두리·축·범례 텍스트만 토큰으로 전환.
 "use client";
 
 import {
@@ -33,9 +35,18 @@ export default function IncomeTimelineChart({ timeline }: Props) {
     .filter((age) => age % 5 === 0 || age === timeline[0].age);
 
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4">
+    <div
+      className="rounded-2xl border p-4"
+      style={{
+        borderColor: "var(--border)",
+        background: "var(--surface-pressed)",
+      }}
+    >
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[13px] font-medium text-neutral-500">
+        <p
+          className="text-[13px] font-medium"
+          style={{ color: "var(--text-sub)" }}
+        >
           연도별 소득 구성 (세후, 월)
         </p>
         <Legend />
@@ -75,22 +86,22 @@ export default function IncomeTimelineChart({ timeline }: Props) {
 
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="#f0f0f0"
+            stroke="var(--border)"
             vertical={false}
           />
           <XAxis
             dataKey="age"
             ticks={tickAges}
             tickFormatter={(age) => `${age}세`}
-            tick={{ fontSize: 11, fill: "#a3a3a3" }}
-            axisLine={{ stroke: "#e5e5e5" }}
+            tick={{ fontSize: 11, fill: "var(--text-faint)" }}
+            axisLine={{ stroke: "var(--border)" }}
             tickLine={false}
           />
           <YAxis
             tickFormatter={(v) =>
               v >= 10000 ? `${Math.round(v / 10000)}억` : `${v}`
             }
-            tick={{ fontSize: 11, fill: "#a3a3a3" }}
+            tick={{ fontSize: 11, fill: "var(--text-faint)" }}
             axisLine={false}
             tickLine={false}
             width={40}
@@ -136,7 +147,7 @@ export default function IncomeTimelineChart({ timeline }: Props) {
         </AreaChart>
       </ResponsiveContainer>
 
-      <p className="text-[11px] text-neutral-400 mt-2">
+      <p className="text-[11px] mt-2" style={{ color: "var(--text-faint)" }}>
         색이 쌓인 높이가 그 나이의 소득, 점선이 목표 생활비예요. 색이 점선에
         닿으면 목표를 채운 거예요.
       </p>
@@ -155,7 +166,8 @@ function Legend() {
       {items.map((item) => (
         <span
           key={item.label}
-          className="inline-flex items-center gap-1 text-[10px] text-neutral-400"
+          className="inline-flex items-center gap-1 text-[10px]"
+          style={{ color: "var(--text-faint)" }}
         >
           <span
             className="w-1.5 h-1.5 rounded-full"
@@ -166,7 +178,10 @@ function Legend() {
       ))}
       {/* WHY: 점선의 의미를 범례에 점선 모양 그대로 보여줘야
           "이 선이 뭐지?"라는 질문이 안 생긴다. */}
-      <span className="inline-flex items-center gap-1 text-[10px] text-neutral-400">
+      <span
+        className="inline-flex items-center gap-1 text-[10px]"
+        style={{ color: "var(--text-faint)" }}
+      >
         <span
           className="w-3 border-t-2 border-dashed"
           style={{ borderColor: COLORS.target }}
@@ -206,12 +221,17 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   );
 
   return (
-    <div className="rounded-lg border border-neutral-200 bg-white px-3 py-2 shadow-sm text-xs">
-      <p className="font-medium text-neutral-700 mb-1">{label}세</p>
+    <div
+      className="rounded-lg border px-3 py-2 shadow-sm text-xs"
+      style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+    >
+      <p className="font-medium mb-1" style={{ color: "var(--text)" }}>
+        {label}세
+      </p>
       {sorted.map((entry) => (
         <div key={entry.name} className="flex justify-between gap-4">
-          <span className="text-neutral-500">{entry.name}</span>
-          <span className="text-neutral-700">
+          <span style={{ color: "var(--text-sub)" }}>{entry.name}</span>
+          <span style={{ color: "var(--text)" }}>
             {formatManwon(Number(entry.value ?? 0))}
           </span>
         </div>

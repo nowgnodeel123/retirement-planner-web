@@ -1,4 +1,6 @@
 // ResultScreen.tsx
+// 다크모드: 히어로(파란 그라데이션)와 미달성 경고(호박색) 카드는 의도적 강조색이라
+// 유지. 그 외 중립 배경/텍스트만 토큰으로 전환.
 "use client";
 
 import { useState } from "react";
@@ -72,7 +74,10 @@ export default function ResultScreen({ result, onRestart }: Props) {
       )}
 
       {/* ── 3구간 타임라인 배지 ── */}
-      <p className="text-[13px] font-semibold text-neutral-500 mb-2.5">
+      <p
+        className="text-[13px] font-semibold mb-2.5"
+        style={{ color: "var(--text-sub)" }}
+      >
         은퇴 후 소득 구간
       </p>
       <PhaseTimeline
@@ -92,17 +97,28 @@ export default function ResultScreen({ result, onRestart }: Props) {
           WHY: 차트는 정보 밀도가 높아 훑어보는 데 시간이 걸린다.
           "결론(합계·목표대비)"은 차트를 안 봐도 바로 눈에 들어와야 하므로
           가볍게 한 줄 요약으로 유지한다. */}
-      <div className="flex items-center justify-between rounded-2xl border border-neutral-100 bg-neutral-50/60 px-4 py-3.5 mt-4 mb-5">
+      <div
+        className="flex items-center justify-between rounded-2xl border px-4 py-3.5 mt-4 mb-5"
+        style={{
+          borderColor: "var(--border)",
+          background: "var(--surface-pressed)",
+        }}
+      >
         <div>
-          <p className="text-[11px] text-neutral-400">
+          <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>
             월 예상 수입 (세후, 은퇴 1년차)
           </p>
-          <p className="text-base font-bold text-neutral-800 mt-0.5">
+          <p
+            className="text-base font-bold mt-0.5"
+            style={{ color: "var(--text-strong)" }}
+          >
             {formatManwon(summary.totalMonthlyIncome)}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[11px] text-neutral-400">목표 대비</p>
+          <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+            목표 대비
+          </p>
           <p
             className={`text-base font-bold mt-0.5 ${
               isShortfallPositive ? "text-emerald-600" : "text-red-500"
@@ -115,10 +131,19 @@ export default function ResultScreen({ result, onRestart }: Props) {
       </div>
 
       {/* ── 세금 · 건강보험료 ── */}
-      <p className="text-[13px] font-semibold text-neutral-500 mb-2.5">
+      <p
+        className="text-[13px] font-semibold mb-2.5"
+        style={{ color: "var(--text-sub)" }}
+      >
         세금 · 건강보험료
       </p>
-      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4 mb-5 space-y-2 text-sm">
+      <div
+        className="rounded-2xl border p-4 mb-5 space-y-2 text-sm"
+        style={{
+          borderColor: "var(--border)",
+          background: "var(--surface-pressed)",
+        }}
+      >
         <PlainRow
           label="연금소득세율"
           value={`${taxDetail.pensionIncomeTaxRate.toFixed(1)}%`}
@@ -145,7 +170,10 @@ export default function ResultScreen({ result, onRestart }: Props) {
             다시 계산하기
           </SecondaryButton>
         </div>
-        <p className="text-[10px] text-neutral-400 text-center pt-2 leading-relaxed">
+        <p
+          className="text-[10px] text-center pt-2 leading-relaxed"
+          style={{ color: "var(--text-faint)" }}
+        >
           본 서비스는 투자자문이나 금융상품 권유가 아닌 정보 제공 목적이에요.
           결과는 입력하신 가정에 따른 예상치로, 실제와 다를 수 있어요.
           <br />
@@ -206,7 +234,13 @@ function PhaseTimeline({
   });
 
   return (
-    <div className="rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4">
+    <div
+      className="rounded-2xl border p-4"
+      style={{
+        borderColor: "var(--border)",
+        background: "var(--surface-pressed)",
+      }}
+    >
       <div className="flex h-2.5 rounded-full overflow-hidden">
         {phases.map((p) => (
           <div
@@ -216,7 +250,10 @@ function PhaseTimeline({
           />
         ))}
       </div>
-      <div className="flex justify-between text-[10px] text-neutral-400 mt-2">
+      <div
+        className="flex justify-between text-[10px] mt-2"
+        style={{ color: "var(--text-faint)" }}
+      >
         <span>{retirementAge}세 은퇴</span>
         <span>{lifeExpectancy}세</span>
       </div>
@@ -224,7 +261,8 @@ function PhaseTimeline({
         {phases.map((p) => (
           <span
             key={p.label}
-            className="inline-flex items-center gap-1 text-[11px] text-neutral-500"
+            className="inline-flex items-center gap-1 text-[11px]"
+            style={{ color: "var(--text-sub)" }}
           >
             <span className={`w-2 h-2 rounded-full ${p.color}`} />
             {p.from}세~ {p.label}
@@ -238,8 +276,10 @@ function PhaseTimeline({
 function PlainRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
-      <span className="text-neutral-500">{label}</span>
-      <span className="font-medium text-neutral-700">{value}</span>
+      <span style={{ color: "var(--text-sub)" }}>{label}</span>
+      <span className="font-medium" style={{ color: "var(--text)" }}>
+        {value}
+      </span>
     </div>
   );
 }

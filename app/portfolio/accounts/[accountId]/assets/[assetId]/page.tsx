@@ -44,10 +44,10 @@ export default function AssetDetailPage() {
   const accountId = Number(params.accountId);
   const assetId = Number(params.assetId);
 
-  const [holding, setHolding] = useState
+  const [holding, setHolding] = useState<
     AssetHoldingResponse | null | undefined
   >(undefined);
-  const [transactions, setTransactions] = useState
+  const [transactions, setTransactions] = useState<
     TransactionResponse[] | null
   >(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,9 +64,7 @@ export default function AssetDetailPage() {
     // 단건 조회 API가 없어 계좌 보유목록에서 찾는다 — 계좌 상세 화면과 동일한 우회 패턴(백로그 항목)
     api
       .get<AssetHoldingResponse[]>(`/api/assets?accountId=${accountId}`)
-      .then((all) =>
-        setHolding(all.find((h) => h.assetId === assetId) ?? null),
-      )
+      .then((all) => setHolding(all.find((h) => h.assetId === assetId) ?? null))
       .catch((e) =>
         setError(
           e instanceof ApiError ? e.message : "자산 정보를 불러오지 못했어요.",
@@ -219,7 +217,9 @@ export default function AssetDetailPage() {
             <div className="mb-6 card px-4 py-4">
               <Field
                 label="매도 수량"
-                unit={categoryUnit[holding.category as TradableAssetCategory] ?? ""}
+                unit={
+                  categoryUnit[holding.category as TradableAssetCategory] ?? ""
+                }
               >
                 <NumberInput
                   value={quantity}
@@ -327,7 +327,9 @@ export default function AssetDetailPage() {
                       color:
                         tx.type === "BUY" ? "var(--accent)" : "var(--text-sub)",
                       background:
-                        tx.type === "BUY" ? "var(--accent-soft)" : "var(--border)",
+                        tx.type === "BUY"
+                          ? "var(--accent-soft)"
+                          : "var(--border)",
                     }}
                   >
                     {transactionTypeLabel[tx.type]}
@@ -345,7 +347,9 @@ export default function AssetDetailPage() {
                 >
                   {formatQuantity(tx.quantity)}
                   {holding
-                    ? categoryUnit[holding.category as TradableAssetCategory] ?? ""
+                    ? (categoryUnit[
+                        holding.category as TradableAssetCategory
+                      ] ?? "")
                     : ""}{" "}
                   · {formatMoney(tx.unitPrice, holding?.currency ?? "KRW")}
                 </p>

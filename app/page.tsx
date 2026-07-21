@@ -3,7 +3,7 @@ import RetirementWizard from "@/app/components/wizard/RetirementWizard";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-neutral-100 pb-24">
+    <main className="min-h-screen pb-24" style={{ background: "var(--bg)" }}>
       <RetirementWizard />
     </main>
   );

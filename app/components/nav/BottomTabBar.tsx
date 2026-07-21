@@ -1,4 +1,5 @@
 // BottomTabBar.tsx — D-078: 하단 탭바(아이콘+라벨), 포트폴리오/은퇴시뮬레이션 2탭 고정.
+// 다크모드: neutral-*/blue-* 하드코딩을 디자인 토큰(CSS 변수)으로 전환 (Ui.tsx와 동일 유형 수정)
 "use client";
 
 import Link from "next/link";
@@ -53,7 +54,7 @@ export default function BottomTabBar() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-neutral-100 bg-white/90 backdrop-blur-md">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur-md">
       <div className="max-w-[420px] mx-auto flex pb-[env(safe-area-inset-bottom)]">
         {TABS.map(({ href, label, Icon }) => {
           const active =
@@ -64,13 +65,18 @@ export default function BottomTabBar() {
               href={href}
               className="flex-1 flex flex-col items-center gap-1 py-2.5"
             >
-              <span className={active ? "text-blue-500" : "text-neutral-300"}>
+              <span
+                style={{
+                  color: active ? "var(--accent)" : "var(--text-faint)",
+                }}
+              >
                 <Icon active={active} />
               </span>
               <span
-                className={`text-[11px] font-medium ${
-                  active ? "text-blue-500" : "text-neutral-400"
-                }`}
+                className="text-[11px] font-medium"
+                style={{
+                  color: active ? "var(--accent)" : "var(--text-sub)",
+                }}
               >
                 {label}
               </span>

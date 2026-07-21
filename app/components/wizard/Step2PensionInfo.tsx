@@ -1,4 +1,5 @@
 // Step2PensionInfo.tsx
+// 다크모드: neutral-*/blue-*/white 하드코딩을 디자인 토큰으로 전환
 import { RetirementFormState } from "./types";
 import {
   Field,
@@ -33,10 +34,13 @@ export default function Step2PensionInfo({
       <ProgressBar step={1} total={3} />
 
       <SectionCard>
-        <p className="text-lg font-semibold text-neutral-800 mb-1">
+        <p
+          className="text-lg font-semibold mb-1"
+          style={{ color: "var(--text-strong)" }}
+        >
           연금 정보를 입력해주세요
         </p>
-        <p className="text-sm text-neutral-400 mb-5">
+        <p className="text-sm mb-5" style={{ color: "var(--text-faint)" }}>
           55세부터 받을 수 있는 연금 자산들이에요.
         </p>
 
@@ -44,15 +48,21 @@ export default function Step2PensionInfo({
           <NumberInput
             value={form.pensionYearsPaid}
             onChange={(v) => onChange("pensionYearsPaid", v)}
-            placeholder="예) 6"
+            placeholder="예) 3"
             maxDigits={2}
             ariaLabel="국민연금 납입 기간"
           />
         </Field>
 
         {/* 퇴직연금 */}
-        <div className="border-t border-neutral-200/70 pt-4 mb-4">
-          <p className="text-sm font-semibold text-neutral-700 mb-2.5">
+        <div
+          className="border-t pt-4 mb-4"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <p
+            className="text-sm font-semibold mb-2.5"
+            style={{ color: "var(--text)" }}
+          >
             퇴직연금
           </p>
           <div
@@ -177,20 +187,27 @@ function PensionTypeButton({
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className={`flex-1 rounded-xl py-2.5 border-2 transition-all duration-150 text-left px-3.5 ${
+      className="flex-1 rounded-xl py-2.5 border-2 transition-all duration-150 text-left px-3.5"
+      style={
         selected
-          ? "border-blue-500 bg-blue-50/60 shadow-[0_2px_8px_rgba(59,130,246,0.15)]"
-          : "border-neutral-200 bg-white hover:border-neutral-300"
-      }`}
+          ? {
+              borderColor: "var(--accent)",
+              background: "var(--accent-soft)",
+              boxShadow: "0 2px 8px rgba(49,130,246,0.15)",
+            }
+          : { borderColor: "var(--border)", background: "var(--surface)" }
+      }
     >
       <span
-        className={`block text-sm font-semibold ${
-          selected ? "text-blue-600" : "text-neutral-600"
-        }`}
+        className="block text-sm font-semibold"
+        style={{ color: selected ? "var(--accent)" : "var(--text)" }}
       >
         {label}
       </span>
-      <span className="block text-[11px] text-neutral-400 mt-0.5">
+      <span
+        className="block text-[11px] mt-0.5"
+        style={{ color: "var(--text-faint)" }}
+      >
         {description}
       </span>
     </button>
@@ -220,9 +237,15 @@ function PensionProductFields({
 }) {
   return (
     <div
-      className={`border-t border-neutral-200/70 pt-4 ${noBorderBottom ? "" : "mb-4"}`}
+      className={`border-t pt-4 ${noBorderBottom ? "" : "mb-4"}`}
+      style={{ borderColor: "var(--border)" }}
     >
-      <p className="text-sm font-semibold text-neutral-700 mb-2.5">{title}</p>
+      <p
+        className="text-sm font-semibold mb-2.5"
+        style={{ color: "var(--text)" }}
+      >
+        {title}
+      </p>
       <div className="grid grid-cols-2 gap-2.5 mb-1.5">
         <SmallField label="월 납입액" unit="만원">
           <NumberInput
