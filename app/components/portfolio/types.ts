@@ -89,3 +89,29 @@ export const categoryUnit: Record<TradableAssetCategory, string> = {
   FOREIGN_STOCK: "주",
   CRYPTO: "개",
 };
+
+// M6: 거래내역
+export type TransactionType = "BUY" | "SELL";
+
+export interface TransactionResponse {
+  transactionId: number;
+  type: TransactionType;
+  tradeDate: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  fx: number | null;
+}
+
+export interface AssetSellRequest {
+  assetId: number;
+  quantity: number;
+  unitPrice: number;
+  fx?: number;
+  tradeDate: string; // YYYY-MM-DD
+}
+
+export const transactionTypeLabel: Record<TransactionType, string> = {
+  BUY: "매수",
+  SELL: "매도",
+};
