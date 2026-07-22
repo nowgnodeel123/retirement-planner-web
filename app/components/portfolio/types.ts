@@ -115,3 +115,20 @@ export const transactionTypeLabel: Record<TransactionType, string> = {
   BUY: "매수",
   SELL: "매도",
 };
+
+// M8: 배당 추적 (D-067)
+export type DividendEligibleCategory = "DOMESTIC_STOCK" | "FOREIGN_STOCK";
+
+export interface DividendResponse {
+  dividendId: number;
+  assetId: number;
+  payDate: string; // YYYY-MM-DD
+  amount: number; // 국내: 세후 원화 / 해외: USD
+  fx: number | null; // 해외주식만 값 존재
+}
+
+export interface DividendCreateRequest {
+  payDate: string;
+  amount: number;
+  fx?: number;
+}
