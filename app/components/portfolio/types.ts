@@ -132,3 +132,27 @@ export interface DividendCreateRequest {
   amount: number;
   fx?: number;
 }
+
+// M9: 포트폴리오 대시보드 (D-066/D-069/D-071~D-074)
+export interface CategorySummary {
+  category: string;
+  totalKrw: number;
+  assetCount: number;
+}
+
+export interface PortfolioSummaryResponse {
+  totalKrw: number | null; // 보유자산이 전부 시세 미조회로 제외되면 null
+  profitKrw: number;
+  profitRate: number;
+  excludedCount: number;
+  categories: CategorySummary[];
+}
+
+export interface MonthlyInsightResponse {
+  buyCount: number;
+  buyAmountKrw: number;
+  sellCount: number;
+  sellAmountKrw: number;
+  dividendCount: number;
+  dividendAmountKrw: number;
+}

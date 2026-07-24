@@ -1,17 +1,23 @@
-// app/portfolio/page.tsx — 계좌 목록 (포트폴리오 탭 진입 화면)
+// app/portfolio/page.tsx — 포트폴리오 탭 진입 화면
+// M9: 대시보드(총자산→인사이트 배너→비중 도넛, D-069 순서) + 기존 계좌 목록
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { AccountCard } from "@/app/components/portfolio/AccountCard";
+import { CategoryDonutChart } from "@/app/components/portfolio/CategoryDonutChart";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
+import { MonthlyInsightBanner } from "@/app/components/portfolio/MonthlyInsightBanner";
+import { PortfolioSummary } from "@/app/components/portfolio/PortfolioSummary";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import {
   AccountResponse,
   institutionLabel,
   InstitutionType,
+  MonthlyInsightResponse,
+  PortfolioSummaryResponse,
 } from "@/app/components/portfolio/types";
 
 const SECTION_ORDER: InstitutionType[] = ["BANK", "SECURITIES", "EXCHANGE"];
@@ -64,6 +70,10 @@ function EmptyState() {
 
 export default function PortfolioPage() {
   const [accounts, setAccounts] = useState<AccountResponse[] | null>(null);
+  const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(
+    null,
+  );
+  const [insight, setInsight] = useState<MonthlyInsightResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<AccountResponse | null>(
@@ -81,6 +91,17 @@ export default function PortfolioPage() {
           e instanceof ApiError ? e.message : "계좌를 불러오지 못했어요.",
         ),
       );
+
+    // M9: 대시보드 요약/인사이트는 계좌 목록과 독립적으로 병렬 조회
+    api
+      .get<PortfolioSummaryResponse>("/api/portfolio/summary")
+      .catch(() => null)
+      .then((data) => data && setSummary(data));
+
+    api
+      .get<MonthlyInsightResponse>("/api/portfolio/insights/monthly")
+      .catch(() => null)
+      .then((data) => data && setInsight(data));
   }, []);
 
   async function handleConfirmDelete() {
@@ -176,6 +197,15 @@ export default function PortfolioPage() {
       )}
 
       {accounts !== null && accounts.length === 0 && <EmptyState />}
+
+      {/* M9: 대시보드 — 총자산 → 이번 달 인사이트 → 비중(도넛) 순서(D-069) */}
+      {accounts !== null && accounts.length > 0 && (
+        <>
+          <PortfolioSummary summary={summary} />
+          <MonthlyInsightBanner insight={insight} />
+          <CategoryDonutChart categories={summary?.categories ?? null} />
+        </>
+      )}
 
       {accounts !== null && accounts.length > 0 && (
         <div className="space-y-7 rise-in">

@@ -94,6 +94,15 @@ export default function ProfileMenu() {
             알림 설정 <span className="text-[10px]">(준비중)</span>
           </button>
 
+          {/* M9(D-066): 앱 내 기능요청 피드백 채널 — mailto로 기본 메일 앱 실행 */}
+          <a
+            href="mailto:nowgnodeel123@gmail.com?subject=%EB%84%A4%EC%8A%A4%ED%8A%B8%20%EA%B8%B0%EB%8A%A5%20%EC%A0%9C%EC%95%88"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-3 text-sm text-neutral-700 dark:text-neutral-200 border-t border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+          >
+            기능 제안하기
+          </a>
+
           <button
             onClick={handleLogout}
             className="w-full text-left px-4 py-3 text-sm text-red-500 border-t border-neutral-100 dark:border-neutral-700 hover:bg-red-50 dark:hover:bg-neutral-700"
