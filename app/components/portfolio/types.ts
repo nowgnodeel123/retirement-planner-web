@@ -156,3 +156,35 @@ export interface MonthlyInsightResponse {
   dividendCount: number;
   dividendAmountKrw: number;
 }
+
+// M10: 수익 탭 (D-065)
+export type ProfitPeriod = "DAY" | "WEEK" | "MONTH" | "YEAR" | "ALL";
+
+export const profitPeriodLabel: Record<ProfitPeriod, string> = {
+  DAY: "일",
+  WEEK: "주",
+  MONTH: "월",
+  YEAR: "년",
+  ALL: "전체",
+};
+
+export type ProfitItemKind = "REALIZED_SELL" | "DIVIDEND";
+
+export interface ProfitItem {
+  kind: ProfitItemKind;
+  sourceId: number;
+  assetId: number;
+  assetName: string;
+  category: string; // TradableAssetCategory 문자열
+  date: string; // YYYY-MM-DD
+  amountKrw: number;
+}
+
+export interface ProfitSummaryResponse {
+  realizedProfitKrw: number;
+  dividendKrw: number;
+  totalProfitKrw: number;
+  sellCount: number;
+  dividendCount: number;
+  items: ProfitItem[];
+}

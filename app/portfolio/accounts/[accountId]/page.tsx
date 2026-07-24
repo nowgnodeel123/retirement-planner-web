@@ -1,7 +1,7 @@
 // app/portfolio/accounts/[accountId]/page.tsx — 계좌 상세: 총 평가금액 요약 + 보유 자산 목록
 // D-049 손익 + D-058 전일종가 라벨 + D-063 원화환산. 디자인 토큰 기반.
 // M6: 보유자산 카드 → 자산 상세(매도/거래내역) 화면 링크 추가.
-// M7: D-054 정렬(모달 팝업) + D-069 관련 "정리한 자산"(전량매도) 섹션 분리.
+// M7: D-054 정렬(드롭다운) + D-069 관련 "정리한 자산"(전량매도) 섹션 분리.
 // quantity===0인 자산은 보유목록에서 제외하고 하단 접이식 섹션으로 뺀다 — 백엔드는 그대로
 // 전체를 내려주므로(GET /api/assets) 이 구분은 프론트 전용이며 API 변경 없음.
 "use client";
@@ -12,6 +12,8 @@ import { useParams, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
+import { ProfitTab } from "@/app/components/portfolio/ProfitTab";
+import { formatKrw, formatMoney, signed } from "@/app/components/portfolio/format";
 import {
   HoldingSortKey,
   SortDirection,
@@ -30,25 +32,12 @@ function formatQuantity(qty: number) {
   return qty % 1 === 0 ? qty.toLocaleString() : qty.toString();
 }
 
-function formatMoney(value: number, currency: string) {
-  if (currency === "KRW") return `${Math.round(value).toLocaleString()}원`;
-  return `$${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function formatKrw(value: number) {
-  return `${Math.round(value).toLocaleString()}원`;
-}
-
-function signed(value: number, formatted: string) {
-  return `${value >= 0 ? "+" : "-"}${formatted.replace(/^-/, "")}`;
-}
-
 // M7: 정렬 기준값 추출. 해외주식은 원화환산 평가금액을 기준으로 삼아 카테고리가 섞여도
 // 비교가 성립하게 한다(D-063/D-087 이중표시 원칙과 일관).
-function getSortValue(h: AssetHoldingResponse, key: HoldingSortKey): number | null {
+function getSortValue(
+  h: AssetHoldingResponse,
+  key: HoldingSortKey,
+): number | null {
   if (key === "profitRate") return h.profitRate;
   if (h.category === "FOREIGN_STOCK") return h.krwEvaluationAmount;
   return h.evaluationAmount;
@@ -114,6 +103,11 @@ export default function AccountDetailPage() {
   );
   const [holdings, setHoldings] = useState<AssetHoldingResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // M10(D-065): 계좌 상세 3탭(자산/수익/세금). 세금 탭은 M11 스코프 — 플레이스홀더만 노출.
+  const [activeTab, setActiveTab] = useState<"ASSETS" | "PROFIT" | "TAX">(
+    "ASSETS",
+  );
 
   // M7: 정렬(D-054) — 기본값은 평가금액 내림차순(비중 큰 자산부터).
   const [sortKey, setSortKey] = useState<HoldingSortKey>("value");
@@ -244,6 +238,51 @@ export default function AccountDetailPage() {
         )}
       </div>
 
+      {/* M10(D-065): 자산/수익/세금 3탭 */}
+      <div
+        className="flex mb-5 border-b"
+        style={{ borderColor: "var(--border)" }}
+      >
+        {(
+          [
+            { key: "ASSETS" as const, label: "자산" },
+            { key: "PROFIT" as const, label: "수익" },
+            { key: "TAX" as const, label: "세금" },
+          ]
+        ).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            className="flex-1 text-center py-2.5 text-[13px] font-semibold relative"
+            style={{
+              color:
+                activeTab === tab.key ? "var(--text-strong)" : "var(--text-faint)",
+            }}
+          >
+            {tab.label}
+            {activeTab === tab.key && (
+              <span
+                className="absolute left-0 right-0 -bottom-px h-[2px]"
+                style={{ background: "var(--accent)" }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "PROFIT" && <ProfitTab accountId={accountId} />}
+
+      {activeTab === "TAX" && (
+        <div className="card px-4 py-9 text-center rise-in">
+          <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+            세금 탭은 다음 업데이트(M11)에서 제공될 예정이에요.
+          </p>
+        </div>
+      )}
+
+      {activeTab === "ASSETS" && (
+      <>
       {/* 총 평가금액 — 진입 즉시 "내 돈이 지금 얼마인가" */}
       {summary && summary.totalKrw !== null && (
         <div className="mt-5 mb-7 rise-in">
@@ -292,26 +331,40 @@ export default function AccountDetailPage() {
         </p>
         <div className="flex items-center gap-1">
           {activeHoldings.length >= 2 && (
-            <button
-              type="button"
-              onClick={() => setSortModalOpen(true)}
-              className="flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg"
-              style={{ color: "var(--text-sub)" }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setSortModalOpen((v) => !v)}
+                className="flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg"
+                style={{ color: "var(--text-sub)" }}
               >
-                <path d="M3 6h18M6 12h12M10 18h4" />
-              </svg>
-              정렬
-            </button>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 6h18M6 12h12M10 18h4" />
+                </svg>
+                정렬
+              </button>
+              {sortModalOpen && (
+                <SortModal
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onApply={(key, dir) => {
+                    setSortKey(key);
+                    setSortDir(dir);
+                    setSortModalOpen(false);
+                  }}
+                  onClose={() => setSortModalOpen(false)}
+                />
+              )}
+            </div>
           )}
           <Link
             href={`/portfolio/accounts/${accountId}/assets/new`}
@@ -541,18 +594,7 @@ export default function AccountDetailPage() {
           )}
         </div>
       )}
-
-      {sortModalOpen && (
-        <SortModal
-          sortKey={sortKey}
-          sortDir={sortDir}
-          onApply={(key, dir) => {
-            setSortKey(key);
-            setSortDir(dir);
-            setSortModalOpen(false);
-          }}
-          onClose={() => setSortModalOpen(false)}
-        />
+      </>
       )}
     </div>
   );
