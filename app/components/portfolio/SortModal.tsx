@@ -1,70 +1,25 @@
 // app/components/portfolio/SortModal.tsx
-// M7: D-054 — 보유자산 정렬 모달 팝업. 방향은 위/아래 화살표 아이콘.
-// 계좌 상세 화면 전용으로 시작하지만 기능 중립적으로 작성 — 추후 다른 목록에도 재사용 가능.
+// M7: D-054 — 보유자산 정렬. 실제 증권사 앱처럼 정렬 버튼 바로 아래 작은 드롭다운으로
+// 표시(기존 큰 바텀시트 모달에서 변경 — 사용자 실기기 검증 중 피드백 반영).
+// 옵션 선택 즉시 적용 후 닫힘(별도 "적용" 버튼 없음) — 드롭다운 관례.
 "use client";
 
-import { useState } from "react";
-import { PrimaryButton, SecondaryButton } from "@/app/components/wizard/Ui";
+import { useEffect, useRef } from "react";
 
 export type HoldingSortKey = "value" | "profitRate" | "name";
 export type SortDirection = "desc" | "asc";
 
-const SORT_KEY_OPTIONS: { key: HoldingSortKey; label: string }[] = [
-  { key: "value", label: "평가금액" },
-  { key: "profitRate", label: "수익률" },
-  { key: "name", label: "이름" },
+const SORT_OPTIONS: {
+  key: HoldingSortKey;
+  dir: SortDirection;
+  label: string;
+}[] = [
+  { key: "value", dir: "desc", label: "평가금액 높은순" },
+  { key: "value", dir: "asc", label: "평가금액 낮은순" },
+  { key: "profitRate", dir: "desc", label: "수익률 높은순" },
+  { key: "profitRate", dir: "asc", label: "수익률 낮은순" },
+  { key: "name", dir: "asc", label: "이름순" },
 ];
-
-function CheckIcon() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.4}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-
-function ArrowDownIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 5v14M6 13l6 6 6-6" />
-    </svg>
-  );
-}
-
-function ArrowUpIcon() {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 19V5M6 11l6-6 6 6" />
-    </svg>
-  );
-}
 
 export function SortModal({
   sortKey,
@@ -77,93 +32,51 @@ export function SortModal({
   onApply: (key: HoldingSortKey, dir: SortDirection) => void;
   onClose: () => void;
 }) {
-  const [key, setKey] = useState<HoldingSortKey>(sortKey);
-  const [dir, setDir] = useState<SortDirection>(sortDir);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div
-        className="absolute inset-0 backdrop-blur-[2px]"
-        style={{ background: "rgba(16,16,19,0.4)" }}
-        onClick={onClose}
-      />
-      <div
-        className="relative w-full max-w-[420px] rounded-t-3xl sm:rounded-3xl p-6"
-        style={{ background: "var(--surface)" }}
-      >
-        <p
-          className="text-[16px] font-semibold mb-4"
-          style={{ color: "var(--text-strong)" }}
-        >
-          정렬
-        </p>
-
-        <div className="space-y-1.5 mb-5">
-          {SORT_KEY_OPTIONS.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setKey(opt.key)}
-              className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-[14px] font-medium transition-colors"
-              style={
-                key === opt.key
-                  ? { color: "var(--accent)", background: "var(--accent-soft)" }
-                  : { color: "var(--text)" }
-              }
-            >
-              {opt.label}
-              {key === opt.key && <CheckIcon />}
-            </button>
-          ))}
-        </div>
-
-        <p
-          className="text-[12px] font-semibold mb-2 px-1"
-          style={{ color: "var(--text-sub)" }}
-        >
-          방향
-        </p>
-        <div className="flex gap-2 mb-6">
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-1.5 z-30 w-[168px] rounded-xl overflow-hidden"
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+      }}
+    >
+      {SORT_OPTIONS.map((opt) => {
+        const active = opt.key === sortKey && opt.dir === sortDir;
+        return (
           <button
+            key={`${opt.key}-${opt.dir}`}
             type="button"
-            onClick={() => setDir("desc")}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-medium transition-colors"
+            onClick={() => onApply(opt.key, opt.dir)}
+            className="w-full text-left px-3.5 py-2.5 text-[13px] font-medium transition-colors"
             style={
-              dir === "desc"
+              active
                 ? { color: "var(--accent)", background: "var(--accent-soft)" }
-                : { color: "var(--text-sub)", background: "var(--surface-pressed)" }
+                : { color: "var(--text)" }
             }
           >
-            <ArrowDownIcon />
-            내림차순
+            {opt.label}
           </button>
-          <button
-            type="button"
-            onClick={() => setDir("asc")}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-medium transition-colors"
-            style={
-              dir === "asc"
-                ? { color: "var(--accent)", background: "var(--accent-soft)" }
-                : { color: "var(--text-sub)", background: "var(--surface-pressed)" }
-            }
-          >
-            <ArrowUpIcon />
-            오름차순
-          </button>
-        </div>
-
-        <div className="flex gap-2">
-          <SecondaryButton onClick={onClose} className="flex-1">
-            취소
-          </SecondaryButton>
-          <PrimaryButton
-            onClick={() => onApply(key, dir)}
-            className="flex-1"
-          >
-            적용
-          </PrimaryButton>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }

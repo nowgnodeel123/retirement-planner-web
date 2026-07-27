@@ -74,10 +74,10 @@ export default function AssetDetailPage() {
   const accountId = Number(params.accountId);
   const assetId = Number(params.assetId);
 
-  const [holding, setHolding] = useState
+  const [holding, setHolding] = useState<
     AssetHoldingResponse | null | undefined
   >(undefined);
-  const [transactions, setTransactions] = useState
+  const [transactions, setTransactions] = useState<
     TransactionResponse[] | null
   >(null);
   const [dividends, setDividends] = useState<DividendResponse[] | null>(null);
@@ -144,7 +144,8 @@ export default function AssetDetailPage() {
   const isForeign = holding?.category === "FOREIGN_STOCK";
   // D-067: 배당은 국내/해외주식만
   const isDividendEligible =
-    holding?.category === "DOMESTIC_STOCK" || holding?.category === "FOREIGN_STOCK";
+    holding?.category === "DOMESTIC_STOCK" ||
+    holding?.category === "FOREIGN_STOCK";
 
   const combinedHistory = useMemo(() => {
     if (transactions === null || dividends === null) return null;
@@ -243,9 +244,7 @@ export default function AssetDetailPage() {
       setToast("배당 기록이 삭제되었어요.");
       loadAll();
     } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : "배당 삭제에 실패했어요.",
-      );
+      setError(e instanceof ApiError ? e.message : "배당 삭제에 실패했어요.");
       setDeleteTargetId(null);
     } finally {
       setDeleting(false);
@@ -543,7 +542,11 @@ export default function AssetDetailPage() {
                           holding.category as TradableAssetCategory
                         ] ?? "")
                       : ""}{" "}
-                    · {formatMoney(item.data.unitPrice, holding?.currency ?? "KRW")}
+                    ·{" "}
+                    {formatMoney(
+                      item.data.unitPrice,
+                      holding?.currency ?? "KRW",
+                    )}
                   </p>
                 </div>
                 <p
@@ -587,7 +590,16 @@ export default function AssetDetailPage() {
                     className="p-1 rounded-md"
                     style={{ color: "var(--text-faint)" }}
                   >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <path d="M3 6h18" />
                       <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
