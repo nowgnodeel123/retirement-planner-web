@@ -13,6 +13,7 @@ import { api, ApiError } from "@/lib/api";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { ProfitTab } from "@/app/components/portfolio/ProfitTab";
+import { TaxTab } from "@/app/components/portfolio/TaxTab";
 import { formatKrw, formatMoney, signed } from "@/app/components/portfolio/format";
 import {
   HoldingSortKey,
@@ -273,13 +274,7 @@ export default function AccountDetailPage() {
 
       {activeTab === "PROFIT" && <ProfitTab accountId={accountId} />}
 
-      {activeTab === "TAX" && (
-        <div className="card px-4 py-9 text-center rise-in">
-          <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
-            세금 탭은 다음 업데이트(M11)에서 제공될 예정이에요.
-          </p>
-        </div>
-      )}
+      {activeTab === "TAX" && <TaxTab accountId={accountId} />}
 
       {activeTab === "ASSETS" && (
       <>

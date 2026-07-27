@@ -188,3 +188,38 @@ export interface ProfitSummaryResponse {
   dividendCount: number;
   items: ProfitItem[];
 }
+
+// M11: 세금 탭 (D-064 양도소득세 추정 / D-068 배당소득세 판정)
+// 세금계산기 완전판이 아니라 추정·판정만 제공 — 실제 세액이 아니다.
+export type DividendTaxJudgement =
+  | "SEPARATE_TAXATION_FINAL"
+  | "COMPREHENSIVE_FILING_POSSIBLE";
+
+export const dividendJudgementLabel: Record<DividendTaxJudgement, string> = {
+  SEPARATE_TAXATION_FINAL: "분리과세로 종결돼요",
+  COMPREHENSIVE_FILING_POSSIBLE: "종합소득 신고 대상일 수 있어요",
+};
+
+export interface CapitalGainsEstimate {
+  realizedProfitKrw: number; // 해외주식 연간 실현손익 합(D-107)
+  basicDeductionKrw: number; // 250만원 고정
+  taxableBaseKrw: number; // max(0, realizedProfitKrw - basicDeductionKrw)
+  taxRate: number; // 0.22 고정
+  estimatedTaxKrw: number;
+  sellCount: number;
+}
+
+export interface DividendIncomeJudgement {
+  totalDividendKrw: number;
+  thresholdKrw: number; // 2000만원 고정
+  exceedsThreshold: boolean;
+  judgement: DividendTaxJudgement;
+  interestIncomeNotTracked: boolean; // 항상 true — 이자소득 미추적 캐비트
+  dividendCount: number;
+}
+
+export interface TaxSummaryResponse {
+  year: number;
+  capitalGains: CapitalGainsEstimate;
+  dividendIncome: DividendIncomeJudgement;
+}
