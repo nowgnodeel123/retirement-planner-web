@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearToken, useDevToken } from "@/lib/devAuth";
+import { clearToken, useToken } from "@/lib/auth";
 import { setTheme, useTheme } from "@/lib/theme";
 import { api, ApiError } from "@/lib/api";
 
@@ -14,7 +14,7 @@ type MeResponse = {
 };
 
 export default function ProfileMenu() {
-  const token = useDevToken();
+  const token = useToken();
   const theme = useTheme();
   const router = useRouter();
 

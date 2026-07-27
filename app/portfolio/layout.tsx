@@ -1,4 +1,4 @@
-import DevTokenGate from "@/app/components/portfolio/DevTokenGate";
+import RequireAuth from "@/app/components/portfolio/RequireAuth";
 
 export default function PortfolioLayout({
   children,
@@ -7,7 +7,7 @@ export default function PortfolioLayout({
 }) {
   return (
     <div className="min-h-screen pb-24" style={{ background: "var(--bg)" }}>
-      <DevTokenGate>{children}</DevTokenGate>
+      <RequireAuth>{children}</RequireAuth>
     </div>
   );
 }

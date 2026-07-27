@@ -1,11 +1,8 @@
-// lib/devAuth.ts
-// WHY: 프론트-로그인 연동은 M12 스코프. 그 전까지는 카카오 로그인 성공 후
-// 리다이렉트 주소창(app.frontend-callback-url)에 노출되는 accessToken을 수동으로
-// 붙여넣어 로컬에 저장해두고 포트폴리오 API를 테스트한다.
-// M12에서 실제 OAuth 콜백 라우트(/auth/callback)가 이 역할을 대체하면 이 파일은 삭제한다.
+// lib/auth.ts — accessToken 저장/구독. 카카오 OAuth 콜백(/auth/callback)과
+// 이메일 로그인/회원가입 응답 양쪽 모두 이 모듈을 통해 토큰을 저장한다.
 import { useSyncExternalStore } from "react";
 
-const TOKEN_KEY = "nest_dev_token";
+const TOKEN_KEY = "nest_access_token";
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -25,8 +22,8 @@ function getServerSnapshot() {
   return null;
 }
 
-/** 컴포넌트에서 토큰 유무를 구독한다. SSR에서는 항상 null(비로그인)로 렌더된다. */
-export function useDevToken() {
+/** 컴포넌트에서 로그인 여부를 구독한다. SSR에서는 항상 null(비로그인)로 렌더된다. */
+export function useToken() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 

@@ -1,7 +1,8 @@
 // lib/api.ts — 공용 fetch 래퍼. 매 API 호출마다 인증 헤더/에러 파싱을 반복하지 않게 한다.
-import { getToken } from "./devAuth";
+import { getToken } from "./auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export class ApiError extends Error {
   status: number;
@@ -38,8 +39,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body = isJson ? await res.json() : null;
 
   if (!res.ok) {
-    // GlobalExceptionHandler 응답 형태: { error, fields? }
-    const message = body?.error ?? "요청 처리 중 문제가 발생했어요.";
+    // 백엔드 에러 응답 필드명이 핸들러별로 다르다(GlobalExceptionHandler={error,fields},
+    // AuthExceptionHandler={message}) — 통일은 백로그, 우선 둘 다 흡수.
+    const message =
+      body?.message ?? body?.error ?? "요청 처리 중 문제가 발생했어요.";
     throw new ApiError(res.status, message, body?.fields);
   }
 
