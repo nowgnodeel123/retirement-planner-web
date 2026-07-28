@@ -1,6 +1,11 @@
 // ResultScreen.tsx
 // 다크모드: 히어로(파란 그라데이션)와 미달성 경고(호박색) 카드는 의도적 강조색이라
 // 유지. 그 외 중립 배경/텍스트만 토큰으로 전환.
+// WHY(레이아웃 리뉴얼): 예전 구조는 히어로 아래로 소득구간/차트/월수입/세금 카드가
+// 각자 테두리를 두르고 따로 떠 있어 "붕 뜬" 느낌을 줬다. 지금은 (1) 월 예상 수입·
+// 목표 대비를 히어로 안으로 옮겨 헤드라인 숫자와 한 덩어리로 묶고 (2) 나머지
+// 정보(소득 구간/차트/세금)는 구분선으로 나눈 카드 하나로 합쳐 화면 전체가
+// 히어로+상세카드 두 덩어리로만 읽히게 했다.
 "use client";
 
 import { useState } from "react";
@@ -55,6 +60,24 @@ export default function ResultScreen({ result, onRestart }: Props) {
             뒤예요
           </p>
           <p className="text-xs text-blue-100/90 mt-2">{summary.message}</p>
+
+          <div className="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-white/15">
+            <div>
+              <p className="text-[11px] text-blue-100">
+                월 예상 수입 (세후, 1년차)
+              </p>
+              <p className="text-[15px] font-semibold text-white mt-0.5">
+                {formatManwon(summary.totalMonthlyIncome)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] text-blue-100">목표 대비</p>
+              <p className="text-[15px] font-semibold text-white mt-0.5">
+                {isShortfallPositive ? "+" : ""}
+                {formatManwon(summary.monthlyShortfall)}
+              </p>
+            </div>
+          </div>
         </div>
       ) : (
         <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-center mb-5">
@@ -68,94 +91,92 @@ export default function ResultScreen({ result, onRestart }: Props) {
           </p>
           <p className="text-[13px] text-neutral-500 mt-3 leading-relaxed">
             납입액을 늘리거나 목표 생활비를 낮춰서 다시 계산해보세요. 아래
-            그래프에서 어느 시점부터 부족해지는지 볼 수 있어요.
+            상세 내역에서 어느 시점부터 부족해지는지 볼 수 있어요.
           </p>
+
+          <div className="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-amber-200">
+            <div>
+              <p className="text-[11px] text-amber-700/80">
+                월 예상 수입 (세후, {retirementAge}세 기준)
+              </p>
+              <p className="text-[15px] font-semibold text-amber-900 mt-0.5">
+                {formatManwon(summary.totalMonthlyIncome)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] text-amber-700/80">목표 대비</p>
+              <p className="text-[15px] font-semibold text-amber-900 mt-0.5">
+                {formatManwon(summary.monthlyShortfall)}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* ── 3구간 타임라인 배지 ── */}
-      <p
-        className="text-[13px] font-semibold mb-2.5"
-        style={{ color: "var(--text-sub)" }}
-      >
-        은퇴 후 소득 구간
-      </p>
-      <PhaseTimeline
-        retirementAge={retirementAge}
-        receiptAge={receiptAge}
-        lifeExpectancy={meta.lifeExpectancy}
-      />
-
-      {/* ── 연도별 소득 구성 차트 ── */}
-      {incomeTimeline.length > 0 && (
-        <div className="mt-4">
-          <IncomeTimelineChart timeline={incomeTimeline} />
-        </div>
-      )}
-
-      {/* ── 소득 요약 (합계만 — 항목별 상세는 위 차트가 담당) ──
-          WHY: 차트는 정보 밀도가 높아 훑어보는 데 시간이 걸린다.
-          "결론(합계·목표대비)"은 차트를 안 봐도 바로 눈에 들어와야 하므로
-          가볍게 한 줄 요약으로 유지한다. */}
+      {/* ── 상세 내역: 소득 구간 / 차트 / 세금·건강보험료를 구분선으로 나눈 단일 카드 ── */}
       <div
-        className="flex items-center justify-between rounded-2xl border px-4 py-3.5 mt-4 mb-5"
-        style={{
-          borderColor: "var(--border)",
-          background: "var(--surface-pressed)",
-        }}
+        className="rounded-2xl border overflow-hidden mb-5"
+        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
-        <div>
-          <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>
-            월 예상 수입 (세후, 은퇴 1년차)
-          </p>
-          <p
-            className="text-base font-bold mt-0.5"
-            style={{ color: "var(--text-strong)" }}
-          >
-            {formatManwon(summary.totalMonthlyIncome)}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>
-            목표 대비
-          </p>
-          <p
-            className={`text-base font-bold mt-0.5 ${
-              isShortfallPositive ? "text-emerald-600" : "text-red-500"
-            }`}
-          >
-            {isShortfallPositive ? "+" : ""}
-            {formatManwon(summary.monthlyShortfall)}
-          </p>
-        </div>
-      </div>
+        <section className="p-4">
+          <SectionLabel>은퇴 후 소득 구간</SectionLabel>
+          <PhaseTimeline
+            retirementAge={retirementAge}
+            receiptAge={receiptAge}
+            lifeExpectancy={meta.lifeExpectancy}
+          />
+        </section>
 
-      {/* ── 세금 · 건강보험료 ── */}
-      <p
-        className="text-[13px] font-semibold mb-2.5"
-        style={{ color: "var(--text-sub)" }}
-      >
-        세금 · 건강보험료
-      </p>
-      <div
-        className="rounded-2xl border p-4 mb-5 space-y-2 text-sm"
-        style={{
-          borderColor: "var(--border)",
-          background: "var(--surface-pressed)",
-        }}
-      >
-        <PlainRow
-          label="연금소득세율"
-          value={`${taxDetail.pensionIncomeTaxRate.toFixed(1)}%`}
-        />
-        <PlainRow
-          label="월 연금세금"
-          value={formatManwon(taxDetail.monthlyPensionTax)}
-        />
-        <PlainRow
-          label="월 건강보험료"
-          value={formatManwon(taxDetail.monthlyHealthInsurance)}
-        />
+        {incomeTimeline.length > 0 && (
+          <section
+            className="p-4 border-t"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <IncomeTimelineChart timeline={incomeTimeline} />
+          </section>
+        )}
+
+        <section
+          className="p-4 border-t"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <SectionLabel>세금 · 건강보험료 (은퇴 1년차 기준)</SectionLabel>
+          <div className="space-y-1">
+            <TaxRow
+              label="주식/ETF 양도세"
+              value={formatManwon(taxDetail.monthlyStockTax)}
+            />
+            <TaxRow
+              label={
+                taxDetail.pensionIncomeTaxRate > 0
+                  ? `연금소득세 (${taxDetail.pensionIncomeTaxRate.toFixed(1)}%)`
+                  : "연금소득세"
+              }
+              value={formatManwon(taxDetail.monthlyPensionTax)}
+            />
+            <TaxRow
+              label="건강보험료"
+              value={formatManwon(taxDetail.monthlyHealthInsurance)}
+            />
+          </div>
+          <div
+            className="flex justify-between items-baseline mt-2.5 pt-2.5 border-t"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <span
+              className="text-[13px] font-semibold"
+              style={{ color: "var(--text-sub)" }}
+            >
+              월 합계
+            </span>
+            <span
+              className="text-[15px] font-bold"
+              style={{ color: "var(--text-strong)" }}
+            >
+              {formatManwon(taxDetail.totalMonthlyTax)}
+            </span>
+          </div>
+        </section>
       </div>
 
       {/* ── 액션 ── */}
@@ -185,6 +206,33 @@ export default function ResultScreen({ result, onRestart }: Props) {
         </p>
       </div>
     </WizardCard>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      className="text-xs font-semibold tracking-wide mb-2.5"
+      style={{ color: "var(--text-faint)" }}
+    >
+      {children}
+    </p>
+  );
+}
+
+function TaxRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-baseline">
+      <span className="text-sm" style={{ color: "var(--text-sub)" }}>
+        {label}
+      </span>
+      <span
+        className="text-sm font-medium"
+        style={{ color: "var(--text)" }}
+      >
+        {value}
+      </span>
+    </div>
   );
 }
 
@@ -234,13 +282,7 @@ function PhaseTimeline({
   });
 
   return (
-    <div
-      className="rounded-2xl border p-4"
-      style={{
-        borderColor: "var(--border)",
-        background: "var(--surface-pressed)",
-      }}
-    >
+    <div>
       <div className="flex h-2.5 rounded-full overflow-hidden">
         {phases.map((p) => (
           <div
@@ -269,17 +311,6 @@ function PhaseTimeline({
           </span>
         ))}
       </div>
-    </div>
-  );
-}
-
-function PlainRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <span style={{ color: "var(--text-sub)" }}>{label}</span>
-      <span className="font-medium" style={{ color: "var(--text)" }}>
-        {value}
-      </span>
     </div>
   );
 }

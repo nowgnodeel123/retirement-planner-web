@@ -1,6 +1,9 @@
 // IncomeTimelineChart.tsx
 // 다크모드: 그래프 데이터 색상(COLORS)은 의도적으로 고정 유지(데이터 시각화 팔레트는
 // 라이트/다크 공통이 관례). 배경·테두리·축·범례 텍스트만 토큰으로 전환.
+// WHY(레이아웃): 이 컴포넌트는 자체 카드 테두리를 갖지 않는다 — ResultScreen의
+// 단일 "상세 내역" 카드 내부 섹션으로 삽입되어, 결과 화면 전체가 여러 개의
+// 떠있는 박스로 흩어지지 않고 하나의 카드로 읽히게 한다.
 "use client";
 
 import {
@@ -35,27 +38,21 @@ export default function IncomeTimelineChart({ timeline }: Props) {
     .filter((age) => age % 5 === 0 || age === timeline[0].age);
 
   return (
-    <div
-      className="rounded-2xl border p-4"
-      style={{
-        borderColor: "var(--border)",
-        background: "var(--surface-pressed)",
-      }}
-    >
+    <div>
       <div className="flex items-center justify-between mb-3">
         <p
-          className="text-[13px] font-medium"
-          style={{ color: "var(--text-sub)" }}
+          className="text-xs font-semibold tracking-wide"
+          style={{ color: "var(--text-faint)" }}
         >
           연도별 소득 구성 (세후, 월)
         </p>
         <Legend />
       </div>
 
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveContainer width="100%" height={190}>
         <AreaChart
           data={timeline}
-          margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+          margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
         >
           <defs>
             <linearGradient id="fillNational" x1="0" y1="0" x2="0" y2="1">
@@ -99,12 +96,12 @@ export default function IncomeTimelineChart({ timeline }: Props) {
           />
           <YAxis
             tickFormatter={(v) =>
-              v >= 10000 ? `${Math.round(v / 10000)}억` : `${v}`
+              v >= 10000 ? `${Math.round(v / 10000)}억` : v.toLocaleString()
             }
             tick={{ fontSize: 11, fill: "var(--text-faint)" }}
             axisLine={false}
             tickLine={false}
-            width={40}
+            width={52}
           />
           <Tooltip content={ChartTooltip} />
 

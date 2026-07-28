@@ -137,6 +137,7 @@ export interface SimulationResponseDto {
     healthInsuranceRate: number;
     monthlyPensionTax: number;
     monthlyHealthInsurance: number;
+    monthlyStockTax: number;
     totalMonthlyTax: number;
     isPreciseHealthInsurance: boolean;
     healthInsuranceIncomePart: number;
