@@ -1,5 +1,6 @@
-// RequireAuth.tsx — 포트폴리오 화면 접근 전 로그인 여부를 확인한다.
-// 비로그인 상태면 /login으로 보낸다. (M12: DevTokenGate 대체)
+// RequireAuth.tsx — 로그인 필요 화면 진입 전 로그인 여부를 확인한다.
+// 비로그인 상태면 /login으로 보낸다. (M12: DevTokenGate 대체, M13: 포트폴리오 전용에서
+// 기능 중립 위치로 이동해 은퇴시뮬레이터 화면과 공유)
 "use client";
 
 import { useEffect, useState } from "react";

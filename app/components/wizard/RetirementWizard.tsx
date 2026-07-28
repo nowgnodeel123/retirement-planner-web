@@ -12,12 +12,9 @@ import Step1BasicInfo from "./Step1BasicInfo";
 import Step2PensionInfo from "./Step2PensionInfo";
 import Step3InvestmentAssets from "./Step3InvestmentAssets";
 import ResultScreen from "./ResultScreen";
+import { api, ApiError } from "@/lib/api";
 
 type WizardStep = 1 | 2 | 3 | "result";
-
-// WHY: 배포 환경(Vercel→Railway)에서는 환경변수로 주입한다.
-// .env.local 예시: NEXT_PUBLIC_API_URL=https://your-app.up.railway.app
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
 export default function RetirementWizard() {
   const [step, setStep] = useState<WizardStep>(1);
@@ -92,35 +89,23 @@ export default function RetirementWizard() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/v1/simulation/calculate`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(toRequestPayload(form)),
-        },
+      const data = await api.post<SimulationResponseDto>(
+        "/api/v1/simulation/calculate",
+        toRequestPayload(form),
       );
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        if (body?.fields) {
-          const detail = Object.entries(body.fields)
-            .map(([field, msg]) => `${field}: ${msg}`)
-            .join(", ");
-          throw new Error(`${body.error} (${detail})`);
-        }
-        throw new Error(body?.error ?? `서버 오류 (${response.status})`);
-      }
-
-      const data: SimulationResponseDto = await response.json();
       setResult(data);
       setStep("result");
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "계산 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.",
-      );
+      if (e instanceof ApiError && e.fields) {
+        const detail = Object.entries(e.fields)
+          .map(([field, msg]) => `${field}: ${msg}`)
+          .join(", ");
+        setError(`${e.message} (${detail})`);
+      } else if (e instanceof ApiError) {
+        setError(e.message);
+      } else {
+        setError("계산 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
+      }
     } finally {
       setSubmitting(false);
     }

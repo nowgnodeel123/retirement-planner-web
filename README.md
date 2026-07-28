@@ -2,7 +2,7 @@
 
 > 은퇴 시점 역산 시뮬레이터 + 포트폴리오(자산관리) 프론트엔드
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.2.9-000000?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-000000?style=flat&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-06B6D4?style=flat&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Vercel](https://img.shields.io/badge/Vercel-Deployed-000000?style=flat&logo=vercel&logoColor=white)](https://vercel.com/)
@@ -11,7 +11,7 @@
 
 ## 📌 프로젝트 소개
 
-**"나는 몇 살에 은퇴할 수 있을까?"** — 3단계 입력만으로 은퇴 가능 나이를 계산하고, 은퇴 시점부터 90세까지 소득이 어떻게 구성되는지 그래프로 보여주는 은퇴 시뮬레이터와, 그 계산에 필요한 자산 데이터를 입력·조회하는 포트폴리오(계좌/자산/매매/시세) 화면으로 구성됩니다.
+**"나는 몇 살에 은퇴할 수 있을까?"** — 3단계 입력만으로 은퇴 가능 나이를 계산하고, 은퇴 시점부터 90세까지 소득이 어떻게 구성되는지 그래프로 보여주는 은퇴 시뮬레이터와, 그 계산에 필요한 자산 데이터를 입력·조회하는 포트폴리오(계좌/자산/매매/배당/수익/세금) 화면으로 구성됩니다.
 
 👉 백엔드 레포: [retirement-planner](https://github.com/nowgnodeel123/retirement-planner)
 
@@ -19,7 +19,15 @@
 
 ## 🎯 핵심 기능
 
-### 은퇴 시뮬레이터
+### 로그인
+| 기능 | 설명 |
+|---|---|
+| 카카오 소셜 로그인 | `/oauth2/authorization/kakao` → 콜백(`/auth/callback`)에서 `accessToken` 저장 |
+| 이메일 로그인/회원가입 | 하나의 화면(`/login`)에서 토글 전환 |
+| 세션 유지 | localStorage에 토큰 저장, 새로고침 후에도 로그인 상태 유지 |
+| 접근 가드 | 포트폴리오·은퇴시뮬레이터 화면 진입 전 로그인 여부 확인, 비로그인 시 `/login`으로 리다이렉트 |
+
+### 은퇴 시뮬레이터 (로그인 필요)
 | 기능                      | 설명                                                            |
 | ------------------------- | --------------------------------------------------------------- |
 | 3단계 입력 위저드         | 기본정보 → 연금정보 → 투자자산, 진행률 표시                     |
@@ -30,25 +38,36 @@
 | 결과 공유                 | 클립보드로 공유 메시지 복사                                     |
 | 입력 검증                 | 음수/문자/앞자리 0 차단, 천단위 콤마, 필드 간 모순 값 사전 차단 |
 
-### 포트폴리오 — 계좌·자산
+### 포트폴리오 — 계좌·자산·매매·배당 (로그인 필요)
 | 기능 | 설명 |
 |---|---|
 | 계좌 목록/생성/편집 | 은행/증권사/거래소, 상세유형(일반/ISA/IRP/연금저축), 편집모드(연필 토글)로 수정·삭제 |
-| 계좌 상세 | 총 평가금액(원화 환산) + 손익 요약, 보유자산 카드 목록 |
-| 자산 추가 | 계좌 기관유형에 따라 카테고리 자동 필터(증권사=국내·해외주식, 거래소=코인, 은행=미지원), 종목검색은 아직 수동입력(코드+이름) |
+| 계좌 상세 3탭 | 자산 / 수익 / 세금 탭 구조 |
+| 자산 추가 | 계좌 기관유형에 따라 카테고리 자동 필터(증권사=국내·해외주식, 거래소=코인, 은행=미지원) |
 | 손익 표시 | 평가금액/손익금액/손익률(빨강=이득/파랑=손실), 국내주식 "전일 종가 기준" 라벨 |
-| 해외주식 원화환산 | 평가금액에 원화 환산 병기(환율 기준일 라벨 포함) |
-| 자산 상세 + 매도 | 보유 요약, 매도 폼(수량/단가/[해외주식만 환율]/거래일), 보유수량 초과 시 에러 표시 |
-| 매매 히스토리 | 자산별 매수/매도 거래내역 최신순 조회 |
-| 프로필 메뉴 | 마이페이지(닉네임 수정), 로그아웃, 라이트/다크 테마 토글 |
-| 개발용 인증 우회 | `DevTokenGate` — 실제 로그인(M12) 연동 전까지 임시 토큰으로 API 테스트, M12에서 제거 예정 |
+| 해외주식 원화환산 | 평가금액에 원화 환산 병기(환율 기준일 라벨 포함), 손익률 자체는 USD 기준 유지 |
+| 자산 상세 | 보유 요약, 매도 폼, 배당 등록 폼(국내·해외주식만 노출), 매매+배당 통합 히스토리 |
+| 정렬/정리 | 앵커드 드롭다운 정렬(평가금액/수익률/이름 × 방향), 전량매도 자산은 접이식 섹션으로 분리 |
+| 삭제 플로우 | 확인 모달 + 실행취소 토스트(4초) |
+
+### 포트폴리오 대시보드 / 수익 / 세금
+| 기능 | 설명 |
+|---|---|
+| 대시보드(`/portfolio`) | 총자산 → 이번 달 매매+배당 인사이트 배너 → 카테고리 비중 도넛(상위 5 + 기타) 순서로 배치 |
+| 수익 탭 | 기간(일/주/월/년/전체)×카테고리 필터로 실현손익+배당 조회 |
+| 세금 탭 | 연도 네비게이션, 양도소득세 추정 카드(해외주식만) + 배당소득세 판정 카드, 전문용어 ⓘ 인라인 툴팁, "세무 전문가 검증 필요" 디스클레이머 상시 노출 |
+
+### 계정
+| 기능 | 설명 |
+|---|---|
+| 프로필 메뉴 | 마이페이지(닉네임 수정), 로그아웃, 라이트/다크 테마 토글, 기능 제안하기(mailto) |
 
 <br>
 
 ## 🛠 기술 스택
 
 - **Next.js** (App Router) + **TypeScript** + **Tailwind CSS**
-- **Recharts** — 연도별 소득 타임라인 차트
+- **Recharts** — 연도별 소득 타임라인 차트, 카테고리 도넛차트
 - **Vercel** 배포
 
 <br>
@@ -56,13 +75,19 @@
 ## 🏗 시스템 아키텍처
 
 ```
-┌─────────────────────┐         ┌────────────────────────────────┐
-│   Next.js             │  HTTPS  │   Spring Boot API                │
-│   (Vercel)             │────────▶│   /api/v1/simulation/calculate    │
-│   위저드 + 포트폴리오   │         │   /api/accounts, /api/assets/**   │
-│                        │         │   /api/domestic-stocks/search     │
-└─────────────────────┘         └────────────────────────────────┘
+┌─────────────────────┐         ┌──────────────────────────────────────┐
+│   Next.js            │  HTTPS  │   Spring Boot API                     │
+│   (Vercel)            │────────▶│   /api/auth/**, /oauth2/**            │
+│   위저드 + 포트폴리오  │         │   /api/accounts, /api/assets/**       │
+│                       │         │   /api/assets/{id}/dividends          │
+│                       │         │   /api/accounts/{id}/profit, /tax     │
+│                       │         │   /api/portfolio/summary, /insights   │
+│                       │         │   /api/domestic-stocks/search         │
+│                       │         │   /api/v1/simulation/calculate (인증)│
+└─────────────────────┘         └──────────────────────────────────────┘
 ```
+
+모든 API 호출은 `lib/api.ts` 공용 fetch 래퍼를 경유해 `Authorization: Bearer {accessToken}` 헤더를 자동 주입하고, 에러 응답 형식({message} 또는 {error, fields})을 모두 흡수해 일관된 `ApiError`로 던집니다.
 
 <br>
 
@@ -70,38 +95,48 @@
 
 ```
 app/
-├── page.tsx
+├── page.tsx                            # 은퇴 시뮬레이터 (RequireAuth로 보호)
 ├── layout.tsx
-├── globals.css                        # 라이트/다크 CSS 변수 (--gain/--loss/--accent 등)
+├── login/page.tsx                      # 카카오 버튼 + 이메일 로그인/회원가입 토글
+├── auth/callback/page.tsx              # 카카오 OAuth 콜백 — accessToken 저장 후 /portfolio 이동
+├── globals.css                         # 라이트/다크 CSS 변수 (--gain/--loss/--accent 등)
 ├── components/
+│   ├── auth/
+│   │   └── RequireAuth.tsx             # 로그인 필요 화면 공용 가드 (포트폴리오 + 시뮬레이터 공유)
 │   ├── wizard/
-│   │   ├── RetirementWizard.tsx       # 위저드 상태 관리 + API 호출
-│   │   ├── Step1BasicInfo.tsx         # 나이 / 소득 / 목표 생활비
-│   │   ├── Step2PensionInfo.tsx       # 국민연금 / 퇴직연금(DB·DC) / IRP / 연금저축
-│   │   ├── Step3InvestmentAssets.tsx  # 주식 / ETF
-│   │   ├── ResultScreen.tsx           # 결과 화면 (히어로 + 차트 + 요약)
-│   │   ├── IncomeTimelineChart.tsx    # 연도별 소득 구성 차트
-│   │   ├── Ui.tsx                     # 공용 입력/버튼 컴포넌트 (NumberInput, Field 등)
-│   │   └── types.ts                   # 은퇴 시뮬레이터 DTO 타입 + 변환 함수
-│   ├── nav/                            # 프로필 메뉴, 테마 토글 (M4)
+│   │   ├── RetirementWizard.tsx        # 위저드 상태 관리 + API 호출
+│   │   ├── Step1BasicInfo.tsx          # 나이 / 소득 / 목표 생활비
+│   │   ├── Step2PensionInfo.tsx        # 국민연금 / 퇴직연금(DB·DC) / IRP / 연금저축
+│   │   ├── Step3InvestmentAssets.tsx   # 주식 / ETF
+│   │   ├── ResultScreen.tsx            # 결과 화면 (히어로 + 차트 + 요약)
+│   │   ├── IncomeTimelineChart.tsx     # 연도별 소득 구성 차트
+│   │   ├── Ui.tsx                      # 공용 입력/버튼 컴포넌트 (NumberInput, Field 등)
+│   │   └── types.ts                    # 은퇴 시뮬레이터 DTO 타입 + 변환 함수
+│   ├── nav/                            # BottomTabBar, ProfileMenu, ThemeInit
 │   └── portfolio/
-│       ├── types.ts                    # 계좌/자산/거래 DTO 타입 + 라벨/색상 맵
-│       └── CategoryBadge.tsx           # 자산 카테고리 색상 dot + 라벨
+│       ├── types.ts                    # 계좌/자산/거래/배당/수익/세금 DTO 타입
+│       ├── PortfolioSummary.tsx        # 총자산/손익 요약
+│       ├── CategoryDonutChart.tsx      # 카테고리 비중 도넛(상위5+기타)
+│       ├── MonthlyInsightBanner.tsx    # 이번 달 매매+배당 요약
+│       ├── ProfitTab.tsx / TaxTab.tsx  # 계좌 상세 수익/세금 탭
+│       ├── PeriodFilterModal.tsx / CategoryFilterChips.tsx
+│       ├── SortModal.tsx               # 정렬 앵커드 드롭다운
+│       └── ConfirmModal.tsx / Toast.tsx
 └── portfolio/
-    ├── layout.tsx
-    ├── page.tsx                         # 포트폴리오 메인 (계좌 목록, 편집모드)
+    ├── layout.tsx                       # RequireAuth 적용
+    ├── page.tsx                         # 포트폴리오 메인(대시보드)
     └── accounts/
-        ├── new/page.tsx                 # 계좌 생성
+        ├── new/page.tsx
         └── [accountId]/
-            ├── page.tsx                 # 계좌 상세 (총 평가금액 + 보유자산 목록)
+            ├── page.tsx                 # 계좌 상세 — 자산/수익/세금 3탭
             └── assets/
-                ├── new/page.tsx         # 자산 추가(=최초 매수 거래)
-                └── [assetId]/page.tsx   # 자산 상세: 매도 폼 + 매매 히스토리 (M6)
+                ├── new/page.tsx
+                └── [assetId]/page.tsx   # 자산 상세: 매도 폼 + 배당 등록 + 통합 히스토리
 
 lib/
-├── api.ts        # 공용 fetch 래퍼 (인증 헤더, 에러 파싱)
-├── devAuth.ts     # 개발용 토큰 저장/조회 (DevTokenGate)
-└── theme.ts       # 라이트/다크 테마 상태 (M4)
+├── api.ts     # 공용 fetch 래퍼 (인증 헤더 주입, 에러 파싱 단일화)
+├── auth.ts    # 토큰 저장/조회 (localStorage, useSyncExternalStore)
+└── theme.ts   # 라이트/다크 테마 상태
 ```
 
 <br>
@@ -111,7 +146,7 @@ lib/
 ### 사전 요구사항
 
 - Node.js 20+
-- [retirement-planner 백엔드](https://github.com/nowgnodeel123/retirement-planner) 실행 중 (포트폴리오 화면은 백엔드의 `DATA_GO_KR_API_KEY`/`FINNHUB_API_KEY`/`KOREAEXIM_API_KEY` 설정 필요)
+- [retirement-planner 백엔드](https://github.com/nowgnodeel123/retirement-planner) 실행 중
 
 ### 1. 클론 & 설치
 
@@ -137,15 +172,17 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 npm run dev
 ```
 
-`http://localhost:3000` 에서 확인합니다.
-
-> ⚠️ 로그인이 아직 프론트에 연동되지 않아(M12 예정), 포트폴리오 화면은 `DevTokenGate`를 통해 개발용 토큰으로 접근합니다 — 실제 로그인 화면이 아니며, M12에서 전량 대체·삭제될 임시 장치입니다.
+`http://localhost:3000` 에서 확인합니다. 카카오 로그인·이메일 회원가입 후 포트폴리오/은퇴시뮬레이터 화면에 진입할 수 있습니다.
 
 <br>
 
 ## 📱 화면 구성
 
-### 은퇴 시뮬레이터
+### 로그인 (`/login`)
+
+카카오 버튼 + 이메일 로그인/회원가입 토글. 회원가입·로그인 실패 시 서버 에러 메시지(중복 이메일 409, 틀린 비밀번호 401)를 배너로 표시합니다.
+
+### 은퇴 시뮬레이터 (`/`, 로그인 필요)
 
 **Step 1 — 기본 정보**: 현재 나이, 현재 월 소득, 목표 은퇴 생활비 (오늘 물가 기준 입력)
 **Step 2 — 연금 정보**: 국민연금 납입 기간, 퇴직연금 유형(DB/DC)별 입력, IRP, 연금저축
@@ -159,26 +196,22 @@ npm run dev
 - 세금·건강보험료
 - 결과 공유하기 / 다시 계산하기(입력값 유지)
 
-### 포트폴리오
+### 포트폴리오 (`/portfolio`, 로그인 필요)
 
-**메인 (`/portfolio`)**: 계좌 목록, 편집모드(연필 아이콘)로 계좌명 수정/삭제
+**메인**: 총자산 요약 → 이번 달 매매+배당 인사이트 배너 → 카테고리 비중 도넛 → 계좌 목록(편집모드로 수정/삭제)
 
-**계좌 상세 (`/portfolio/accounts/[accountId]`)**
-- 총 평가금액(원화 환산 기준) + 총 손익(금액/률, 빨강=이득·파랑=손실)
-- 보유자산 카드 목록 — 카드 클릭 시 자산 상세로 이동
-- 시세 미조회 자산은 "시세 조회 실패" 표시로 화면 유지(에러로 막지 않음)
+**계좌 상세 (`/portfolio/accounts/[accountId]`)** — 자산 / 수익 / 세금 3탭
+- **자산 탭**: 보유자산 카드 목록, 정렬·정리한 자산(전량매도) 접이식 섹션
+- **수익 탭**: 기간(일/주/월/년/전체)×카테고리 필터, 실현손익+배당 통합 리스트
+- **세금 탭**: 연도 네비게이션, 양도소득세 추정 카드(해외주식만)·배당소득세 판정 카드, 전문용어 ⓘ 클릭 토글, 디스클레이머 배너 상시 노출
 
-**자산 추가 (`/portfolio/accounts/[accountId]/assets/new`)**
-- 계좌 기관유형에 따라 카테고리 자동 필터(증권사=국내·해외주식, 거래소=코인)
-- 종목코드/종목명 수동 입력(자동완성은 추후 지원 예정), 수량·매수단가·[해외주식만 환율]·거래일 입력
-- 거래일은 오늘 이후로 입력 불가
-
-**자산 상세 (`/portfolio/accounts/[accountId]/assets/[assetId]`)** — M6 신규
+**자산 상세 (`/portfolio/accounts/[accountId]/assets/[assetId]`)**
 - 보유 수량·평단 요약
-- "매도" 버튼으로 매도 폼 오픈: 수량/단가/[해외주식만 환율]/거래일, 보유수량 초과 입력 시 에러 표시
-- 매매 히스토리: 매수(파랑 배지)/매도(회색 배지) 구분, 날짜·수량×단가·금액 최신순 목록
+- 매도 폼(수량/단가/[해외주식만 환율]/거래일)
+- 배당 등록 폼(국내·해외주식만 노출, 해외는 환율 필수)
+- 매매+배당 통합 히스토리(배당은 별도 배지)
 
-**프로필 메뉴**: 우측 상단 아이콘 → 마이페이지(닉네임 수정) / 로그아웃 / 라이트·다크 테마 토글
+**프로필 메뉴**: 마이페이지(닉네임 수정) / 로그아웃 / 라이트·다크 테마 토글 / 기능 제안하기(mailto)
 
 <br>
 
@@ -204,33 +237,31 @@ npm run dev
 | `--surface` / `--bg` / `--border` | 배경/카드/구분선 |
 | `--accent` / `--accent-soft` | 강조색(링크, 버튼) |
 | `--gain` / `--loss` | 손익 전용 색상(빨강=이득/파랑=손실) — **매수/매도 등 다른 의미에는 재사용하지 않음** |
-| `--error` / `--error-soft` | 검증/서버 에러 배너 전용. `--gain`과 값이 같아 보여도(라이트 모드 기준) 의미가 달라 별도 토큰으로 분리 |
-| `--category-*` | 자산 카테고리별 뱃지 색상(국내주식/해외주식/코인/펀드/현금) |
-
-`app/components/wizard/Ui.tsx`(위저드 공용 컴포넌트 — `NumberInput`, `Field`, `PrimaryButton`, `ErrorBanner` 등)는 원래 Tailwind 고정 색상(`neutral-500`, `blue-500`, `red-50` 등)을 직접 쓰고 있어 다크모드 전환 시 반영되지 않던 문제가 있었으나, 전 항목을 위 디자인 토큰 기반(`bg-[var(--surface)]` 등 Tailwind 임의값 문법)으로 교체해 해결했습니다. 위저드(은퇴 시뮬레이터 3단계)와 포트폴리오 화면 전체가 이제 동일한 토큰 체계로 라이트/다크 모드를 지원합니다. *(실동작 확인은 진행중 — 아래 로드맵 참고)*
+| `--error` / `--error-soft` | 검증/서버 에러 배너 전용 |
+| `--category-*` | 자산 카테고리별 뱃지·도넛 색상(순수 빨강·파랑 제외 — 손익 색상과 혼동 방지) |
 
 <br>
 
 ## 🗓 개발 로드맵
 
-- [x] 3단계 위저드 UI
-- [x] Spring Boot API 연동 (은퇴 시뮬레이션)
-- [x] 결과 화면 + 연도별 소득 타임라인 차트
-- [x] 입력 검증 (음수/문자/모순값 차단)
-- [x] 결과 공유 기능 (클립보드)
-- [x] **M3** — 포트폴리오 하단 탭바, 계좌 CRUD, 자산 추가(매수), DevTokenGate
+MVP 개발 페이즈 M1~M13이 모두 완료되었습니다.
+
+- [x] **M1** — 카카오 OAuth2 + 이메일 로그인 백엔드 연동 준비, JWT 인증
+- [x] **M2** — 데이터 모델(계좌/자산/거래/배당/입금) 대응 타입
+- [x] **M3** — 포트폴리오 하단 탭바, 계좌 CRUD, 자산 추가(매수)
 - [x] **M4** — 계좌 상세 손익 표시(평가금액/손익금액/손익률), 국내주식 D+1 라벨, 프로필 메뉴·테마 토글
 - [x] **M5** — 해외주식 원화 이중표시(환율 기준일 포함)
-- [ ] **M6** — 자산 상세 화면(매도 폼 + 매매 히스토리) — *코드 반영 완료, 실동작 검증 진행중*
-- [x] `Ui.tsx` 다크모드 미대응 수정 — 위저드 공용 컴포넌트를 디자인 토큰 기반으로 전환 (`--error`/`--error-soft` 토큰 신설) — *코드 반영 완료, 실동작(토글) 확인 진행중*
-- [ ] `text-amber-500`(계좌 상세 "시세 조회 실패" 문구) 토큰화 — 백로그, Ui.tsx와 같은 유형의 잔여 이슈
-- [ ] **M7~M9** — 자산목록 정리 / 배당추적 화면 / 포트폴리오 대시보드(도넛차트)
-- [ ] **M10~M11** — 수익 탭 / 세금 탭
-- [ ] **M12** — 실제 로그인 화면 연동 (DevTokenGate 제거)
-- [ ] **M13** — 은퇴시뮬레이터-계정 연동 + README 최종화
-- [ ] Vercel 배포
+- [x] **M6** — 자산 상세 화면(매도 폼 + 매매 히스토리)
+- [x] **M7** — 정렬 UI(앵커드 드롭다운) + 정리한 자산(전량매도) 접이식 분리
+- [x] **M8** — 배당 등록 폼 + 매매·배당 통합 히스토리
+- [x] **M9** — 포트폴리오 대시보드(총자산 요약, 카테고리 도넛, 월간 인사이트 배너)
+- [x] **M10** — 계좌 상세 자산/수익/세금 3탭 구조, 수익 탭(기간×카테고리 필터)
+- [x] **M11** — 세금 탭(양도소득세 추정 + 배당소득세 판정, 전문용어 인라인 툴팁)
+- [x] **M12** — 실제 로그인 화면 연동(`DevTokenGate`/`devAuth.ts` 제거, 카카오+이메일 로그인, `RequireAuth`)
+- [x] **M13** — 은퇴시뮬레이터에 `RequireAuth` 적용(로그인 필요), API 호출을 공용 `lib/api.ts`로 통일, README 최종화
+- [ ] Vercel 배포 (환경변수 및 카카오 운영 redirect URI 등록 필요)
 - [ ] 입력값 새로고침 시 보존 (sessionStorage)
-- [ ] 세액공제 최적화 팁 화면 (현재 스텁)
+- [ ] JWT 만료/무효 시 자동 로그아웃(401 전역 처리) — 현재는 토큰 존재 여부만으로 게이트 통과
 - [ ] CI (GitHub Actions — `next build` on Linux runner)
 
 <br>

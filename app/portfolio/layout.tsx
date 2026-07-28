@@ -1,4 +1,4 @@
-import RequireAuth from "@/app/components/portfolio/RequireAuth";
+import RequireAuth from "@/app/components/auth/RequireAuth";
 
 export default function PortfolioLayout({
   children,
