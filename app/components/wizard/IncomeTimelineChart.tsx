@@ -14,6 +14,7 @@ import {
   AreaChart,
   CartesianGrid,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -71,10 +72,14 @@ export default function IncomeTimelineChart({
     };
   });
 
-  // recharts는 매 몇 년마다 눈금을 자동으로 못 골라주므로 5년 단위로 직접 지정
+  const retirementAge = data[0].age;
+
+  // recharts는 매 몇 년마다 눈금을 자동으로 못 골라주므로 5년 단위로 직접
+  // 지정한다. 은퇴 나이는 아래 ReferenceLine이 라벨로 따로 표시하므로,
+  // 5년 눈금과 너무 가까워 겹쳐 보이지 않도록 축 눈금에서는 뺀다.
   const tickAges = data
     .map((p) => p.age)
-    .filter((age) => age % 5 === 0 || age === data[0].age);
+    .filter((age) => age % 5 === 0 && Math.abs(age - retirementAge) >= 2);
 
   return (
     <div>
@@ -109,6 +114,19 @@ export default function IncomeTimelineChart({
             strokeDasharray="3 3"
             stroke="var(--border)"
             vertical={false}
+          />
+          <ReferenceLine
+            x={retirementAge}
+            stroke="var(--accent)"
+            strokeWidth={1.5}
+            label={{
+              value: `${retirementAge}세 은퇴`,
+              position: "insideTopLeft",
+              fill: "var(--accent)",
+              fontSize: 11,
+              fontWeight: 600,
+              offset: 8,
+            }}
           />
           <XAxis
             dataKey="age"

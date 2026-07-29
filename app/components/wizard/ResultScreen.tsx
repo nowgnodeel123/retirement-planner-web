@@ -12,7 +12,7 @@
 
 import { useState } from "react";
 import { SimulationResponseDto } from "./types";
-import { SecondaryButton, WizardCard } from "./Ui";
+import { PrimaryButton, SecondaryButton, WizardCard } from "./Ui";
 import IncomeTimelineChart from "./IncomeTimelineChart";
 
 interface Props {
@@ -92,16 +92,26 @@ export default function ResultScreen({ result, onRestart }: Props) {
       )}
 
       {/* ── 액션 ── */}
+      {/* WHY(위계): 두 버튼이 똑같은 아웃라인 스타일이라 뭐가 주 행동인지
+          구분이 안 됐다. feasible이면 "공유하기"가 이 화면의 보상 행동이자
+          공유를 통한 유입 통로라 Primary로, 아니면 유일한 다음 행동인
+          "다시 계산하기"가 Primary가 된다. */}
       <div className="space-y-2.5">
         <div className="flex gap-2.5">
-          {summary.feasible && (
-            <SecondaryButton onClick={handleShare} className="flex-1">
-              {copied ? "복사됐어요 ✓" : "결과 공유하기"}
-            </SecondaryButton>
+          {summary.feasible ? (
+            <>
+              <PrimaryButton onClick={handleShare} className="flex-1">
+                {copied ? "복사됐어요 ✓" : "결과 공유하기"}
+              </PrimaryButton>
+              <SecondaryButton onClick={onRestart} className="flex-1">
+                다시 계산하기
+              </SecondaryButton>
+            </>
+          ) : (
+            <PrimaryButton onClick={onRestart} className="flex-1">
+              다시 계산하기
+            </PrimaryButton>
           )}
-          <SecondaryButton onClick={onRestart} className="flex-1">
-            다시 계산하기
-          </SecondaryButton>
         </div>
         <p
           className="text-[10px] text-center pt-2 leading-relaxed"
