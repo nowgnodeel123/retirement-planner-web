@@ -2,11 +2,15 @@
 // 다크모드: 그래프 데이터 색상은 의도적으로 고정 유지(데이터 시각화 팔레트는
 // 라이트/다크 공통이 관례). 배경·테두리·축·범례 텍스트만 토큰으로 전환.
 // WHY(소득원별 재구성): "목표 생활비 vs 소득" 단일 비교로 축소했다가(D-128),
-// (1) 소득원(국민연금/연금/주식)별 구성과 시기별 합계를 보고 싶다는 요청
-// (2) 명목 금액을 그대로 그리면 물가상승 때문에 은퇴 후에도 소득이 계속
-// 늘어나는 것처럼 보여 헷갈린다는 지적을 받아, 두 가지를 함께 반영했다.
-// 오늘 가치(실질) 기준으로 환산해서 그리면 목표 생활비 선이 평평해지고,
-// "인플레이션 때문에 늘어나 보이는 착시"가 사라진다(D-129).
+// (1) 소득원별 구성과 시기별 합계를 보고 싶다는 요청 (2) 명목 금액을 그대로
+// 그리면 물가상승 때문에 은퇴 후에도 소득이 계속 늘어나는 것처럼 보여
+// 헷갈린다는 지적을 받아, 두 가지를 함께 반영했다. 오늘 가치(실질) 기준으로
+// 환산해서 그리면 목표 생활비 선이 평평해지고, 착시가 사라진다(D-129).
+// WHY(퇴직연금/사적연금 분리): 퇴직연금(DB/DC)은 근속연수·급여만으로
+// 자동 계산되고 IRP·연금저축은 사용자가 직접 납입액을 넣어야 하는 별개
+// 상품인데, 하나로 합쳐서 보여주면 "IRP를 안 넣었는데 왜 연금이 나오냐"는
+// 혼란을 일으킨다. 네 소득원(국민연금/퇴직연금/IRP+연금저축/주식·ETF)을
+// 각각 다른 계열로 분리했다(D-131).
 "use client";
 
 import {
@@ -29,16 +33,18 @@ interface Props {
 }
 
 const COLORS = {
-  national: "#34d399", // emerald-400
-  mid: "#60a5fa", // blue-400
-  liquid: "#fbbf24", // amber-400
+  national: "#34d399", // emerald-400 — 국민연금
+  retirementPension: "#60a5fa", // blue-400 — 퇴직연금(DB/DC)
+  privatePension: "#a78bfa", // violet-400 — IRP+연금저축
+  liquid: "#fbbf24", // amber-400 — 주식/ETF
   target: "#a3a3a3", // neutral-400
 };
 
 interface ChartPoint {
   age: number;
   national: number;
-  mid: number;
+  retirementPension: number;
+  privatePension: number;
   liquid: number;
   total: number;
   targetExpense: number;
@@ -60,14 +66,20 @@ export default function IncomeTimelineChart({
 
   const data: ChartPoint[] = timeline.map((p) => {
     const national = Math.round(toReal(p.nationalAfterTax, p.age));
-    const mid = Math.round(toReal(p.midAfterTax, p.age));
+    const retirementPension = Math.round(
+      toReal(p.retirementPensionAfterTax, p.age),
+    );
+    const privatePension = Math.round(
+      toReal(p.privatePensionAfterTax, p.age),
+    );
     const liquid = Math.round(toReal(p.liquidWithdrawalAfterTax, p.age));
     return {
       age: p.age,
       national,
-      mid,
+      retirementPension,
+      privatePension,
       liquid,
-      total: national + mid + liquid,
+      total: national + retirementPension + privatePension + liquid,
       targetExpense: Math.round(toReal(p.targetExpense, p.age)),
     };
   });
@@ -90,8 +102,8 @@ export default function IncomeTimelineChart({
         >
           은퇴 후 월 소득 구성 (오늘 가치 기준)
         </p>
-        <Legend />
       </div>
+      <Legend />
 
       <ResponsiveContainer width="100%" height={180}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
@@ -100,9 +112,13 @@ export default function IncomeTimelineChart({
               <stop offset="0%" stopColor={COLORS.national} stopOpacity={0.35} />
               <stop offset="100%" stopColor={COLORS.national} stopOpacity={0.05} />
             </linearGradient>
-            <linearGradient id="fillMid" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.mid} stopOpacity={0.35} />
-              <stop offset="100%" stopColor={COLORS.mid} stopOpacity={0.05} />
+            <linearGradient id="fillRetirementPension" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.retirementPension} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={COLORS.retirementPension} stopOpacity={0.05} />
+            </linearGradient>
+            <linearGradient id="fillPrivatePension" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.privatePension} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={COLORS.privatePension} stopOpacity={0.05} />
             </linearGradient>
             <linearGradient id="fillLiquid" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={COLORS.liquid} stopOpacity={0.35} />
@@ -158,11 +174,20 @@ export default function IncomeTimelineChart({
           />
           <Area
             type="monotone"
-            dataKey="mid"
-            name="퇴직연금+IRP+연금저축"
+            dataKey="privatePension"
+            name="IRP+연금저축"
             stackId="income"
-            stroke={COLORS.mid}
-            fill="url(#fillMid)"
+            stroke={COLORS.privatePension}
+            fill="url(#fillPrivatePension)"
+            strokeWidth={1.5}
+          />
+          <Area
+            type="monotone"
+            dataKey="retirementPension"
+            name="퇴직연금"
+            stackId="income"
+            stroke={COLORS.retirementPension}
+            fill="url(#fillRetirementPension)"
             strokeWidth={1.5}
           />
           <Area
@@ -197,11 +222,12 @@ export default function IncomeTimelineChart({
 function Legend() {
   const items = [
     { label: "국민연금", color: COLORS.national },
-    { label: "연금", color: COLORS.mid },
+    { label: "퇴직연금", color: COLORS.retirementPension },
+    { label: "IRP+연금저축", color: COLORS.privatePension },
     { label: "주식/ETF", color: COLORS.liquid },
   ];
   return (
-    <div className="flex flex-wrap gap-2.5 justify-end">
+    <div className="flex flex-wrap gap-x-2.5 gap-y-1 mb-2">
       {items.map((item) => (
         <span
           key={item.label}
@@ -250,7 +276,8 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   // stackId를 쓰면 payload 순서가 역순으로 오므로, 항상 같은 순서로 재정렬
   const order = [
     "국민연금",
-    "퇴직연금+IRP+연금저축",
+    "퇴직연금",
+    "IRP+연금저축",
     "주식/ETF",
     "목표 생활비",
   ];

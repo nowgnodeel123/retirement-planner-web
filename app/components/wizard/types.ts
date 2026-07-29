@@ -101,10 +101,14 @@ export function toRequestPayload(
 }
 
 // ── 결과 화면 타임라인 차트 한 점 ──
+// 퇴직연금(DB/DC)과 IRP+연금저축은 서로 다른 입력 경로를 가진 별개
+// 상품이라 분리해서 내려온다(D-131) — 합쳐서 보여주면 "IRP를 안 넣었는데
+// 왜 연금이 나오냐"처럼 어느 쪽에서 온 금액인지 헷갈릴 수 있다.
 export interface IncomeTimelinePoint {
   age: number;
   nationalAfterTax: number;
-  midAfterTax: number;
+  retirementPensionAfterTax: number;
+  privatePensionAfterTax: number;
   liquidWithdrawalAfterTax: number;
   targetExpense: number;
 }
