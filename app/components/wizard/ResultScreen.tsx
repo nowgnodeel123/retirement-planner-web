@@ -9,6 +9,10 @@
 // WHY(세금 상세 카드 제거): 양도세/연금소득세/건강보험료 raw 숫자는 "월 예상 수입"이
 // 어떻게 나왔는지의 근거일 뿐, 사용자가 직접 액션할 수 있는 정보가 아니라서
 // 오히려 확인 질문("왜 0원이지?")만 유발했다. 액션 가능한 정보인 절세 팁만 남긴다.
+// WHY(소득 구간 막대 제거): "몇 세부터 어떤 소득원이 열리는지"는 아래 소득 구성
+// 차트가 색상 스택으로 이미 보여주는 정보라 막대와 차트가 같은 내용을 두 번
+// 말하고 있었다. 정보처리기사 UI 설계 4원칙(직관성·유효성·학습성·유연성) 중
+// 유효성 관점에서 중복 정보는 화면을 이해하는 데 오히려 방해가 되므로 제거.
 "use client";
 
 import { useState } from "react";
@@ -21,14 +25,11 @@ interface Props {
   onRestart: () => void;
 }
 
-const MID_UNLOCK_AGE = 55;
-
 export default function ResultScreen({ result, onRestart }: Props) {
   const { summary, taxBenefit, meta, incomeTimeline } = result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
-  const receiptAge = meta.nationalPensionReceiptAge;
   const isShortfallPositive = summary.monthlyShortfall >= 0;
 
   async function handleShare() {
@@ -116,31 +117,19 @@ export default function ResultScreen({ result, onRestart }: Props) {
         </div>
       )}
 
-      {/* ── 상세 내역: 소득 구간 / 차트 / 세금·건강보험료를 구분선으로 나눈 단일 카드 ── */}
+      {/* ── 상세 내역: 차트 / 절세 팁을 구분선으로 나눈 단일 카드 ── */}
       <div
         className="rounded-2xl border overflow-hidden mb-5"
         style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
-        <section className="p-4">
-          <SectionLabel>은퇴 후 소득 구간</SectionLabel>
-          <PhaseTimeline
-            retirementAge={retirementAge}
-            receiptAge={receiptAge}
-            lifeExpectancy={meta.lifeExpectancy}
-          />
-        </section>
-
         {incomeTimeline.length > 0 && (
-          <section
-            className="p-4 border-t"
-            style={{ borderColor: "var(--border)" }}
-          >
+          <section className="p-4">
             <IncomeTimelineChart timeline={incomeTimeline} />
           </section>
         )}
 
         <section
-          className="p-4 border-t"
+          className={`p-4 ${incomeTimeline.length > 0 ? "border-t" : ""}`}
           style={{ borderColor: "var(--border)" }}
         >
           <SectionLabel>절세 팁</SectionLabel>
@@ -209,81 +198,3 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-/**
- * 은퇴~55세(주식만) / 55~수령개시(연금 합류) / 수령개시~90(전체) 3구간을
- * 가로 막대로 보여준다. 은퇴나이가 55세 이후면 앞 구간은 자동으로 사라진다.
- */
-function PhaseTimeline({
-  retirementAge,
-  receiptAge,
-  lifeExpectancy,
-}: {
-  retirementAge: number;
-  receiptAge: number;
-  lifeExpectancy: number;
-}) {
-  const totalYears = lifeExpectancy - retirementAge;
-  if (totalYears <= 0) return null;
-
-  const phases: { label: string; from: number; to: number; color: string }[] =
-    [];
-
-  const bridgeEnd = Math.min(MID_UNLOCK_AGE, receiptAge);
-  if (retirementAge < bridgeEnd) {
-    phases.push({
-      label: "주식/ETF",
-      from: retirementAge,
-      to: bridgeEnd,
-      color: "bg-amber-400",
-    });
-  }
-  const midStart = Math.max(retirementAge, MID_UNLOCK_AGE);
-  if (midStart < receiptAge) {
-    phases.push({
-      label: "+ 연금 개시",
-      from: midStart,
-      to: receiptAge,
-      color: "bg-blue-400",
-    });
-  }
-  const fullStart = Math.max(retirementAge, receiptAge);
-  phases.push({
-    label: "+ 국민연금",
-    from: fullStart,
-    to: lifeExpectancy,
-    color: "bg-emerald-400",
-  });
-
-  return (
-    <div>
-      <div className="flex h-2.5 rounded-full overflow-hidden">
-        {phases.map((p) => (
-          <div
-            key={p.label}
-            className={p.color}
-            style={{ width: `${((p.to - p.from) / totalYears) * 100}%` }}
-          />
-        ))}
-      </div>
-      <div
-        className="flex justify-between text-[10px] mt-2"
-        style={{ color: "var(--text-faint)" }}
-      >
-        <span>{retirementAge}세 은퇴</span>
-        <span>{lifeExpectancy}세</span>
-      </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2.5">
-        {phases.map((p) => (
-          <span
-            key={p.label}
-            className="inline-flex items-center gap-1 text-[11px]"
-            style={{ color: "var(--text-sub)" }}
-          >
-            <span className={`w-2 h-2 rounded-full ${p.color}`} />
-            {p.from}세~ {p.label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
