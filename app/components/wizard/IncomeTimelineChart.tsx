@@ -1,15 +1,12 @@
 // IncomeTimelineChart.tsx
 // 다크모드: 그래프 데이터 색상은 의도적으로 고정 유지(데이터 시각화 팔레트는
 // 라이트/다크 공통이 관례). 배경·테두리·축·범례 텍스트만 토큰으로 전환.
-// WHY(단순화): 원래 국민연금/연금/주식·ETF 3색 스택 영역 차트였다. "몇 살에 은퇴
-// 가능한지"라는 단순한 질문에 소득원 구성 디테일까지 보여주는 건 과했다는
-// 피드백에 따라, 소득원 구분 없이 "총 소득이 목표 생활비 위에 계속 있는지"
-// 하나만 보여주는 단일 그래프로 축소했다(D-128).
-// WHY(선 대신 영역): 이 시뮬레이션은 매년 목표 생활비를 정확히 채우도록 인출액을
-// 역산하므로, 연금만으로 목표를 넘어서기 전까지는 "예상 소득"과 "목표 생활비"가
-// 수학적으로 완전히 같은 값이다. 두 선을 겹쳐 그리면 점선에 실선이 완전히
-// 가려져 차트가 빈 것처럼 보인다(실제로 확인함). 소득을 영역(면)으로 채워서
-// 겹치는 구간에도 항상 시각적으로 존재가 드러나게 한다.
+// WHY(소득원별 재구성): "목표 생활비 vs 소득" 단일 비교로 축소했다가(D-128),
+// (1) 소득원(국민연금/연금/주식)별 구성과 시기별 합계를 보고 싶다는 요청
+// (2) 명목 금액을 그대로 그리면 물가상승 때문에 은퇴 후에도 소득이 계속
+// 늘어나는 것처럼 보여 헷갈린다는 지적을 받아, 두 가지를 함께 반영했다.
+// 오늘 가치(실질) 기준으로 환산해서 그리면 목표 생활비 선이 평평해지고,
+// "인플레이션 때문에 늘어나 보이는 착시"가 사라진다(D-129).
 "use client";
 
 import {
@@ -26,27 +23,53 @@ import { IncomeTimelinePoint, formatManwon } from "./types";
 
 interface Props {
   timeline: IncomeTimelinePoint[];
+  currentAge: number;
+  inflationRate: number;
 }
 
 const COLORS = {
-  income: "#3182f6",
-  target: "#a3a3a3",
+  national: "#34d399", // emerald-400
+  mid: "#60a5fa", // blue-400
+  liquid: "#fbbf24", // amber-400
+  target: "#a3a3a3", // neutral-400
 };
 
 interface ChartPoint {
   age: number;
-  income: number;
+  national: number;
+  mid: number;
+  liquid: number;
+  total: number;
   targetExpense: number;
 }
 
-export default function IncomeTimelineChart({ timeline }: Props) {
+export default function IncomeTimelineChart({
+  timeline,
+  currentAge,
+  inflationRate,
+}: Props) {
   if (timeline.length === 0) return null;
 
-  const data: ChartPoint[] = timeline.map((p) => ({
-    age: p.age,
-    income: p.nationalAfterTax + p.midAfterTax + p.liquidWithdrawalAfterTax,
-    targetExpense: p.targetExpense,
-  }));
+  // WHY: 백엔드는 명목(nominal) 금액을 그대로 내려준다(시뮬레이터 전체 원칙).
+  // 오늘 가치로 보여주려면 프론트에서 그 해까지의 물가상승률만큼 역할인한다.
+  const toReal = (nominal: number, age: number) => {
+    const yearsFromNow = age - currentAge;
+    return nominal / Math.pow(1 + inflationRate, yearsFromNow);
+  };
+
+  const data: ChartPoint[] = timeline.map((p) => {
+    const national = Math.round(toReal(p.nationalAfterTax, p.age));
+    const mid = Math.round(toReal(p.midAfterTax, p.age));
+    const liquid = Math.round(toReal(p.liquidWithdrawalAfterTax, p.age));
+    return {
+      age: p.age,
+      national,
+      mid,
+      liquid,
+      total: national + mid + liquid,
+      targetExpense: Math.round(toReal(p.targetExpense, p.age)),
+    };
+  });
 
   // recharts는 매 몇 년마다 눈금을 자동으로 못 골라주므로 5년 단위로 직접 지정
   const tickAges = data
@@ -60,17 +83,25 @@ export default function IncomeTimelineChart({ timeline }: Props) {
           className="text-xs font-semibold tracking-wide"
           style={{ color: "var(--text-faint)" }}
         >
-          은퇴 후 월 소득 vs 목표 생활비
+          은퇴 후 월 소득 구성 (오늘 가치 기준)
         </p>
         <Legend />
       </div>
 
-      <ResponsiveContainer width="100%" height={160}>
+      <ResponsiveContainer width="100%" height={180}>
         <AreaChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }}>
           <defs>
-            <linearGradient id="fillIncome" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={COLORS.income} stopOpacity={0.35} />
-              <stop offset="100%" stopColor={COLORS.income} stopOpacity={0.05} />
+            <linearGradient id="fillNational" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.national} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={COLORS.national} stopOpacity={0.05} />
+            </linearGradient>
+            <linearGradient id="fillMid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.mid} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={COLORS.mid} stopOpacity={0.05} />
+            </linearGradient>
+            <linearGradient id="fillLiquid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={COLORS.liquid} stopOpacity={0.35} />
+              <stop offset="100%" stopColor={COLORS.liquid} stopOpacity={0.05} />
             </linearGradient>
           </defs>
 
@@ -100,11 +131,30 @@ export default function IncomeTimelineChart({ timeline }: Props) {
 
           <Area
             type="monotone"
-            dataKey="income"
-            name="예상 소득"
-            stroke={COLORS.income}
-            fill="url(#fillIncome)"
-            strokeWidth={2}
+            dataKey="liquid"
+            name="주식/ETF"
+            stackId="income"
+            stroke={COLORS.liquid}
+            fill="url(#fillLiquid)"
+            strokeWidth={1.5}
+          />
+          <Area
+            type="monotone"
+            dataKey="mid"
+            name="퇴직연금+IRP+연금저축"
+            stackId="income"
+            stroke={COLORS.mid}
+            fill="url(#fillMid)"
+            strokeWidth={1.5}
+          />
+          <Area
+            type="monotone"
+            dataKey="national"
+            name="국민연금"
+            stackId="income"
+            stroke={COLORS.national}
+            fill="url(#fillNational)"
+            strokeWidth={1.5}
           />
           <Line
             type="monotone"
@@ -119,26 +169,34 @@ export default function IncomeTimelineChart({ timeline }: Props) {
       </ResponsiveContainer>
 
       <p className="text-[11px] mt-2" style={{ color: "var(--text-faint)" }}>
-        색칠된 영역이 예상 소득, 점선이 목표 생활비예요. 영역 높이가 점선과
-        같으면 목표를 정확히 채우고 있는 거예요.
+        색이 쌓인 높이가 그 나이의 총소득(오늘 가치 기준)이에요. 물가상승분을
+        미리 제해서, 점선(목표 생활비)은 지금 입력하신 금액 그대로 평평해요.
       </p>
     </div>
   );
 }
 
 function Legend() {
+  const items = [
+    { label: "국민연금", color: COLORS.national },
+    { label: "연금", color: COLORS.mid },
+    { label: "주식/ETF", color: COLORS.liquid },
+  ];
   return (
     <div className="flex flex-wrap gap-2.5 justify-end">
-      <span
-        className="inline-flex items-center gap-1 text-[10px]"
-        style={{ color: "var(--text-faint)" }}
-      >
+      {items.map((item) => (
         <span
-          className="w-2 h-2 rounded-sm"
-          style={{ backgroundColor: COLORS.income }}
-        />
-        예상 소득
-      </span>
+          key={item.label}
+          className="inline-flex items-center gap-1 text-[10px]"
+          style={{ color: "var(--text-faint)" }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: item.color }}
+          />
+          {item.label}
+        </span>
+      ))}
       <span
         className="inline-flex items-center gap-1 text-[10px]"
         style={{ color: "var(--text-faint)" }}
@@ -164,11 +222,24 @@ interface ChartTooltipProps {
     name?: string | number;
     value?: unknown;
     color?: string;
+    payload?: ChartPoint;
   }>;
 }
 
 function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null;
+
+  // stackId를 쓰면 payload 순서가 역순으로 오므로, 항상 같은 순서로 재정렬
+  const order = [
+    "국민연금",
+    "퇴직연금+IRP+연금저축",
+    "주식/ETF",
+    "목표 생활비",
+  ];
+  const sorted = [...payload].sort(
+    (a, b) => order.indexOf(String(a.name)) - order.indexOf(String(b.name)),
+  );
+  const total = payload[0]?.payload?.total ?? 0;
 
   return (
     <div
@@ -178,7 +249,7 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
       <p className="font-medium mb-1" style={{ color: "var(--text)" }}>
         {label}세
       </p>
-      {payload.map((entry) => (
+      {sorted.map((entry) => (
         <div key={entry.name} className="flex justify-between gap-4">
           <span style={{ color: "var(--text-sub)" }}>{entry.name}</span>
           <span style={{ color: "var(--text)" }}>
@@ -186,6 +257,13 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
           </span>
         </div>
       ))}
+      <div
+        className="flex justify-between gap-4 mt-1 pt-1 border-t font-semibold"
+        style={{ borderColor: "var(--border)", color: "var(--text-strong)" }}
+      >
+        <span>합계</span>
+        <span>{formatManwon(total)}</span>
+      </div>
     </div>
   );
 }

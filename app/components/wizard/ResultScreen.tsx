@@ -2,11 +2,12 @@
 // 다크모드: 히어로(파란 그라데이션)와 미달성 경고(호박색) 카드는 의도적 강조색이라
 // 유지. 그 외 중립 배경/텍스트만 토큰으로 전환.
 // WHY(최종 단순화, D-128): 이 화면이 답해야 하는 질문은 "몇 살에 은퇴 가능한지"
-// 하나다. 월 예상 수입·목표 대비 숫자, 소득원 3색 스택 차트, 절세 팁까지 있던
-// 이전 버전은 그 답의 "근거 자료"를 계속 덧붙인 것이었는데, 사용자 피드백에 따라
-// 근거 자료보다 답 자체가 화면을 지배해야 한다고 판단해 히어로(나이) + 목표
-// 유지 여부를 보여주는 단순 라인 차트만 남겼다. 절세 팁(taxBenefit)은 "언제
-// 은퇴 가능한지"와 무관한 별개 질문이라 이 화면에서 완전히 제거했다.
+// 하나다. 월 예상 수입·목표 대비 숫자, 절세 팁까지 있던 이전 버전은 그 답의
+// "근거 자료"를 계속 덧붙인 것이었는데, 사용자 피드백에 따라 근거 자료보다
+// 답 자체가 화면을 지배해야 한다고 판단해 히어로(나이) + 소득 구성 차트만
+// 남겼다. 절세 팁(taxBenefit)은 "언제 은퇴 가능한지"와 무관한 별개 질문이라
+// 이 화면에서 완전히 제거했다. 차트는 이후 D-129에서 소득원별 구성+오늘
+// 가치 기준으로 다시 확장됨(IncomeTimelineChart.tsx 참고).
 "use client";
 
 import { useState } from "react";
@@ -24,6 +25,7 @@ export default function ResultScreen({ result, onRestart }: Props) {
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
+  const currentAge = retirementAge - meta.yearsUntilRetirement;
 
   async function handleShare() {
     try {
@@ -81,7 +83,11 @@ export default function ResultScreen({ result, onRestart }: Props) {
           className="rounded-2xl border p-4 mb-5"
           style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
-          <IncomeTimelineChart timeline={incomeTimeline} />
+          <IncomeTimelineChart
+            timeline={incomeTimeline}
+            currentAge={currentAge}
+            inflationRate={meta.inflationRate}
+          />
         </div>
       )}
 
