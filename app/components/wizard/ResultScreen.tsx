@@ -21,7 +21,7 @@ interface Props {
 const MID_UNLOCK_AGE = 55;
 
 export default function ResultScreen({ result, onRestart }: Props) {
-  const { summary, taxDetail, meta, incomeTimeline } = result;
+  const { summary, taxDetail, taxBenefit, meta, incomeTimeline } = result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
@@ -174,6 +174,34 @@ export default function ResultScreen({ result, onRestart }: Props) {
               style={{ color: "var(--text-strong)" }}
             >
               {formatManwon(taxDetail.totalMonthlyTax)}
+            </span>
+          </div>
+        </section>
+
+        <section
+          className="p-4 border-t"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <SectionLabel>절세 팁</SectionLabel>
+          <div
+            className="rounded-xl p-3.5"
+            style={{ background: "var(--accent-soft)" }}
+          >
+            <p
+              className="text-[13px] leading-relaxed font-medium"
+              style={{ color: "var(--text-strong)" }}
+            >
+              {taxBenefit.optimizationTip}
+            </p>
+          </div>
+          <div
+            className="flex justify-between items-baseline mt-2.5 text-[11px]"
+            style={{ color: "var(--text-faint)" }}
+          >
+            <span>{taxBenefit.incomeLevel}</span>
+            <span>
+              올해 세액공제 {formatManwon(taxBenefit.currentTaxCredit)} / 최대{" "}
+              {formatManwon(taxBenefit.maxTaxCredit)}
             </span>
           </div>
         </section>
