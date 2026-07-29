@@ -1,22 +1,16 @@
 // ResultScreen.tsx
 // 다크모드: 히어로(파란 그라데이션)와 미달성 경고(호박색) 카드는 의도적 강조색이라
 // 유지. 그 외 중립 배경/텍스트만 토큰으로 전환.
-// WHY(레이아웃 리뉴얼): 예전 구조는 히어로 아래로 소득구간/차트/월수입/세금 카드가
-// 각자 테두리를 두르고 따로 떠 있어 "붕 뜬" 느낌을 줬다. 지금은 (1) 월 예상 수입·
-// 목표 대비를 히어로 안으로 옮겨 헤드라인 숫자와 한 덩어리로 묶고 (2) 나머지
-// 정보(소득 구간/차트/절세 팁)는 구분선으로 나눈 카드 하나로 합쳐 화면 전체가
-// 히어로+상세카드 두 덩어리로만 읽히게 했다.
-// WHY(세금 상세 카드 제거): 양도세/연금소득세/건강보험료 raw 숫자는 "월 예상 수입"이
-// 어떻게 나왔는지의 근거일 뿐, 사용자가 직접 액션할 수 있는 정보가 아니라서
-// 오히려 확인 질문("왜 0원이지?")만 유발했다. 액션 가능한 정보인 절세 팁만 남긴다.
-// WHY(소득 구간 막대 제거): "몇 세부터 어떤 소득원이 열리는지"는 아래 소득 구성
-// 차트가 색상 스택으로 이미 보여주는 정보라 막대와 차트가 같은 내용을 두 번
-// 말하고 있었다. 정보처리기사 UI 설계 4원칙(직관성·유효성·학습성·유연성) 중
-// 유효성 관점에서 중복 정보는 화면을 이해하는 데 오히려 방해가 되므로 제거.
+// WHY(최종 단순화, D-128): 이 화면이 답해야 하는 질문은 "몇 살에 은퇴 가능한지"
+// 하나다. 월 예상 수입·목표 대비 숫자, 소득원 3색 스택 차트, 절세 팁까지 있던
+// 이전 버전은 그 답의 "근거 자료"를 계속 덧붙인 것이었는데, 사용자 피드백에 따라
+// 근거 자료보다 답 자체가 화면을 지배해야 한다고 판단해 히어로(나이) + 목표
+// 유지 여부를 보여주는 단순 라인 차트만 남겼다. 절세 팁(taxBenefit)은 "언제
+// 은퇴 가능한지"와 무관한 별개 질문이라 이 화면에서 완전히 제거했다.
 "use client";
 
 import { useState } from "react";
-import { SimulationResponseDto, formatManwon } from "./types";
+import { SimulationResponseDto } from "./types";
 import { SecondaryButton, WizardCard } from "./Ui";
 import IncomeTimelineChart from "./IncomeTimelineChart";
 
@@ -26,11 +20,10 @@ interface Props {
 }
 
 export default function ResultScreen({ result, onRestart }: Props) {
-  const { summary, taxBenefit, meta, incomeTimeline } = result;
+  const { summary, meta, incomeTimeline } = result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
-  const isShortfallPositive = summary.monthlyShortfall >= 0;
 
   async function handleShare() {
     try {
@@ -64,24 +57,6 @@ export default function ResultScreen({ result, onRestart }: Props) {
             뒤예요
           </p>
           <p className="text-xs text-blue-100/90 mt-2">{summary.message}</p>
-
-          <div className="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-white/15">
-            <div>
-              <p className="text-[11px] text-blue-100">
-                월 예상 수입 (세후, 1년차)
-              </p>
-              <p className="text-[15px] font-semibold text-white mt-0.5">
-                {formatManwon(summary.totalMonthlyIncome)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] text-blue-100">목표 대비</p>
-              <p className="text-[15px] font-semibold text-white mt-0.5">
-                {isShortfallPositive ? "+" : ""}
-                {formatManwon(summary.monthlyShortfall)}
-              </p>
-            </div>
-          </div>
         </div>
       ) : (
         <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-center mb-5">
@@ -95,67 +70,20 @@ export default function ResultScreen({ result, onRestart }: Props) {
           </p>
           <p className="text-[13px] text-neutral-500 mt-3 leading-relaxed">
             납입액을 늘리거나 목표 생활비를 낮춰서 다시 계산해보세요. 아래
-            상세 내역에서 어느 시점부터 부족해지는지 볼 수 있어요.
+            그래프에서 어느 시점부터 부족해지는지 볼 수 있어요.
           </p>
-
-          <div className="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-amber-200">
-            <div>
-              <p className="text-[11px] text-amber-700/80">
-                월 예상 수입 (세후, {retirementAge}세 기준)
-              </p>
-              <p className="text-[15px] font-semibold text-amber-900 mt-0.5">
-                {formatManwon(summary.totalMonthlyIncome)}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[11px] text-amber-700/80">목표 대비</p>
-              <p className="text-[15px] font-semibold text-amber-900 mt-0.5">
-                {formatManwon(summary.monthlyShortfall)}
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* ── 상세 내역: 차트 / 절세 팁을 구분선으로 나눈 단일 카드 ── */}
-      <div
-        className="rounded-2xl border overflow-hidden mb-5"
-        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-      >
-        {incomeTimeline.length > 0 && (
-          <section className="p-4">
-            <IncomeTimelineChart timeline={incomeTimeline} />
-          </section>
-        )}
-
-        <section
-          className={`p-4 ${incomeTimeline.length > 0 ? "border-t" : ""}`}
-          style={{ borderColor: "var(--border)" }}
+      {/* ── 목표 유지 여부만 보여주는 단순 라인 차트 ── */}
+      {incomeTimeline.length > 0 && (
+        <div
+          className="rounded-2xl border p-4 mb-5"
+          style={{ borderColor: "var(--border)", background: "var(--surface)" }}
         >
-          <SectionLabel>절세 팁</SectionLabel>
-          <div
-            className="rounded-xl p-3.5"
-            style={{ background: "var(--accent-soft)" }}
-          >
-            <p
-              className="text-[13px] leading-relaxed font-medium"
-              style={{ color: "var(--text-strong)" }}
-            >
-              {taxBenefit.optimizationTip}
-            </p>
-          </div>
-          <div
-            className="flex justify-between items-baseline mt-2.5 text-[11px]"
-            style={{ color: "var(--text-faint)" }}
-          >
-            <span>{taxBenefit.incomeLevel}</span>
-            <span>
-              올해 세액공제 {formatManwon(taxBenefit.currentTaxCredit)} / 최대{" "}
-              {formatManwon(taxBenefit.maxTaxCredit)}
-            </span>
-          </div>
-        </section>
-      </div>
+          <IncomeTimelineChart timeline={incomeTimeline} />
+        </div>
+      )}
 
       {/* ── 액션 ── */}
       <div className="space-y-2.5">
@@ -178,23 +106,8 @@ export default function ResultScreen({ result, onRestart }: Props) {
           <br />
           국민연금은 간이 산식으로 계산한 근사치예요. 정확한 예상 수령액은
           국민연금공단 &lsquo;내 연금 알아보기&rsquo;에서 확인할 수 있어요.
-          <br />
-          주식/ETF 세금은 해외주식 기준(양도세 22%, 연 250만원 공제)으로
-          계산돼요.
         </p>
       </div>
     </WizardCard>
   );
 }
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      className="text-xs font-semibold tracking-wide mb-2.5"
-      style={{ color: "var(--text-faint)" }}
-    >
-      {children}
-    </p>
-  );
-}
-
