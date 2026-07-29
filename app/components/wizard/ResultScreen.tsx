@@ -4,8 +4,11 @@
 // WHY(레이아웃 리뉴얼): 예전 구조는 히어로 아래로 소득구간/차트/월수입/세금 카드가
 // 각자 테두리를 두르고 따로 떠 있어 "붕 뜬" 느낌을 줬다. 지금은 (1) 월 예상 수입·
 // 목표 대비를 히어로 안으로 옮겨 헤드라인 숫자와 한 덩어리로 묶고 (2) 나머지
-// 정보(소득 구간/차트/세금)는 구분선으로 나눈 카드 하나로 합쳐 화면 전체가
+// 정보(소득 구간/차트/절세 팁)는 구분선으로 나눈 카드 하나로 합쳐 화면 전체가
 // 히어로+상세카드 두 덩어리로만 읽히게 했다.
+// WHY(세금 상세 카드 제거): 양도세/연금소득세/건강보험료 raw 숫자는 "월 예상 수입"이
+// 어떻게 나왔는지의 근거일 뿐, 사용자가 직접 액션할 수 있는 정보가 아니라서
+// 오히려 확인 질문("왜 0원이지?")만 유발했다. 액션 가능한 정보인 절세 팁만 남긴다.
 "use client";
 
 import { useState } from "react";
@@ -21,7 +24,7 @@ interface Props {
 const MID_UNLOCK_AGE = 55;
 
 export default function ResultScreen({ result, onRestart }: Props) {
-  const { summary, taxDetail, taxBenefit, meta, incomeTimeline } = result;
+  const { summary, taxBenefit, meta, incomeTimeline } = result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
@@ -140,48 +143,6 @@ export default function ResultScreen({ result, onRestart }: Props) {
           className="p-4 border-t"
           style={{ borderColor: "var(--border)" }}
         >
-          <SectionLabel>세금 · 건강보험료 (은퇴 1년차 기준)</SectionLabel>
-          <div className="space-y-1">
-            <TaxRow
-              label="주식/ETF 양도세"
-              value={formatManwon(taxDetail.monthlyStockTax)}
-            />
-            <TaxRow
-              label={
-                taxDetail.pensionIncomeTaxRate > 0
-                  ? `연금소득세 (${taxDetail.pensionIncomeTaxRate.toFixed(1)}%)`
-                  : "연금소득세"
-              }
-              value={formatManwon(taxDetail.monthlyPensionTax)}
-            />
-            <TaxRow
-              label="건강보험료"
-              value={formatManwon(taxDetail.monthlyHealthInsurance)}
-            />
-          </div>
-          <div
-            className="flex justify-between items-baseline mt-2.5 pt-2.5 border-t"
-            style={{ borderColor: "var(--border)" }}
-          >
-            <span
-              className="text-[13px] font-semibold"
-              style={{ color: "var(--text-sub)" }}
-            >
-              월 합계
-            </span>
-            <span
-              className="text-[15px] font-bold"
-              style={{ color: "var(--text-strong)" }}
-            >
-              {formatManwon(taxDetail.totalMonthlyTax)}
-            </span>
-          </div>
-        </section>
-
-        <section
-          className="p-4 border-t"
-          style={{ borderColor: "var(--border)" }}
-        >
           <SectionLabel>절세 팁</SectionLabel>
           <div
             className="rounded-xl p-3.5"
@@ -245,22 +206,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     >
       {children}
     </p>
-  );
-}
-
-function TaxRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between items-baseline">
-      <span className="text-sm" style={{ color: "var(--text-sub)" }}>
-        {label}
-      </span>
-      <span
-        className="text-sm font-medium"
-        style={{ color: "var(--text)" }}
-      >
-        {value}
-      </span>
-    </div>
   );
 }
 
