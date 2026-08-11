@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useToken } from "@/lib/auth";
 
 function WalletIcon({ active }: { active: boolean }) {
   return (
@@ -52,6 +53,11 @@ const TABS: {
 
 export default function BottomTabBar() {
   const pathname = usePathname();
+  const token = useToken();
+
+  // WHY: 로그인 전 화면(로그인/카카오 콜백)에서는 로그인 기능만 보여야 한다.
+  // ProfileMenu와 같은 기준(token 유무)으로 표시 여부를 맞춘다.
+  if (!token) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur-md">

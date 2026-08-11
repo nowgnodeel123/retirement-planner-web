@@ -217,16 +217,18 @@ export function PrimaryButton({
   loading,
   children,
   className = "",
+  type = "button",
 }: {
   onClick: () => void;
   disabled?: boolean;
   loading?: boolean;
   children: React.ReactNode;
   className?: string;
+  type?: "button" | "submit";
 }) {
   return (
     <button
-      type="button"
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={`relative rounded-2xl bg-[var(--accent)] text-white py-3.5 text-[15px] font-semibold
