@@ -1,7 +1,8 @@
 // AccountCard.tsx — 계좌 목록의 개별 행. D-044/D-045: 편집모드에서 삭제(휴지통) 버튼 노출.
 // 토스식: 기관 유형별 컬러 아이콘 + 테두리 없는 카드 + 눌림 피드백
 import Link from "next/link";
-import { AccountResponse, detailTypeLabel, InstitutionType } from "./types";
+import { AccountResponse, AccountSummary, detailTypeLabel, InstitutionType } from "./types";
+import { formatKrw, signed } from "./format";
 
 type IconStyle = { bg: string; color: string };
 
@@ -83,6 +84,24 @@ function TrashIcon() {
   );
 }
 
+function PencilIcon() {
+  return (
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
+    </svg>
+  );
+}
+
 function ChevronRightIcon() {
   return (
     <svg
@@ -104,10 +123,14 @@ function ChevronRightIcon() {
 export function AccountCard({
   account,
   editing,
+  summary,
+  onRename,
   onDelete,
 }: {
   account: AccountResponse;
   editing: boolean;
+  summary?: AccountSummary;
+  onRename: () => void;
   onDelete: () => void;
 }) {
   const body = (
@@ -133,19 +156,50 @@ export function AccountCard({
         )}
       </div>
 
+      {!editing && summary && (
+        <div className="text-right flex-shrink-0">
+          <p
+            className="amount text-[14px] font-semibold"
+            style={{ color: "var(--text-strong)" }}
+          >
+            {formatKrw(summary.totalKrw)}
+          </p>
+          <p
+            className="amount text-[11px] mt-0.5"
+            style={{ color: summary.profitKrw >= 0 ? "var(--gain)" : "var(--loss)" }}
+          >
+            {signed(summary.profitRate, `${Math.abs(summary.profitRate).toFixed(1)}%`)}
+          </p>
+        </div>
+      )}
+
       {editing ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            onDelete();
-          }}
-          aria-label={`${account.name} 삭제`}
-          className="flex-shrink-0 p-2 rounded-xl transition-colors hover:text-red-500"
-          style={{ color: "var(--text-sub)" }}
-        >
-          <TrashIcon />
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onRename();
+            }}
+            aria-label={`${account.name} 이름 수정`}
+            className="p-2 rounded-xl transition-colors"
+            style={{ color: "var(--text-sub)" }}
+          >
+            <PencilIcon />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onDelete();
+            }}
+            aria-label={`${account.name} 삭제`}
+            className="p-2 rounded-xl transition-colors hover:text-red-500"
+            style={{ color: "var(--text-sub)" }}
+          >
+            <TrashIcon />
+          </button>
+        </div>
       ) : (
         <ChevronRightIcon />
       )}

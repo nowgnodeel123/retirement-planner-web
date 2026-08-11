@@ -74,7 +74,7 @@ export function TaxTab({ accountId }: { accountId: number }) {
           ‹
         </button>
         <p className="text-[14px] font-semibold" style={{ color: "var(--text-strong)" }}>
-          {year}년 귀속
+          {year}년
         </p>
         <button
           type="button"

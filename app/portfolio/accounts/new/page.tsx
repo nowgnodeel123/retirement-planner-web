@@ -60,10 +60,19 @@ export default function NewAccountPage() {
 
   return (
     <div className="max-w-[420px] mx-auto px-5 pt-6">
-      <h1 className="text-[20px] font-bold text-neutral-800 mb-6">계좌 등록</h1>
+      <h1 className="text-[20px] font-bold mb-6" style={{ color: "var(--text-strong)" }}>
+        계좌 등록
+      </h1>
 
-      <div className="bg-white rounded-3xl p-6 shadow-[0_2px_24px_rgba(15,23,42,0.06)] border border-neutral-100">
-        <label className="text-sm text-neutral-500 font-medium">
+      <div
+        className="rounded-3xl p-6 border"
+        style={{
+          background: "var(--surface)",
+          borderColor: "var(--border)",
+          boxShadow: "0 2px 24px rgba(15,23,42,0.06)",
+        }}
+      >
+        <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
           기관 유형
         </label>
         <div className="mt-1.5 mb-5">
@@ -86,7 +95,7 @@ export default function NewAccountPage() {
 
         {showDetailType && (
           <div className="mt-4">
-            <label className="text-sm text-neutral-500 font-medium">
+            <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
               상세 유형
             </label>
             <div className="mt-1.5 grid grid-cols-4 gap-1.5">
@@ -99,9 +108,10 @@ export default function NewAccountPage() {
                     onClick={() => setDetailType(type)}
                     className={`rounded-xl border py-2.5 text-[12px] font-medium transition-all ${
                       active
-                        ? "border-blue-400 bg-blue-50/60 text-blue-600 ring-4 ring-blue-500/10"
-                        : "border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300"
+                        ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-4 ring-[var(--accent)]/10"
+                        : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-faint)]"
                     }`}
+                    style={{ color: active ? "var(--accent)" : "var(--text-sub)" }}
                   >
                     {detailTypeLabel[type]}
                   </button>

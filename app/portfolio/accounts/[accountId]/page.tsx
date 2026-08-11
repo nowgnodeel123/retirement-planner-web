@@ -239,42 +239,49 @@ export default function AccountDetailPage() {
         )}
       </div>
 
-      {/* M10(D-065): 자산/수익/세금 3탭 */}
-      <div
-        className="flex mb-5 border-b"
-        style={{ borderColor: "var(--border)" }}
-      >
-        {(
-          [
-            { key: "ASSETS" as const, label: "자산" },
-            { key: "PROFIT" as const, label: "수익" },
-            { key: "TAX" as const, label: "세금" },
-          ]
-        ).map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className="flex-1 text-center py-2.5 text-[13px] font-semibold relative"
-            style={{
-              color:
-                activeTab === tab.key ? "var(--text-strong)" : "var(--text-faint)",
-            }}
-          >
-            {tab.label}
-            {activeTab === tab.key && (
-              <span
-                className="absolute left-0 right-0 -bottom-px h-[2px]"
-                style={{ background: "var(--accent)" }}
-              />
-            )}
-          </button>
-        ))}
-      </div>
+      {/* M10(D-065): 자산/수익/세금 3탭 — 은행 계좌는 입금 히스토리만 다뤄(D-060)
+          실현손익·세금 개념 자체가 없으므로 자산 탭만 보여준다 */}
+      {account && account.institutionType !== "BANK" && (
+        <div
+          className="flex mb-5 border-b"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {(
+            [
+              { key: "ASSETS" as const, label: "자산" },
+              { key: "PROFIT" as const, label: "수익" },
+              { key: "TAX" as const, label: "세금" },
+            ]
+          ).map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className="flex-1 text-center py-2.5 text-[13px] font-semibold relative"
+              style={{
+                color:
+                  activeTab === tab.key ? "var(--text-strong)" : "var(--text-faint)",
+              }}
+            >
+              {tab.label}
+              {activeTab === tab.key && (
+                <span
+                  className="absolute left-0 right-0 -bottom-px h-[2px]"
+                  style={{ background: "var(--accent)" }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {activeTab === "PROFIT" && <ProfitTab accountId={accountId} />}
+      {activeTab === "PROFIT" && account?.institutionType !== "BANK" && (
+        <ProfitTab accountId={accountId} />
+      )}
 
-      {activeTab === "TAX" && <TaxTab accountId={accountId} />}
+      {activeTab === "TAX" && account?.institutionType !== "BANK" && (
+        <TaxTab accountId={accountId} />
+      )}
 
       {activeTab === "ASSETS" && (
       <>

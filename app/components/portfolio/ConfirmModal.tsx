@@ -21,14 +21,23 @@ export function ConfirmModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div
-        className="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
         onClick={onCancel}
       />
-      <div className="relative w-full max-w-[420px] bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-[0_-4px_32px_rgba(0,0,0,0.12)]">
-        <p className="text-[16px] font-semibold text-neutral-800 mb-1.5">
+      <div
+        className="relative w-full max-w-[420px] rounded-t-3xl sm:rounded-3xl p-6 shadow-[0_-4px_32px_rgba(0,0,0,0.12)]"
+        style={{ background: "var(--surface)" }}
+      >
+        <p
+          className="text-[16px] font-semibold mb-1.5"
+          style={{ color: "var(--text-strong)" }}
+        >
           {title}
         </p>
-        <p className="text-[13px] text-neutral-400 leading-relaxed mb-5">
+        <p
+          className="text-[13px] leading-relaxed mb-5"
+          style={{ color: "var(--text-sub)" }}
+        >
           {description}
         </p>
         <div className="flex gap-2">

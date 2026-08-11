@@ -17,6 +17,7 @@ import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import {
+  AssetBuyRequest,
   AssetHoldingResponse,
   AssetSellRequest,
   DividendCreateRequest,
@@ -83,6 +84,14 @@ export default function AssetDetailPage() {
   const [dividends, setDividends] = useState<DividendResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [buyQuantity, setBuyQuantity] = useState<number | "">("");
+  const [buyUnitPrice, setBuyUnitPrice] = useState<number | "">("");
+  const [buyFx, setBuyFx] = useState<number | "">("");
+  const [buyTradeDate, setBuyTradeDate] = useState(todayString());
+  const [buySubmitting, setBuySubmitting] = useState(false);
+  const [buyFormError, setBuyFormError] = useState<string | null>(null);
 
   const [sellOpen, setSellOpen] = useState(false);
   const [quantity, setQuantity] = useState<number | "">("");
@@ -151,6 +160,53 @@ export default function AssetDetailPage() {
     if (transactions === null || dividends === null) return null;
     return combineHistory(transactions, dividends);
   }, [transactions, dividends]);
+
+  // 기존 보유 종목에 매수를 더 쌓는다. /api/assets/buy는 accountId+symbol이 같으면
+  // 새 자산을 만들지 않고 기존 자산에 거래만 추가한다(AssetService.buy() 참고).
+  function validateBuy(): string | null {
+    if (buyQuantity === "" || buyQuantity <= 0) return "매수 수량을 입력해주세요.";
+    if (buyUnitPrice === "" || buyUnitPrice < 0) return "매수 단가를 입력해주세요.";
+    if (isForeign && (buyFx === "" || buyFx <= 0)) return "환율을 입력해주세요.";
+    if (buyTradeDate > todayString()) return "거래일은 오늘보다 미래일 수 없어요.";
+    return null;
+  }
+
+  async function handleBuy() {
+    if (!holding) return;
+    const validationError = validateBuy();
+    if (validationError) {
+      setBuyFormError(validationError);
+      return;
+    }
+    setBuyFormError(null);
+    setBuySubmitting(true);
+    try {
+      const body: AssetBuyRequest = {
+        accountId,
+        symbol: holding.symbol,
+        name: holding.name,
+        category: holding.category as TradableAssetCategory,
+        quantity: buyQuantity as number,
+        unitPrice: buyUnitPrice as number,
+        tradeDate: buyTradeDate,
+        ...(isForeign ? { currency: holding.currency, fx: buyFx as number } : {}),
+      };
+      await api.post("/api/assets/buy", body);
+      setBuyOpen(false);
+      setBuyQuantity("");
+      setBuyUnitPrice("");
+      setBuyFx("");
+      setBuyTradeDate(todayString());
+      setToast("매수 거래가 등록되었어요.");
+      loadAll();
+    } catch (e) {
+      setBuyFormError(
+        e instanceof ApiError ? e.message : "매수 등록에 실패했어요.",
+      );
+    } finally {
+      setBuySubmitting(false);
+    }
+  }
 
   function validateSell(): string | null {
     if (quantity === "" || quantity <= 0) return "매도 수량을 입력해주세요.";
@@ -327,6 +383,12 @@ export default function AssetDetailPage() {
 
           <div className="mb-6 flex gap-2">
             <SecondaryButton
+              onClick={() => setBuyOpen((v) => !v)}
+              className="flex-1"
+            >
+              {buyOpen ? "매수 취소" : "매수"}
+            </SecondaryButton>
+            <SecondaryButton
               onClick={() => setSellOpen((v) => !v)}
               className="flex-1"
             >
@@ -341,6 +403,79 @@ export default function AssetDetailPage() {
               </SecondaryButton>
             )}
           </div>
+
+          {buyOpen && (
+            <div className="mb-6 card px-4 py-4">
+              <Field
+                label="매수 수량"
+                unit={
+                  categoryUnit[holding.category as TradableAssetCategory] ?? ""
+                }
+              >
+                <NumberInput
+                  value={buyQuantity}
+                  onChange={setBuyQuantity}
+                  allowDecimal
+                  placeholder="0"
+                  maxDigits={12}
+                />
+              </Field>
+              <Field label="매수 단가" unit={isForeign ? "USD" : "원"}>
+                <NumberInput
+                  value={buyUnitPrice}
+                  onChange={setBuyUnitPrice}
+                  allowDecimal
+                  placeholder="0"
+                />
+              </Field>
+              {isForeign && (
+                <Field label="매수 시점 환율" unit="원">
+                  <NumberInput
+                    value={buyFx}
+                    onChange={setBuyFx}
+                    allowDecimal
+                    placeholder="1,350.00"
+                  />
+                </Field>
+              )}
+              <div className="mb-1">
+                <label
+                  className="text-sm font-medium"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  거래일
+                </label>
+                <input
+                  type="date"
+                  value={buyTradeDate}
+                  max={todayString()}
+                  onChange={(e) => setBuyTradeDate(e.target.value)}
+                  className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text-strong)",
+                  }}
+                />
+              </div>
+
+              {buyFormError && (
+                <div className="mt-4">
+                  <ErrorBanner message={buyFormError} />
+                </div>
+              )}
+
+              <div className="mt-5">
+                <PrimaryButton
+                  onClick={handleBuy}
+                  loading={buySubmitting}
+                  className="w-full"
+                >
+                  매수 등록
+                </PrimaryButton>
+              </div>
+            </div>
+          )}
 
           {sellOpen && (
             <div className="mb-6 card px-4 py-4">

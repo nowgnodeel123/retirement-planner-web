@@ -6,8 +6,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { AccountCard } from "@/app/components/portfolio/AccountCard";
-import { CategoryDonutChart } from "@/app/components/portfolio/CategoryDonutChart";
+import { HoldingsDonutChart } from "@/app/components/portfolio/HoldingsDonutChart";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
+import { RenameAccountModal } from "@/app/components/portfolio/RenameAccountModal";
 import { MonthlyInsightBanner } from "@/app/components/portfolio/MonthlyInsightBanner";
 import { PortfolioSummary } from "@/app/components/portfolio/PortfolioSummary";
 import { Toast } from "@/app/components/portfolio/Toast";
@@ -80,6 +81,11 @@ export default function PortfolioPage() {
     null,
   );
   const [deleting, setDeleting] = useState(false);
+  const [pendingRename, setPendingRename] = useState<AccountResponse | null>(
+    null,
+  );
+  const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -120,6 +126,29 @@ export default function PortfolioPage() {
     } finally {
       setDeleting(false);
       setPendingDelete(null);
+    }
+  }
+
+  async function handleRenameSubmit(name: string) {
+    if (!pendingRename) return;
+    setRenaming(true);
+    setRenameError(null);
+    try {
+      const updated = await api.patch<AccountResponse>(
+        `/api/accounts/${pendingRename.id}/name`,
+        { name },
+      );
+      setAccounts(
+        (prev) => prev?.map((a) => (a.id === updated.id ? updated : a)) ?? null,
+      );
+      setPendingRename(null);
+      setToast("계좌 이름이 수정되었어요.");
+    } catch (e) {
+      setRenameError(
+        e instanceof ApiError ? e.message : "이름 수정 중 문제가 발생했어요.",
+      );
+    } finally {
+      setRenaming(false);
     }
   }
 
@@ -203,7 +232,7 @@ export default function PortfolioPage() {
         <>
           <PortfolioSummary summary={summary} />
           <MonthlyInsightBanner insight={insight} />
-          <CategoryDonutChart categories={summary?.categories ?? null} />
+          <HoldingsDonutChart holdings={summary?.holdings ?? null} />
         </>
       )}
 
@@ -223,6 +252,11 @@ export default function PortfolioPage() {
                     key={account.id}
                     account={account}
                     editing={editing}
+                    summary={summary?.accounts.find((a) => a.accountId === account.id)}
+                    onRename={() => {
+                      setRenameError(null);
+                      setPendingRename(account);
+                    }}
                     onDelete={() => setPendingDelete(account)}
                   />
                 ))}
@@ -239,6 +273,16 @@ export default function PortfolioPage() {
           loading={deleting}
           onConfirm={handleConfirmDelete}
           onCancel={() => setPendingDelete(null)}
+        />
+      )}
+
+      {pendingRename && (
+        <RenameAccountModal
+          currentName={pendingRename.name}
+          loading={renaming}
+          error={renameError}
+          onConfirm={handleRenameSubmit}
+          onCancel={() => setPendingRename(null)}
         />
       )}
 

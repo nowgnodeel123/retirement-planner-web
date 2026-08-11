@@ -10,7 +10,7 @@ function InstitutionIcon({
   type: InstitutionType;
   active: boolean;
 }) {
-  const stroke = active ? "#3B82F6" : "#A3A3A3";
+  const stroke = active ? "var(--accent)" : "var(--text-faint)";
   const common = {
     width: 20,
     height: 20,
@@ -62,18 +62,16 @@ export function InstitutionTypeSelector({
             key={type}
             type="button"
             onClick={() => onChange(type)}
-            className={`flex flex-col items-center gap-1.5 rounded-2xl border py-3.5 transition-all
-              ${
-                active
-                  ? "border-blue-400 bg-blue-50/60 ring-4 ring-blue-500/10"
-                  : "border-neutral-200 bg-white hover:border-neutral-300"
-              }`}
+            className={`flex flex-col items-center gap-1.5 rounded-2xl border py-3.5 transition-all ${
+              active
+                ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-4 ring-[var(--accent)]/10"
+                : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-faint)]"
+            }`}
           >
             <InstitutionIcon type={type} active={active} />
             <span
-              className={`text-[13px] font-medium ${
-                active ? "text-blue-600" : "text-neutral-500"
-              }`}
+              className="text-[13px] font-medium"
+              style={{ color: active ? "var(--accent)" : "var(--text-sub)" }}
             >
               {institutionLabel[type]}
             </span>

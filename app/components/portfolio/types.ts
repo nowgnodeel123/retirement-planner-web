@@ -44,6 +44,13 @@ export interface AssetHoldingResponse {
   exchangeRateBaseDate: string | null;
 }
 
+// GET /api/domestic-stocks/search 응답 — DomesticStock 엔티티 그대로 직렬화됨
+export interface DomesticStockSearchResult {
+  symbolCode: string;
+  name: string;
+  market: string;
+}
+
 export interface AssetBuyRequest {
   accountId: number;
   symbol: string;
@@ -140,12 +147,30 @@ export interface CategorySummary {
   assetCount: number;
 }
 
+// 계좌 목록에 계좌별 평가금액/손익을 함께 보여주기 위한 집계(D-066 확장)
+export interface AccountSummary {
+  accountId: number;
+  totalKrw: number;
+  profitKrw: number;
+  profitRate: number;
+}
+
+// 메인 파이차트를 카테고리가 아니라 종목별로 보여주기 위한 집계(같은 종목은 계좌 무관하게 합산)
+export interface HoldingSummary {
+  symbol: string;
+  name: string;
+  category: string;
+  totalKrw: number;
+}
+
 export interface PortfolioSummaryResponse {
   totalKrw: number | null; // 보유자산이 전부 시세 미조회로 제외되면 null
   profitKrw: number;
   profitRate: number;
   excludedCount: number;
   categories: CategorySummary[];
+  accounts: AccountSummary[];
+  holdings: HoldingSummary[];
 }
 
 export interface MonthlyInsightResponse {

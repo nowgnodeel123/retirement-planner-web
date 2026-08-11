@@ -1,0 +1,192 @@
+// HoldingsDonutChart.tsx — M9 대시보드 도넛차트, 카테고리가 아니라 종목별 비중으로 표시.
+// (구 CategoryDonutChart.tsx를 대체 — "국내주식 40%"가 아니라 "삼성전자 20%"처럼 보여달라는
+// 요청 반영) D-071(상위 5개 색상표시 + 나머지 "기타") / D-072("외 N건" 라벨) /
+// D-073(순수 빨강·파랑 제외 채도 상향 팔레트) / D-074(탭으로 하이라이트) 원칙은 그대로 유지.
+// 범례를 차트 아래가 아니라 오른쪽에 배치.
+"use client";
+
+import { useState } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { formatKrw } from "./format";
+import { HoldingSummary } from "./types";
+
+// D-073: 손익 색상(빨강/파랑)과 혼동되지 않는 채도 상향 팔레트. 카테고리 배지와 같은 5색을
+// 종목 슬라이스에도 순환 적용 — 의미는 "카테고리"에서 "종목 순서"로 바뀌었지만 톤은 유지.
+const PALETTE = ["#A78BFA", "#2DD4BF", "#E879A8", "#FBBF24", "#94A3B8"];
+const OTHER_COLOR = "#B0B8C1";
+
+interface Slice {
+  key: string;
+  label: string;
+  color: string;
+  value: number;
+}
+
+function buildSlices(holdings: HoldingSummary[]): Slice[] {
+  const sorted = [...holdings].sort((a, b) => b.totalKrw - a.totalKrw);
+  const toSlice = (h: HoldingSummary, i: number): Slice => ({
+    key: h.symbol,
+    label: h.name,
+    color: PALETTE[i % PALETTE.length],
+    value: h.totalKrw,
+  });
+
+  if (sorted.length <= 5) return sorted.map(toSlice);
+
+  const top5 = sorted.slice(0, 5).map(toSlice);
+  const rest = sorted.slice(5);
+  const restValue = rest.reduce((sum, h) => sum + h.totalKrw, 0);
+
+  return [
+    ...top5,
+    {
+      key: "OTHER",
+      label: `외 ${rest.length}건`,
+      color: OTHER_COLOR,
+      value: restValue,
+    },
+  ];
+}
+
+export function HoldingsDonutChart({
+  holdings,
+}: {
+  holdings: HoldingSummary[] | null;
+}) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  if (holdings === null) {
+    return (
+      <div className="mb-7 flex items-center gap-4">
+        <div
+          className="rounded-full animate-pulse flex-shrink-0"
+          style={{ width: 140, height: 140, background: "var(--border)" }}
+        />
+        <div className="flex-1 space-y-2">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-4 rounded animate-pulse"
+              style={{ background: "var(--border)" }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (holdings.length === 0) return null;
+
+  const slices = buildSlices(holdings);
+  const total = slices.reduce((sum, s) => sum + s.value, 0);
+  const active = activeIndex !== null ? slices[activeIndex] : null;
+
+  function handleClick(index: number) {
+    setActiveIndex((prev) => (prev === index ? null : index));
+  }
+
+  return (
+    <div className="mb-7 rise-in">
+      <p
+        className="text-[13px] font-semibold mb-2.5 px-1"
+        style={{ color: "var(--text-sub)" }}
+      >
+        비중
+      </p>
+
+      <div className="flex items-center gap-4">
+        <div className="relative flex-shrink-0" style={{ width: 140, height: 140 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={slices}
+                dataKey="value"
+                nameKey="label"
+                cx="50%"
+                cy="50%"
+                innerRadius={44}
+                outerRadius={64}
+                paddingAngle={slices.length > 1 ? 2 : 0}
+                stroke="none"
+                onClick={(_, index) => handleClick(index)}
+              >
+                {slices.map((s, i) => (
+                  <Cell
+                    key={s.key}
+                    fill={s.color}
+                    className="cursor-pointer"
+                    opacity={activeIndex === null || activeIndex === i ? 1 : 0.35}
+                  />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+
+          {/* 도넛 중앙 라벨 — 탭한 조각이 있으면 해당 종목, 없으면 총합 */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-3 text-center">
+            {active ? (
+              <>
+                <p
+                  className="text-[11px] font-medium truncate w-full"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  {active.label}
+                </p>
+                <p
+                  className="amount text-[12px] font-bold mt-0.5"
+                  style={{ color: "var(--text-strong)" }}
+                >
+                  {total > 0 ? `${((active.value / total) * 100).toFixed(1)}%` : "0%"}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-[10px]" style={{ color: "var(--text-sub)" }}>
+                  총 비중
+                </p>
+                <p
+                  className="amount text-[11px] font-bold mt-0.5 truncate w-full"
+                  style={{ color: "var(--text-strong)" }}
+                >
+                  {formatKrw(total)}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* 범례 — 차트 오른쪽 배치. 탭으로도 하이라이트 가능(작은 조각은 직접 탭하기 어려움 보완) */}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          {slices.map((s, i) => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => handleClick(i)}
+              className="w-full flex items-center justify-between px-1 py-0.5 rounded-lg transition-opacity"
+              style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.45 }}
+            >
+              <span className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: s.color }}
+                />
+                <span
+                  className="text-[12px] font-medium truncate"
+                  style={{ color: "var(--text-strong)" }}
+                >
+                  {s.label}
+                </span>
+              </span>
+              <span
+                className="amount text-[12px] flex-shrink-0"
+                style={{ color: "var(--text-sub)" }}
+              >
+                {total > 0 ? `${((s.value / total) * 100).toFixed(1)}%` : "0%"}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
