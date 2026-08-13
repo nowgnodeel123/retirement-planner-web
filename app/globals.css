@@ -27,6 +27,8 @@
   /* 손익 — 토스 계열 팔레트 (D-049: 빨강=이득/파랑=손실) */
   --gain: #f04452;
   --loss: #3182f6;
+  --gain-soft: #fef2f2;
+  --loss-soft: #e8f3ff;
 
   /* 에러 배너 전용 — --gain(빨강)과 값은 같아 보여도 의미가 달라 별도 토큰으로 분리 */
   --error: #f04452;
@@ -59,6 +61,8 @@
 
   --gain: #ff6b76;
   --loss: #5c9eff;
+  --gain-soft: rgba(240, 68, 82, 0.14);
+  --loss-soft: rgba(49, 130, 246, 0.14);
 
   --error: #ff6b76;
   --error-soft: rgba(240, 68, 82, 0.14);

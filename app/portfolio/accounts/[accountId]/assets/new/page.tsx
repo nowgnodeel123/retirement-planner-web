@@ -1,8 +1,9 @@
 // app/portfolio/accounts/[accountId]/assets/new/page.tsx
 // D-053: 종목 검색 → 최초 매수 거래로 자산 생성 통합.
 // D-037: 카테고리는 계좌 기관유형으로 자동 필터 — 사용자가 직접 아무거나 고르지 않는다.
-// 국내주식은 종목명 검색 자동완성(KRX 로컬 캐시, /api/domestic-stocks/search) 적용 —
-// 해외주식/코인은 아직 심볼 검색 API가 없어 기존 수동 입력 유지.
+// 국내주식은 종목명 검색 자동완성(KRX 로컬 캐시, /api/domestic-stocks/search),
+// 해외주식은 Finnhub 심볼 검색(/api/foreign-stocks/search) 적용 —
+// 코인은 아직 심볼 검색 API가 없어 기존 수동 입력 유지.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -23,6 +24,7 @@ import {
   categoryLabel,
   categoryUnit,
   DomesticStockSearchResult,
+  ForeignStockSearchResult,
   InstitutionType,
   TradableAssetCategory,
 } from "@/app/components/portfolio/types";
@@ -126,6 +128,96 @@ function DomesticStockSearch({
                 </span>
                 <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
                   {r.market}
+                </span>
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 해외주식 심볼 검색 자동완성. Finnhub 심볼 검색(/api/foreign-stocks/search)을
+ * 그대로 프록시하는 신규 백엔드 엔드포인트에 연결한다. 구조는 DomesticStockSearch와
+ * 동일 패턴 — 두 카테고리의 응답 필드가 달라(market vs type) 공용 컴포넌트로
+ * 묶지 않고 그대로 나란히 둔다.
+ */
+function ForeignStockSearch({
+  onSelect,
+}: {
+  onSelect: (stock: ForeignStockSearchResult) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<ForeignStockSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (query.trim().length === 0) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    const timer = setTimeout(() => {
+      api
+        .get<ForeignStockSearchResult[]>(
+          `/api/foreign-stocks/search?keyword=${encodeURIComponent(query.trim())}`,
+        )
+        .then((data) => setResults(data))
+        .catch(() => setResults([]))
+        .finally(() => setLoading(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="종목명·심볼 검색 (예: Apple, AAPL)"
+        className={inputClass}
+        autoComplete="off"
+      />
+      {open && query.trim().length > 0 && (
+        <div
+          className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl border max-h-64 overflow-y-auto shadow-lg"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          {loading && (
+            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+              검색 중...
+            </p>
+          )}
+          {!loading && results.length === 0 && (
+            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+              일치하는 종목이 없어요.
+            </p>
+          )}
+          {!loading &&
+            results.map((r) => (
+              <button
+                key={r.symbol}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onSelect(r);
+                  setOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 flex items-center justify-between transition-colors hover:bg-[var(--surface-pressed)]"
+              >
+                <span className="text-[14px] font-medium" style={{ color: "var(--text-strong)" }}>
+                  {r.name}
+                </span>
+                <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                  {r.symbol}
                 </span>
               </button>
             ))}
@@ -244,7 +336,10 @@ export default function NewAssetPage() {
 
   function validate(): string | null {
     if (!category) return "카테고리를 확인해주세요.";
-    if (!symbol.trim()) return isDomestic ? "종목을 검색해서 선택해주세요." : "종목코드를 입력해주세요.";
+    if (!symbol.trim())
+      return isDomestic || isForeign
+        ? "종목을 검색해서 선택해주세요."
+        : "종목코드를 입력해주세요.";
     if (!name.trim()) return "종목명을 입력해주세요.";
     if (quantity === "" || quantity <= 0) return "수량을 입력해주세요.";
     if (unitPrice === "" || unitPrice < 0) return "매수 단가를 입력해주세요.";
@@ -331,7 +426,7 @@ export default function NewAssetPage() {
           </>
         )}
 
-        {isDomestic ? (
+        {isDomestic || isForeign ? (
           <div className="mb-4">
             <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
               종목
@@ -357,10 +452,17 @@ export default function NewAssetPage() {
                     변경
                   </button>
                 </div>
-              ) : (
+              ) : isDomestic ? (
                 <DomesticStockSearch
                   onSelect={(r) => {
                     setSymbol(r.symbolCode);
+                    setName(r.name);
+                  }}
+                />
+              ) : (
+                <ForeignStockSearch
+                  onSelect={(r) => {
+                    setSymbol(r.symbol);
                     setName(r.name);
                   }}
                 />
@@ -374,7 +476,7 @@ export default function NewAssetPage() {
                 type="text"
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
-                placeholder={category === "CRYPTO" ? "BTC" : "AAPL"}
+                placeholder="BTC"
                 className={inputClass}
                 maxLength={30}
               />
@@ -384,7 +486,7 @@ export default function NewAssetPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={category === "CRYPTO" ? "비트코인" : "Apple"}
+                placeholder="비트코인"
                 className={inputClass}
                 maxLength={100}
               />
@@ -463,9 +565,9 @@ export default function NewAssetPage() {
         </div>
       </div>
 
-      {!isDomestic && (
+      {category === "CRYPTO" && (
         <p className="text-[12px] text-center mt-4 leading-relaxed" style={{ color: "var(--text-faint)" }}>
-          {category ? categoryLabel[category] : ""} 종목 검색·자동완성은 아직 준비 중이에요.
+          {categoryLabel[category]} 종목 검색·자동완성은 아직 준비 중이에요.
           <br />
           지금은 종목코드와 이름을 직접 입력해주세요.
         </p>

@@ -650,12 +650,12 @@ export default function AssetDetailPage() {
                       style={{
                         color:
                           item.data.type === "BUY"
-                            ? "var(--accent)"
-                            : "var(--text-sub)",
+                            ? "var(--gain)"
+                            : "var(--loss)",
                         background:
                           item.data.type === "BUY"
-                            ? "var(--accent-soft)"
-                            : "var(--border)",
+                            ? "var(--gain-soft)"
+                            : "var(--loss-soft)",
                       }}
                     >
                       {transactionTypeLabel[item.data.type]}

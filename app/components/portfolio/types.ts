@@ -27,6 +27,7 @@ export interface AccountCreateRequest {
 
 export interface AssetHoldingResponse {
   assetId: number;
+  accountId: number;
   symbol: string;
   name: string;
   category: string;
@@ -49,6 +50,13 @@ export interface DomesticStockSearchResult {
   symbolCode: string;
   name: string;
   market: string;
+}
+
+// GET /api/foreign-stocks/search 응답 — ForeignStockSearchResult 그대로 직렬화됨
+export interface ForeignStockSearchResult {
+  symbol: string;
+  name: string;
+  type: string;
 }
 
 export interface AssetBuyRequest {
