@@ -243,11 +243,12 @@ export interface CapitalGainsEstimate {
 }
 
 export interface DividendIncomeJudgement {
-  totalDividendKrw: number;
+  totalDividendKrw: number; // 세전 환산 추정치(국내주식은 15.4% 원천징수율로 역환산, R-016)
   thresholdKrw: number; // 2000만원 고정
   exceedsThreshold: boolean;
   judgement: DividendTaxJudgement;
   interestIncomeNotTracked: boolean; // 항상 true — 이자소득 미추적 캐비트
+  dividendGrossedUp: boolean; // 항상 true — 국내주식 배당 세전 역환산 적용 캐비트(R-016)
   dividendCount: number;
 }
 

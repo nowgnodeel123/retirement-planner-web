@@ -16,6 +16,7 @@ import {
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
+import { TradeForm } from "@/app/components/portfolio/TradeForm";
 import {
   AssetBuyRequest,
   AssetHoldingResponse,
@@ -405,149 +406,47 @@ export default function AssetDetailPage() {
           </div>
 
           {buyOpen && (
-            <div className="mb-6 card px-4 py-4">
-              <Field
-                label="매수 수량"
-                unit={
-                  categoryUnit[holding.category as TradableAssetCategory] ?? ""
-                }
-              >
-                <NumberInput
-                  value={buyQuantity}
-                  onChange={setBuyQuantity}
-                  allowDecimal
-                  placeholder="0"
-                  maxDigits={12}
-                />
-              </Field>
-              <Field label="매수 단가" unit={isForeign ? "USD" : "원"}>
-                <NumberInput
-                  value={buyUnitPrice}
-                  onChange={setBuyUnitPrice}
-                  allowDecimal
-                  placeholder="0"
-                />
-              </Field>
-              {isForeign && (
-                <Field label="매수 시점 환율" unit="원">
-                  <NumberInput
-                    value={buyFx}
-                    onChange={setBuyFx}
-                    allowDecimal
-                    placeholder="1,350.00"
-                  />
-                </Field>
-              )}
-              <div className="mb-1">
-                <label
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text-sub)" }}
-                >
-                  거래일
-                </label>
-                <input
-                  type="date"
-                  value={buyTradeDate}
-                  max={todayString()}
-                  onChange={(e) => setBuyTradeDate(e.target.value)}
-                  className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--surface)",
-                    color: "var(--text-strong)",
-                  }}
-                />
-              </div>
-
-              {buyFormError && (
-                <div className="mt-4">
-                  <ErrorBanner message={buyFormError} />
-                </div>
-              )}
-
-              <div className="mt-5">
-                <PrimaryButton
-                  onClick={handleBuy}
-                  loading={buySubmitting}
-                  className="w-full"
-                >
-                  매수 등록
-                </PrimaryButton>
-              </div>
-            </div>
+            <TradeForm
+              quantityLabel="매수 수량"
+              quantity={buyQuantity}
+              onQuantityChange={setBuyQuantity}
+              quantityUnit={categoryUnit[holding.category as TradableAssetCategory] ?? ""}
+              priceLabel="매수 단가"
+              unitPrice={buyUnitPrice}
+              onUnitPriceChange={setBuyUnitPrice}
+              isForeign={isForeign}
+              fxLabel="매수 시점 환율"
+              fx={buyFx}
+              onFxChange={setBuyFx}
+              tradeDate={buyTradeDate}
+              onTradeDateChange={setBuyTradeDate}
+              formError={buyFormError}
+              submitting={buySubmitting}
+              submitLabel="매수 등록"
+              onSubmit={handleBuy}
+            />
           )}
 
           {sellOpen && (
-            <div className="mb-6 card px-4 py-4">
-              <Field
-                label="매도 수량"
-                unit={
-                  categoryUnit[holding.category as TradableAssetCategory] ?? ""
-                }
-              >
-                <NumberInput
-                  value={quantity}
-                  onChange={setQuantity}
-                  allowDecimal
-                  placeholder="0"
-                  maxDigits={12}
-                />
-              </Field>
-              <Field label="매도 단가" unit={isForeign ? "USD" : "원"}>
-                <NumberInput
-                  value={unitPrice}
-                  onChange={setUnitPrice}
-                  allowDecimal
-                  placeholder="0"
-                />
-              </Field>
-              {isForeign && (
-                <Field label="매도 시점 환율" unit="원">
-                  <NumberInput
-                    value={fx}
-                    onChange={setFx}
-                    allowDecimal
-                    placeholder="1,350.00"
-                  />
-                </Field>
-              )}
-              <div className="mb-1">
-                <label
-                  className="text-sm font-medium"
-                  style={{ color: "var(--text-sub)" }}
-                >
-                  거래일
-                </label>
-                <input
-                  type="date"
-                  value={tradeDate}
-                  max={todayString()}
-                  onChange={(e) => setTradeDate(e.target.value)}
-                  className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--surface)",
-                    color: "var(--text-strong)",
-                  }}
-                />
-              </div>
-
-              {formError && (
-                <div className="mt-4">
-                  <ErrorBanner message={formError} />
-                </div>
-              )}
-
-              <div className="mt-5">
-                <PrimaryButton
-                  onClick={handleSell}
-                  loading={submitting}
-                  className="w-full"
-                >
-                  매도 등록
-                </PrimaryButton>
-              </div>
-            </div>
+            <TradeForm
+              quantityLabel="매도 수량"
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              quantityUnit={categoryUnit[holding.category as TradableAssetCategory] ?? ""}
+              priceLabel="매도 단가"
+              unitPrice={unitPrice}
+              onUnitPriceChange={setUnitPrice}
+              isForeign={isForeign}
+              fxLabel="매도 시점 환율"
+              fx={fx}
+              onFxChange={setFx}
+              tradeDate={tradeDate}
+              onTradeDateChange={setTradeDate}
+              formError={formError}
+              submitting={submitting}
+              submitLabel="매도 등록"
+              onSubmit={handleSell}
+            />
           )}
 
           {dividendOpen && isDividendEligible && (

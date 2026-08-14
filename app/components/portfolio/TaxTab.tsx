@@ -170,7 +170,10 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
         </p>
 
         <div className="flex justify-between text-[13px]" style={{ color: "var(--text-sub)" }}>
-          <span>연간 배당 합계</span>
+          <InfoTerm
+            term="연간 배당 합계(세전 환산)"
+            explanation="국내주식 배당은 세후 금액으로 기록되기 때문에, 15.4% 원천징수율로 세전 금액을 역환산해서 합산해요. 실제 세전 금액과 다를 수 있는 추정치예요."
+          />
           <span className="amount font-semibold" style={{ color: "var(--text-strong)" }}>
             {formatKrw(di.totalDividendKrw)}
           </span>

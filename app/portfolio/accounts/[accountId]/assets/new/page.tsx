@@ -15,9 +15,9 @@ import {
   PrimaryButton,
   SecondaryButton,
   inputClass,
-  NumberInput,
 } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
+import { TradeAmountFields } from "@/app/components/portfolio/TradeForm";
 import {
   AccountResponse,
   AssetBuyRequest,
@@ -494,56 +494,29 @@ export default function NewAssetPage() {
           </div>
         )}
 
-        <Field label="수량" unit={category ? categoryUnit[category] : ""}>
-          <NumberInput
-            value={quantity}
-            onChange={setQuantity}
-            allowDecimal
-            placeholder="0"
-            maxDigits={12}
-          />
-        </Field>
-
-        <Field label="매수 단가" unit={isForeign ? "USD" : "원"}>
-          <NumberInput
-            value={unitPrice}
-            onChange={setUnitPrice}
-            allowDecimal
-            placeholder="0"
-          />
-        </Field>
-
-        {isForeign && (
-          <Field label="매수 시점 환율" unit="원">
-            <NumberInput
-              value={fx}
-              onChange={(v) => {
-                setFx(v);
-                setFxBaseDate(null);
-              }}
-              allowDecimal
-              placeholder="1,350.00"
-            />
-          </Field>
-        )}
+        <TradeAmountFields
+          quantityLabel="수량"
+          quantity={quantity}
+          onQuantityChange={setQuantity}
+          quantityUnit={category ? categoryUnit[category] : ""}
+          priceLabel="매수 단가"
+          unitPrice={unitPrice}
+          onUnitPriceChange={setUnitPrice}
+          isForeign={isForeign}
+          fxLabel="매수 시점 환율"
+          fx={fx}
+          onFxChange={(v) => {
+            setFx(v);
+            setFxBaseDate(null);
+          }}
+          tradeDate={tradeDate}
+          onTradeDateChange={setTradeDate}
+        />
         {isForeign && fxBaseDate && (
           <p className="text-[12px] -mt-3 mb-4" style={{ color: "var(--text-faint)" }}>
             {fxBaseDate} 매매기준율로 미리 채웠어요. 과거 거래라면 그 시점 환율로 직접 수정해주세요.
           </p>
         )}
-
-        <div className="mb-1">
-          <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
-            거래일
-          </label>
-          <input
-            type="date"
-            value={tradeDate}
-            max={todayString()}
-            onChange={(e) => setTradeDate(e.target.value)}
-            className={`${inputClass} mt-1.5`}
-          />
-        </div>
 
         {error && (
           <div className="mt-5">
