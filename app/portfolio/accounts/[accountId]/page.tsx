@@ -465,7 +465,10 @@ export default function AccountDetailPage() {
                   {/* 우: 평가금액(주역) + 손익(색상) */}
                   <div className="text-right flex-shrink-0">
                     {priceUnavailable ? (
-                      <p className="text-[12px] mt-1 text-amber-500">
+                      <p
+                        className="text-[12px] mt-1"
+                        style={{ color: "var(--warning)" }}
+                      >
                         시세 조회 실패
                       </p>
                     ) : (

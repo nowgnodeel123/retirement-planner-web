@@ -103,6 +103,26 @@ export default function ProfileMenu() {
             기능 제안하기
           </a>
 
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-3 text-sm text-neutral-700 dark:text-neutral-200 border-t border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+          >
+            이용약관
+          </a>
+
+          <a
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="block w-full text-left px-4 py-3 text-sm text-neutral-700 dark:text-neutral-200 border-t border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+          >
+            개인정보처리방침
+          </a>
+
           <button
             onClick={handleLogout}
             className="w-full text-left px-4 py-3 text-sm text-red-500 border-t border-neutral-100 dark:border-neutral-700 hover:bg-red-50 dark:hover:bg-neutral-700"

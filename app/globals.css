@@ -34,6 +34,10 @@
   --error: #f04452;
   --error-soft: #fef2f2;
 
+  /* 경고(시세 조회 실패 등) 전용 — 호박색 계열, 이익/손실 색상과 혼동 방지 위해 별도 토큰 */
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+
   /* 카테고리 (D-073 채도 상향 절충안 유지) */
   --category-domestic-stock: #a78bfa;
   --category-foreign-stock: #2dd4bf;
@@ -66,6 +70,9 @@
 
   --error: #ff6b76;
   --error-soft: rgba(240, 68, 82, 0.14);
+
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
 
   --background: var(--bg);
   --foreground: var(--text);

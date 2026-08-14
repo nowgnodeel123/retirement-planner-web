@@ -3,6 +3,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, API_BASE_URL, ApiError } from "@/lib/api";
 import { setToken } from "@/lib/auth";
@@ -589,7 +590,27 @@ export default function LoginPage() {
                 className="mt-0.5 w-4 h-4 rounded accent-[var(--accent)] flex-shrink-0"
               />
               <span className="text-[13px] text-[var(--text-sub)] leading-relaxed">
-                (필수) 이용약관 및 개인정보처리방침에 동의합니다
+                (필수){" "}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  이용약관
+                </Link>{" "}
+                및{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  개인정보처리방침
+                </Link>
+                에 동의합니다
               </span>
             </label>
           </div>
