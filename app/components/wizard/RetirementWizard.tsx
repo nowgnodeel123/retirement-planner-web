@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   initialFormState,
   RetirementFormState,
+  SimulationRequestPayload,
   SimulationResponseDto,
   toRequestPayload,
 } from "./types";
@@ -20,6 +21,8 @@ export default function RetirementWizard() {
   const [step, setStep] = useState<WizardStep>(1);
   const [form, setForm] = useState<RetirementFormState>(initialFormState);
   const [result, setResult] = useState<SimulationResponseDto | null>(null);
+  const [submittedPayload, setSubmittedPayload] =
+    useState<SimulationRequestPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -89,11 +92,13 @@ export default function RetirementWizard() {
 
     setSubmitting(true);
     try {
+      const payload = toRequestPayload(form);
       const data = await api.post<SimulationResponseDto>(
         "/api/v1/simulation/calculate",
-        toRequestPayload(form),
+        payload,
       );
       setResult(data);
+      setSubmittedPayload(payload);
       setStep("result");
     } catch (e) {
       if (e instanceof ApiError && e.fields) {
@@ -138,8 +143,12 @@ export default function RetirementWizard() {
           error={error}
         />
       )}
-      {step === "result" && result && (
-        <ResultScreen result={result} onRestart={handleRestart} />
+      {step === "result" && result && submittedPayload && (
+        <ResultScreen
+          result={result}
+          onRestart={handleRestart}
+          basePayload={submittedPayload}
+        />
       )}
     </div>
   );

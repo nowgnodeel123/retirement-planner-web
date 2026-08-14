@@ -10,22 +10,49 @@
 // 가치 기준으로 다시 확장됨(IncomeTimelineChart.tsx 참고).
 "use client";
 
-import { useState } from "react";
-import { SimulationResponseDto } from "./types";
+import { useEffect, useState } from "react";
+import { SimulationRequestPayload, SimulationResponseDto } from "./types";
 import { PrimaryButton, SecondaryButton, WizardCard } from "./Ui";
 import IncomeTimelineChart from "./IncomeTimelineChart";
+import WhatIfSlider from "./WhatIfSlider";
 
 interface Props {
   result: SimulationResponseDto;
   onRestart: () => void;
+  basePayload: SimulationRequestPayload;
 }
 
-export default function ResultScreen({ result, onRestart }: Props) {
+// WHY: 결과 화면에 처음 진입할 때 나이가 0에서 목표 숫자까지 차오르는 연출.
+// 은퇴 나이가 바뀔 때마다(예: What-if 슬라이더) 다시 재생되진 않도록 헤드라인
+// 숫자 전용으로만 쓴다 — 슬라이더 쪽 숫자는 즉시 갱신되는 게 더 자연스럽다.
+function useCountUp(target: number, durationMs = 700) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    let raf: number;
+    const start = performance.now();
+    const from = 0;
+
+    function tick(now: number) {
+      const progress = Math.min((now - start) / durationMs, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setValue(Math.round(from + (target - from) * eased));
+      if (progress < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, durationMs]);
+
+  return value;
+}
+
+export default function ResultScreen({ result, onRestart, basePayload }: Props) {
   const { summary, meta, incomeTimeline } = result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
   const currentAge = retirementAge - meta.yearsUntilRetirement;
+  const animatedAge = useCountUp(retirementAge);
 
   async function handleShare() {
     try {
@@ -45,8 +72,8 @@ export default function ResultScreen({ result, onRestart }: Props) {
           <p className="text-[13px] text-blue-100 mb-1.5 font-medium">
             예상 은퇴 가능 나이
           </p>
-          <p className="text-6xl font-bold text-white tracking-tight">
-            {retirementAge}
+          <p className="text-6xl font-bold text-white tracking-tight tabular-nums">
+            {animatedAge}
             <span className="text-2xl font-semibold text-blue-100 ml-1">
               세
             </span>
@@ -90,6 +117,9 @@ export default function ResultScreen({ result, onRestart }: Props) {
           />
         </div>
       )}
+
+      {/* ── What-if: "그럼 뭘 바꾸면 나아지는지"에 답하는 인터랙션 ── */}
+      <WhatIfSlider basePayload={basePayload} baseRetirementAge={retirementAge} />
 
       {/* ── 액션 ── */}
       {/* WHY(위계): 두 버튼이 똑같은 아웃라인 스타일이라 뭐가 주 행동인지
