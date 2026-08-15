@@ -12,10 +12,21 @@ import {
 import Step1BasicInfo from "./Step1BasicInfo";
 import Step2PensionInfo from "./Step2PensionInfo";
 import Step3InvestmentAssets from "./Step3InvestmentAssets";
+import AnalyzingScreen from "./AnalyzingScreen";
 import ResultScreen from "./ResultScreen";
 import { api, ApiError } from "@/lib/api";
 
-type WizardStep = 1 | 2 | 3 | "result";
+type WizardStep = 1 | 2 | 3 | "analyzing" | "result";
+
+// WHY: 실제 계산은 순식간에 끝나지만, AnalyzingScreen의 단계별 연출이 다
+// 보이기 전에 결과가 바뀌면 어색하다. API 응답이 이보다 빨라도 최소 이만큼은
+// 분석 화면을 유지해 연출이 끊기지 않게 한다(AnalyzingScreen의 4단계 ×
+// STEP_INTERVAL_MS와 대략 맞춘 값).
+const MIN_ANALYZING_MS = 2200;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export default function RetirementWizard() {
   const [step, setStep] = useState<WizardStep>(1);
@@ -91,12 +102,13 @@ export default function RetirementWizard() {
     }
 
     setSubmitting(true);
+    setStep("analyzing");
     try {
       const payload = toRequestPayload(form);
-      const data = await api.post<SimulationResponseDto>(
-        "/api/v1/simulation/calculate",
-        payload,
-      );
+      const [data] = await Promise.all([
+        api.post<SimulationResponseDto>("/api/v1/simulation/calculate", payload),
+        wait(MIN_ANALYZING_MS),
+      ]);
       setResult(data);
       setSubmittedPayload(payload);
       setStep("result");
@@ -111,6 +123,7 @@ export default function RetirementWizard() {
       } else {
         setError("계산 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.");
       }
+      setStep(3);
     } finally {
       setSubmitting(false);
     }
@@ -143,6 +156,7 @@ export default function RetirementWizard() {
           error={error}
         />
       )}
+      {step === "analyzing" && <AnalyzingScreen />}
       {step === "result" && result && submittedPayload && (
         <ResultScreen
           result={result}
