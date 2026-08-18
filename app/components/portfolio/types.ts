@@ -138,12 +138,14 @@ export interface DividendResponse {
   dividendId: number;
   assetId: number;
   payDate: string; // YYYY-MM-DD
+  exDividendDate: string | null; // YYYY-MM-DD, 선택 입력(자동조회 대신 수동입력으로 대체, R-018)
   amount: number; // 국내: 세후 원화 / 해외: USD
   fx: number | null; // 해외주식만 값 존재
 }
 
 export interface DividendCreateRequest {
   payDate: string;
+  exDividendDate?: string;
   amount: number;
   fx?: number;
 }

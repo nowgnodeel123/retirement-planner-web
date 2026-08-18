@@ -105,6 +105,8 @@ export default function AssetDetailPage() {
   // M8: 배당 등록 폼
   const [dividendOpen, setDividendOpen] = useState(false);
   const [payDate, setPayDate] = useState(todayString());
+  // 배당락일 — 선택 입력(자동조회는 라이선스 문제로 미제공, R-018 종결)
+  const [exDividendDate, setExDividendDate] = useState("");
   const [amount, setAmount] = useState<number | "">("");
   const [dividendFx, setDividendFx] = useState<number | "">("");
   const [dividendSubmitting, setDividendSubmitting] = useState(false);
@@ -255,6 +257,8 @@ export default function AssetDetailPage() {
   function validateDividend(): string | null {
     if (!payDate) return "지급일을 입력해주세요.";
     if (payDate > todayString()) return "지급일은 오늘보다 미래일 수 없어요.";
+    if (exDividendDate && exDividendDate > payDate)
+      return "배당락일은 지급일보다 늦을 수 없어요.";
     if (amount === "" || amount <= 0) return "배당금액을 입력해주세요.";
     if (isForeign && (dividendFx === "" || dividendFx <= 0))
       return "환율을 입력해주세요.";
@@ -272,12 +276,14 @@ export default function AssetDetailPage() {
     try {
       const body: DividendCreateRequest = {
         payDate,
+        ...(exDividendDate ? { exDividendDate } : {}),
         amount: amount as number,
         ...(isForeign ? { fx: dividendFx as number } : {}),
       };
       await api.post(`/api/assets/${assetId}/dividends`, body);
       setDividendOpen(false);
       setPayDate(todayString());
+      setExDividendDate("");
       setAmount("");
       setDividendFx("");
       setToast("배당 기록이 추가되었어요.");
@@ -471,6 +477,26 @@ export default function AssetDetailPage() {
                   }}
                 />
               </div>
+              <div className="mb-1 mt-4">
+                <label
+                  className="text-sm font-medium"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  배당락일 <span style={{ color: "var(--text-faint)" }}>(선택, 모르면 비워두세요)</span>
+                </label>
+                <input
+                  type="date"
+                  value={exDividendDate}
+                  max={payDate}
+                  onChange={(e) => setExDividendDate(e.target.value)}
+                  className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--surface)",
+                    color: "var(--text-strong)",
+                  }}
+                />
+              </div>
               <Field label="배당금액" unit={isForeign ? "USD" : "원"}>
                 <NumberInput
                   value={amount}
@@ -610,6 +636,14 @@ export default function AssetDetailPage() {
                       {item.data.payDate}
                     </span>
                   </div>
+                  {item.data.exDividendDate && (
+                    <p
+                      className="text-[11px] mt-0.5"
+                      style={{ color: "var(--text-faint)" }}
+                    >
+                      배당락일 {item.data.exDividendDate}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-3">
                   <p
