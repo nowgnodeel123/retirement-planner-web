@@ -47,7 +47,7 @@ function useCountUp(target: number, durationMs = 700) {
 }
 
 export default function ResultScreen({ result, onRestart, basePayload }: Props) {
-  const { summary, meta, incomeTimeline } = result;
+  const { summary, meta, incomeTimeline, dependentStatusWarning } = result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
@@ -107,6 +107,22 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             납입액을 늘리거나 목표 생활비를 낮춰서 다시 계산해보세요. 아래
             그래프에서 어느 시점부터 부족해지는지 볼 수 있어요.
           </p>
+        </div>
+      )}
+
+      {/* M15/D-168: 건강보험 피부양자 자격 상실 가능성 — 위험할 때만 노출(미니멀 원칙,
+          D-127~D-128 연장). 히어로의 "몇 살에 은퇴 가능한지" 답과 직결된 실질적
+          리스크 고지라 D-126에서 제거했던 "절세 팁"류 부가정보와는 다르게 유지한다. */}
+      {summary.feasible && dependentStatusWarning?.atRisk && (
+        <div
+          className="rounded-xl px-3.5 py-2.5 mb-5 text-[12px] leading-relaxed rise-in"
+          style={{
+            background: "var(--warning-soft)",
+            color: "var(--warning)",
+            animationDelay: "60ms",
+          }}
+        >
+          {dependentStatusWarning.message}
         </div>
       )}
 

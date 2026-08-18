@@ -166,6 +166,13 @@ export interface SimulationResponseDto {
     recommendedMonthlyPensionSavings: number;
     optimizationTip: string;
   };
+  // M15/D-168: 건강보험 피부양자 자격 상실 가능성 추정(연금 정상 수령 시점 기준, 확정 판정 아님)
+  dependentStatusWarning: {
+    atRisk: boolean;
+    estimatedAnnualIncome: number;
+    thresholdAnnualIncome: number;
+    message: string;
+  };
   meta: {
     yearsUntilRetirement: number;
     totalPensionYears: number;
