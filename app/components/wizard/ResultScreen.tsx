@@ -47,7 +47,7 @@ function useCountUp(target: number, durationMs = 700) {
 }
 
 export default function ResultScreen({ result, onRestart, basePayload }: Props) {
-  const { summary, meta, incomeTimeline, dependentStatusWarning } = result;
+  const { summary, meta, incomeTimeline, dependentStatusWarning, monteCarloResult } = result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
@@ -141,6 +141,24 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             currentAge={currentAge}
             inflationRate={meta.inflationRate}
           />
+
+          {/* M16/D-169: 결정론적 모델은 은퇴 후 수익률을 고정값(3%)으로 가정하지만,
+              실제로는 해마다 오르내린다. 그 변동성까지 반영하면 이 추정이 얼마나
+              탄탄한지를 한 줄로 보여준다 — 새 카드를 만들지 않고 차트 카드 안에
+              작은 보조 지표로만 붙여서 미니멀 원칙(D-127~D-128)을 유지한다. */}
+          {monteCarloResult && (
+            <p
+              className="text-[11px] mt-3 pt-3 border-t leading-relaxed"
+              style={{ borderColor: "var(--border)", color: "var(--text-faint)" }}
+            >
+              수익률 변동까지 감안한 몬테카를로 시뮬레이션(1,000회) 기준, 90세까지
+              자산이 버틸 확률은{" "}
+              <span style={{ color: "var(--text-sub)", fontWeight: 600 }}>
+                {monteCarloResult.successRatePercent}%
+              </span>
+              예요. 참고용 추정치이며 실제 시장 상황에 따라 달라질 수 있어요.
+            </p>
+          )}
         </div>
       )}
 

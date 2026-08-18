@@ -173,6 +173,15 @@ export interface SimulationResponseDto {
     thresholdAnnualIncome: number;
     message: string;
   };
+  // M16/D-169: 은퇴 후 주식/ETF 수익률만 확률분포로 대체해 1,000회 반복 — infeasible이면 null
+  monteCarloResult: {
+    successRatePercent: number;
+    p10EndingBalance: number;
+    p50EndingBalance: number;
+    p90EndingBalance: number;
+    runs: number;
+    assumedReturnStddev: number;
+  } | null;
   meta: {
     yearsUntilRetirement: number;
     totalPensionYears: number;
