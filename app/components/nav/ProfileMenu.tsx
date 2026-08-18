@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { clearToken, useToken } from "@/lib/auth";
+import { clearTokens, getRefreshToken, useToken } from "@/lib/auth";
 import { setTheme, useTheme } from "@/lib/theme";
 import { api, ApiError } from "@/lib/api";
 
@@ -33,8 +33,19 @@ export default function ProfileMenu() {
 
   if (!token) return null; // 비로그인 상태에선 표시 안 함
 
-  function handleLogout() {
-    clearToken();
+  // RTR 도입(D-161/M14) — 로컬 토큰만 지우면 서버에 남은 refreshToken이 계속
+  // 유효해서(탈취 시 재사용 가능) 서버 쪽도 함께 무효화한다. 실패해도(네트워크 등)
+  // 로컬 로그아웃은 그대로 진행 — 사용자를 로그아웃 화면에 가두지 않는다.
+  async function handleLogout() {
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        await api.post<void>("/api/auth/logout", { refreshToken });
+      } catch {
+        // best-effort — 로컬 토큰 삭제는 아래에서 무조건 진행
+      }
+    }
+    clearTokens();
     setOpen(false);
     router.push("/");
   }

@@ -6,12 +6,12 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, API_BASE_URL, ApiError } from "@/lib/api";
-import { setToken } from "@/lib/auth";
+import { setTokens } from "@/lib/auth";
 import { ErrorBanner, inputClass, PrimaryButton, SecondaryButton } from "@/app/components/wizard/Ui";
 
 type Mode = "login" | "signup" | "findEmail" | "resetPassword";
 type Gender = "MALE" | "FEMALE";
-type TokenResponse = { accessToken: string };
+type TokenResponse = { accessToken: string; refreshToken: string };
 type SendCodeResponse = { devCode: string };
 type VerifyCodeResponse = { verified: boolean };
 type FindEmailResponse = { maskedEmail: string };
@@ -413,7 +413,7 @@ export default function LoginPage() {
     try {
       if (mode === "login") {
         const res = await api.post<TokenResponse>("/api/auth/login", { email, password });
-        setToken(res.accessToken);
+        setTokens(res.accessToken, res.refreshToken);
         localStorage.setItem(LAST_EMAIL_KEY, email);
         router.replace("/portfolio");
       } else if (mode === "signup") {
@@ -423,7 +423,7 @@ export default function LoginPage() {
         const res = await api.post<TokenResponse>("/api/auth/signup", {
           email, password, nickname: name, name, birthDate, gender, phone: verifiedPhone,
         });
-        setToken(res.accessToken);
+        setTokens(res.accessToken, res.refreshToken);
         localStorage.setItem(LAST_EMAIL_KEY, email);
         router.replace("/portfolio");
       } else if (mode === "findEmail") {

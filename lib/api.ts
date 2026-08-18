@@ -1,5 +1,8 @@
 // lib/api.ts — 공용 fetch 래퍼. 매 API 호출마다 인증 헤더/에러 파싱을 반복하지 않게 한다.
-import { getToken } from "./auth";
+// RTR 도입(D-161/M14) — accessToken이 15분으로 짧아진 대신, 401을 만나면 이 레이어가
+// refreshToken으로 조용히 갱신 후 원래 요청을 1회 재시도한다(백로그 "401 전역 처리" 해소).
+// 갱신도 실패하면(리프레시 토큰 만료/탈취 감지 등) 토큰을 지우고 /login으로 보낸다.
+import { getToken, getRefreshToken, setTokens, clearTokens } from "./auth";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
@@ -19,7 +22,44 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+// 동시에 여러 요청이 401을 만나도 refresh는 한 번만 — RTR은 refreshToken을 1회용으로
+// 소진하므로, 두 요청이 동시에 갱신을 시도하면 뒤의 요청이 "재사용"으로 오판정되어
+// 세션 전체가 끊길 수 있다. 진행 중인 갱신 Promise를 공유해서 이를 막는다.
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshTokens(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+
+  const currentRefreshToken = getRefreshToken();
+  if (!currentRefreshToken) return false;
+
+  refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken: currentRefreshToken }),
+      });
+      if (!res.ok) return false;
+
+      const body = await res.json();
+      setTokens(body.accessToken, body.refreshToken);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      refreshPromise = null;
+    }
+  })();
+
+  return refreshPromise;
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  isRetry = false,
+): Promise<T> {
   const token = getToken();
 
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -30,6 +70,20 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...options.headers,
     },
   });
+
+  // 갱신 자체가 401을 반환하는 경우(리프레시 토큰도 만료/탈취) 무한 재시도를 막는다.
+  const isRefreshCall = path === "/api/auth/refresh";
+
+  if (res.status === 401 && token && !isRetry && !isRefreshCall) {
+    const refreshed = await refreshTokens();
+    if (refreshed) {
+      return request<T>(path, options, true);
+    }
+    clearTokens();
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+  }
 
   if (res.status === 204) {
     return undefined as T;
