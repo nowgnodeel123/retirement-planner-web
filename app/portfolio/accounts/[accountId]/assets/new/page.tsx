@@ -1,8 +1,10 @@
 // app/portfolio/accounts/[accountId]/assets/new/page.tsx
 // D-053: 종목 검색 → 최초 매수 거래로 자산 생성 통합.
 // D-037: 카테고리는 계좌 기관유형으로 자동 필터 — 사용자가 직접 아무거나 고르지 않는다.
-// 국내주식은 종목명 검색 자동완성(KRX 로컬 캐시, /api/domestic-stocks/search),
-// 해외주식은 Finnhub 심볼 검색(/api/foreign-stocks/search) 적용 —
+// D-170: 증권사 계좌는 국내/해외 카테고리도 사용자가 먼저 고르지 않는다 —
+// 종목명 하나만 검색하면 UnifiedStockSearch가 국내(KRX 로컬 캐시)·해외(Finnhub)
+// 검색을 동시에 호출해 합친 결과를 보여주고, 선택한 종목이 어느 쪽인지에 따라
+// 카테고리가 자동으로 정해진다(이전엔 카테고리 토글을 먼저 눌러야 검색창이 나왔음).
 // 코인은 아직 심볼 검색 API가 없어 기존 수동 입력 유지.
 "use client";
 
@@ -48,128 +50,73 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-/**
- * 국내주식 종목명 검색 자동완성. 백엔드가 이미 KRX 전체 종목을 로컬 캐싱해서
- * 부분일치 검색을 제공하고 있었는데(GET /api/domestic-stocks/search) 이 화면에
- * 연결이 안 돼 있었다 — 여기서 연결한다.
- */
-function DomesticStockSearch({
-  onSelect,
-}: {
-  onSelect: (stock: DomesticStockSearchResult) => void;
-}) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<DomesticStockSearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (query.trim().length === 0) {
-      setResults([]);
-      return;
-    }
-    setLoading(true);
-    const timer = setTimeout(() => {
-      api
-        .get<DomesticStockSearchResult[]>(
-          `/api/domestic-stocks/search?keyword=${encodeURIComponent(query.trim())}`,
-        )
-        .then((data) => setResults(data))
-        .catch(() => setResults([]))
-        .finally(() => setLoading(false));
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  return (
-    <div className="relative">
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => {
-          setQuery(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="종목명 검색 (예: 삼성전자)"
-        className={inputClass}
-        autoComplete="off"
-      />
-      {open && query.trim().length > 0 && (
-        <div
-          className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl border max-h-64 overflow-y-auto shadow-lg"
-          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
-        >
-          {loading && (
-            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
-              검색 중...
-            </p>
-          )}
-          {!loading && results.length === 0 && (
-            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
-              일치하는 종목이 없어요.
-            </p>
-          )}
-          {!loading &&
-            results.map((r) => (
-              <button
-                key={r.symbolCode}
-                type="button"
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  onSelect(r);
-                  setOpen(false);
-                }}
-                className="w-full text-left px-4 py-2.5 flex items-center justify-between transition-colors hover:bg-[var(--surface-pressed)]"
-              >
-                <span className="text-[14px] font-medium" style={{ color: "var(--text-strong)" }}>
-                  {r.name}
-                </span>
-                <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
-                  {r.market}
-                </span>
-              </button>
-            ))}
-        </div>
-      )}
-    </div>
-  );
+interface UnifiedSearchItem {
+  category: "DOMESTIC_STOCK" | "FOREIGN_STOCK";
+  symbol: string;
+  name: string;
+  sub: string; // 국내: 시장구분(KOSPI/KOSDAQ), 해외: 심볼
 }
 
 /**
- * 해외주식 심볼 검색 자동완성. Finnhub 심볼 검색(/api/foreign-stocks/search)을
- * 그대로 프록시하는 신규 백엔드 엔드포인트에 연결한다. 구조는 DomesticStockSearch와
- * 동일 패턴 — 두 카테고리의 응답 필드가 달라(market vs type) 공용 컴포넌트로
- * 묶지 않고 그대로 나란히 둔다.
+ * 국내(KRX 로컬 캐시)·해외(Finnhub) 종목 검색을 한 입력창에서 동시에 호출해
+ * 합친 결과를 보여준다(D-170). 예전엔 "국내주식/해외주식" 카테고리를 먼저
+ * 골라야 검색창이 나왔는데, 사용자가 그 구분을 몰라도(또는 귀찮아도) 종목명만
+ * 알면 되도록 바꿨다 — 선택한 항목의 category가 그대로 매수 카테고리가 된다.
+ *
+ * 정렬: 관련도를 계산할 시가총액·거래량 데이터가 없어 완벽한 랭킹은 못 하지만,
+ * 입력값에 한글이 섞여 있으면 국내 결과를, 아니면 해외 결과를 위로 올리는
+ * 것만으로도 대부분의 실사용 케이스(한글 검색="국내 종목 찾는 중")에서 원하는
+ * 종목이 스크롤 없이 상단에 온다.
  */
-function ForeignStockSearch({
+function UnifiedStockSearch({
   onSelect,
 }: {
-  onSelect: (stock: ForeignStockSearchResult) => void;
+  onSelect: (item: UnifiedSearchItem) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ForeignStockSearchResult[]>([]);
+  const [domesticResults, setDomesticResults] = useState<DomesticStockSearchResult[]>([]);
+  const [foreignResults, setForeignResults] = useState<ForeignStockSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
     if (query.trim().length === 0) {
-      setResults([]);
+      setDomesticResults([]);
+      setForeignResults([]);
       return;
     }
     setLoading(true);
     const timer = setTimeout(() => {
-      api
-        .get<ForeignStockSearchResult[]>(
-          `/api/foreign-stocks/search?keyword=${encodeURIComponent(query.trim())}`,
-        )
-        .then((data) => setResults(data))
-        .catch(() => setResults([]))
+      const keyword = encodeURIComponent(query.trim());
+      Promise.allSettled([
+        api.get<DomesticStockSearchResult[]>(`/api/domestic-stocks/search?keyword=${keyword}`),
+        api.get<ForeignStockSearchResult[]>(`/api/foreign-stocks/search?keyword=${keyword}`),
+      ])
+        .then(([domestic, foreign]) => {
+          setDomesticResults(domestic.status === "fulfilled" ? domestic.value : []);
+          setForeignResults(foreign.status === "fulfilled" ? foreign.value : []);
+        })
         .finally(() => setLoading(false));
     }, 250);
     return () => clearTimeout(timer);
   }, [query]);
+
+  const domesticItems: UnifiedSearchItem[] = domesticResults.map((r) => ({
+    category: "DOMESTIC_STOCK",
+    symbol: r.symbolCode,
+    name: r.name,
+    sub: r.market,
+  }));
+  const foreignItems: UnifiedSearchItem[] = foreignResults.map((r) => ({
+    category: "FOREIGN_STOCK",
+    symbol: r.symbol,
+    name: r.name,
+    sub: r.symbol,
+  }));
+  const looksKorean = /[가-힣]/.test(query);
+  const merged = looksKorean
+    ? [...domesticItems, ...foreignItems]
+    : [...foreignItems, ...domesticItems];
 
   return (
     <div className="relative">
@@ -182,7 +129,7 @@ function ForeignStockSearch({
         }}
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="종목명·심볼 검색 (예: Apple, AAPL)"
+        placeholder="종목명 검색 (예: 삼성전자, Apple)"
         className={inputClass}
         autoComplete="off"
       />
@@ -196,28 +143,34 @@ function ForeignStockSearch({
               검색 중...
             </p>
           )}
-          {!loading && results.length === 0 && (
+          {!loading && merged.length === 0 && (
             <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
               일치하는 종목이 없어요.
             </p>
           )}
           {!loading &&
-            results.map((r) => (
+            merged.map((item) => (
               <button
-                key={r.symbol}
+                key={`${item.category}-${item.symbol}`}
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
-                  onSelect(r);
+                  onSelect(item);
                   setOpen(false);
                 }}
-                className="w-full text-left px-4 py-2.5 flex items-center justify-between transition-colors hover:bg-[var(--surface-pressed)]"
+                className="w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 transition-colors hover:bg-[var(--surface-pressed)]"
               >
-                <span className="text-[14px] font-medium" style={{ color: "var(--text-strong)" }}>
-                  {r.name}
+                <span className="flex items-center gap-2 min-w-0">
+                  <CategoryBadge category={item.category} />
+                  <span
+                    className="text-[14px] font-medium truncate"
+                    style={{ color: "var(--text-strong)" }}
+                  >
+                    {item.name}
+                  </span>
                 </span>
-                <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
-                  {r.symbol}
+                <span className="text-[11px] flex-shrink-0" style={{ color: "var(--text-faint)" }}>
+                  {item.sub}
                 </span>
               </button>
             ))}
@@ -252,7 +205,11 @@ export default function NewAssetPage() {
       setAccount(found);
       if (found) {
         const options = allowedCategories(found.institutionType);
-        if (options.length > 0) setCategory(options[0]);
+        // D-170: 증권사 계좌(국내+해외 둘 다 허용)는 검색 결과를 고르기 전까지
+        // 카테고리를 비워둔다 — 미리 하나를 찍어두면 "이미 골랐다"는 뜻이 되어
+        // UnifiedStockSearch가 자동으로 정해주는 흐름과 어긋난다. 옵션이 하나뿐인
+        // 계좌(거래소=코인)만 그대로 자동 확정.
+        if (options.length === 1) setCategory(options[0]);
       }
     });
   }, [accountId]);
@@ -323,11 +280,26 @@ export default function NewAssetPage() {
     );
   }
 
+  // 증권사 계좌(국내+해외 둘 다 허용)인데 아직 검색 결과를 안 골랐으면 category가 null.
+  const isDualStockAccount = options.length === 2;
   const isForeign = category === "FOREIGN_STOCK";
   const isDomestic = category === "DOMESTIC_STOCK";
 
-  function selectCategory(c: TradableAssetCategory) {
-    setCategory(c);
+  // D-170: 종목 하나를 고르는 즉시 카테고리까지 함께 확정된다(수동 토글 없음).
+  function selectSearchResult(item: {
+    category: "DOMESTIC_STOCK" | "FOREIGN_STOCK";
+    symbol: string;
+    name: string;
+  }) {
+    setCategory(item.category);
+    setSymbol(item.symbol);
+    setName(item.name);
+  }
+
+  // "변경" 버튼 전용 — 이 함수를 쓰는 곳은 isDualStockAccount 분기뿐이라
+  // 항상 category까지 null로 되돌려 다음 검색에서 새로 자동 확정되게 한다.
+  function clearSelection() {
+    setCategory(null);
     setSymbol("");
     setName("");
     setFx("");
@@ -335,7 +307,7 @@ export default function NewAssetPage() {
   }
 
   function validate(): string | null {
-    if (!category) return "카테고리를 확인해주세요.";
+    if (!category) return "종목을 검색해서 선택해주세요.";
     if (!symbol.trim())
       return isDomestic || isForeign
         ? "종목을 검색해서 선택해주세요."
@@ -389,7 +361,10 @@ export default function NewAssetPage() {
           boxShadow: "0 2px 24px rgba(15,23,42,0.06)",
         }}
       >
-        {options.length === 1 ? (
+        {/* 옵션이 하나뿐인 계좌(거래소=코인)만 고정 카테고리 배지를 보여준다.
+            증권사 계좌는 국내/해외를 먼저 고르게 하지 않는다(D-170) — 아래
+            종목 검색에서 고른 결과에 따라 카테고리가 자동으로 정해진다. */}
+        {options.length === 1 && (
           <div
             className="mb-5 flex items-center justify-between rounded-2xl border px-4 py-3"
             style={{ background: "var(--surface-pressed)", borderColor: "var(--border)" }}
@@ -399,75 +374,46 @@ export default function NewAssetPage() {
             </span>
             <CategoryBadge category={options[0]} />
           </div>
-        ) : (
-          <>
-            <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
-              카테고리
-            </label>
-            <div className="mt-1.5 mb-5 grid grid-cols-2 gap-2">
-              {options.map((c) => {
-                const active = category === c;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => selectCategory(c)}
-                    className={`rounded-2xl border py-3 transition-all ${
-                      active
-                        ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-4 ring-[var(--accent)]/10"
-                        : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-faint)]"
-                    }`}
-                  >
-                    <CategoryBadge category={c} />
-                  </button>
-                );
-              })}
-            </div>
-          </>
         )}
 
-        {isDomestic || isForeign ? (
+        {isDualStockAccount ? (
           <div className="mb-4">
             <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
               종목
             </label>
             <div className="mt-1.5">
-              {symbol && name ? (
+              {symbol && name && category ? (
                 <div
                   className="flex items-center justify-between rounded-xl border px-3.5 py-3"
                   style={{ borderColor: "var(--border)", background: "var(--surface)" }}
                 >
-                  <span className="text-[15px] font-medium" style={{ color: "var(--text-strong)" }}>
-                    {name}
+                  <span className="flex items-center gap-2 min-w-0">
+                    <CategoryBadge category={category} />
+                    <span
+                      className="text-[15px] font-medium truncate"
+                      style={{ color: "var(--text-strong)" }}
+                    >
+                      {name}
+                    </span>
                   </span>
                   <button
                     type="button"
-                    onClick={() => {
-                      setSymbol("");
-                      setName("");
-                    }}
-                    className="text-[12px] font-medium"
+                    onClick={clearSelection}
+                    className="text-[12px] font-medium flex-shrink-0"
                     style={{ color: "var(--accent)" }}
                   >
                     변경
                   </button>
                 </div>
-              ) : isDomestic ? (
-                <DomesticStockSearch
-                  onSelect={(r) => {
-                    setSymbol(r.symbolCode);
-                    setName(r.name);
-                  }}
-                />
               ) : (
-                <ForeignStockSearch
-                  onSelect={(r) => {
-                    setSymbol(r.symbol);
-                    setName(r.name);
-                  }}
-                />
+                <UnifiedStockSearch onSelect={selectSearchResult} />
               )}
             </div>
+            {!(symbol && name && category) && (
+              <p className="text-[11px] mt-1.5" style={{ color: "var(--text-faint)" }}>
+                종목명을 검색하면 국내·해외 구분이 자동으로 정해져요.
+              </p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
