@@ -104,29 +104,31 @@ export default function BottomTabBar() {
           );
         })()}
 
-        {/* 가운데: 내 정보 — 떠있는 원형 버튼 */}
-        <div className="flex flex-col items-center justify-end gap-1 py-2.5 relative">
+        {/* 가운데: 내 정보 — 떠있는 원형 버튼. 라벨 없이 아이콘만(D-176) — 좌우
+            두 탭과 달리 이 버튼은 이미 색·형태·위치로 충분히 도드라져서 텍스트
+            라벨이 군더더기였다. D-177: 테두리를 페이지 배경(--bg, 라이트에서도
+            살짝 회색빛)에서 카드 표면색(--surface, 라이트=순백)으로 바꿔 더
+            또렷하게 "떠 있는" 느낌을 주고, 단색 채우기 대신 좌상단에서 옅게
+            내려오는 화이트 하이라이트를 얹어 유리질/입체감을 냈다 — 색상은
+            하드코딩하지 않고 --accent 위에 반투명 흰 그라데이션만 겹쳐서
+            라이트/다크 양쪽에 자동으로 맞는다. */}
+        <div className="relative py-2.5">
           <Link
             href="/my"
             aria-label="내 정보"
-            className="absolute -top-7 w-14 h-14 rounded-full flex items-center justify-center
+            className="absolute -top-7 left-1/2 -translate-x-1/2 w-14 h-14 rounded-full flex items-center justify-center
               transition-all duration-150 active:scale-95"
             style={{
-              background: "var(--accent)",
-              border: "4px solid var(--bg)",
+              background:
+                "linear-gradient(155deg, rgba(255,255,255,0.38), rgba(255,255,255,0) 55%), var(--accent)",
+              border: "4px solid var(--surface)",
               boxShadow: myActive
-                ? "0 6px 16px rgba(49,130,246,0.45)"
-                : "0 4px 12px rgba(49,130,246,0.3)",
+                ? "0 1px 2px rgba(15,23,42,0.08), 0 8px 20px rgba(49,130,246,0.4)"
+                : "0 1px 2px rgba(15,23,42,0.06), 0 6px 16px rgba(49,130,246,0.28)",
             }}
           >
             <UserIcon />
           </Link>
-          <span
-            className="text-[11px] font-medium"
-            style={{ color: myActive ? "var(--accent)" : "var(--text-sub)" }}
-          >
-            내 정보
-          </span>
         </div>
 
         {/* 우측: 은퇴시뮬레이션 */}

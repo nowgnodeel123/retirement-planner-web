@@ -1,20 +1,22 @@
 // app/my/page.tsx — 하단 탭 "MY". 기존에 우측 상단 드롭다운(ProfileMenu)에 있던
 // 마이페이지/테마/약관/로그아웃을 전용 화면으로 승격했다(D-171). 토스·뱅크샐러드류
-// 앱의 MY 탭 구성을 참고 — 상단 프로필(닉네임 탭하면 수정), 아래 섹션별 메뉴 목록.
+// 앱의 MY 탭 구성을 참고 — 상단 프로필(탭하면 개인정보 수정 화면 D-177), 아래 섹션별 메뉴 목록.
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { clearTokens, getRefreshToken } from "@/lib/auth";
 import { setTheme, useTheme } from "@/lib/theme";
-import { api, ApiError } from "@/lib/api";
-import { ErrorBanner, PrimaryButton, SecondaryButton } from "@/app/components/wizard/Ui";
+import { api } from "@/lib/api";
+import { Avatar } from "@/app/components/profile/Avatar";
 
 type MeResponse = {
   id: number;
   email: string | null;
   nickname: string;
   provider: string;
+  avatarId: number;
 };
 
 function ChevronIcon() {
@@ -81,8 +83,12 @@ function MenuRow({
 
   const className =
     "w-full flex items-center justify-between px-4 py-3.5 text-left rounded-xl transition-colors";
+  // WHY: disabled여도 background를 지우면 안 된다 — 카드 표면이 통째로 사라져
+  // 바로 위 카드와 이어지지 않고 붕 뜬 것처럼 보이는 버그가 있었다(실제 QA에서
+  // "알림 설정" 행으로 발견). 배경은 항상 유지하고 opacity만 낮춰 "같은 카드
+  // 그룹 안의 비활성 항목"으로 보이게 한다.
   const style = disabled
-    ? { opacity: 0.5, cursor: "not-allowed" as const }
+    ? { opacity: 0.5, cursor: "not-allowed" as const, background: "var(--surface)" }
     : { background: "var(--surface)" };
 
   if (href) {
@@ -111,33 +117,10 @@ export default function MyPage() {
   const theme = useTheme();
 
   const [me, setMe] = useState<MeResponse | null>(null);
-  const [editingNickname, setEditingNickname] = useState(false);
-  const [nickname, setNickname] = useState("");
-  const [nicknameError, setNicknameError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get<MeResponse>("/api/users/me").then((data) => {
-      setMe(data);
-      setNickname(data.nickname);
-    });
+    api.get<MeResponse>("/api/users/me").then(setMe);
   }, []);
-
-  async function handleSaveNickname() {
-    setSaving(true);
-    setNicknameError(null);
-    try {
-      const updated = await api.patch<MeResponse>("/api/users/me/nickname", {
-        nickname,
-      });
-      setMe(updated);
-      setEditingNickname(false);
-    } catch (e) {
-      setNicknameError(e instanceof ApiError ? e.message : "저장에 실패했어요.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   // RTR 도입(D-161/M14) — 로컬 토큰만 지우면 서버에 남은 refreshToken이 계속
   // 유효해서(탈취 시 재사용 가능) 서버 쪽도 함께 무효화한다.
@@ -155,89 +138,37 @@ export default function MyPage() {
   }
 
   return (
-    <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
-      <h1 className="text-[22px] font-bold mb-6" style={{ color: "var(--text-strong)" }}>
-        내 정보
-      </h1>
+    <div className="max-w-[420px] w-full mx-auto px-5 pt-10">
+      {/* D-176: 페이지 제목("내 정보") 텍스트 제거 — 탭 자체가 이미 떠있는 원형
+          버튼으로 명확히 구분되고, 진입하자마자 보이는 프로필 카드가 곧 이 화면이
+          뭔지 스스로 설명한다. 제목 공간이 빠진 만큼 상단 여백을 pt-7→pt-10으로
+          살짝 늘려 프로필 카드가 화면 끝에 바로 붙어 답답해 보이지 않게 했다. */}
 
-      {/* 프로필 — 닉네임 탭하면 인라인 수정 */}
-      <div
-        className="rounded-2xl border p-4 mb-2"
+      {/* 프로필 — 탭하면 개인정보 수정 화면(D-177)으로 이동. 닉네임 인라인 수정은
+          그 화면으로 옮겼다 — 여기는 요약(아바타+닉네임+이메일)만 보여주는
+          진입점 역할로 단순화. */}
+      <Link
+        href="/my/profile"
+        className="rounded-2xl border p-4 mb-2 flex items-center gap-3.5"
         style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
-        <div className="flex items-center gap-3.5">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-[16px] font-semibold flex-shrink-0"
-            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
-          >
-            {(me?.nickname ?? "나").slice(0, 1)}
-          </div>
-          <div className="flex-1 min-w-0">
-            {editingNickname ? (
-              <div className="flex items-center gap-2">
-                <input
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  maxLength={20}
-                  autoFocus
-                  className="flex-1 min-w-0 rounded-lg border px-2.5 py-1.5 text-[15px]"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "var(--bg)",
-                    color: "var(--text-strong)",
-                  }}
-                />
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setNickname(me?.nickname ?? "");
-                  setNicknameError(null);
-                  setEditingNickname(true);
-                }}
-                className="flex items-center gap-1.5"
-              >
-                <span className="text-[16px] font-bold" style={{ color: "var(--text-strong)" }}>
-                  {me?.nickname ?? " "}
-                </span>
-                <ChevronIcon />
-              </button>
-            )}
-            {me?.email && (
-              <p className="text-[12px] mt-0.5 truncate" style={{ color: "var(--text-faint)" }}>
-                {me.email}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {editingNickname && (
-          <div className="mt-3">
-            {nicknameError && (
-              <div className="mb-2.5">
-                <ErrorBanner message={nicknameError} />
-              </div>
-            )}
-            <div className="flex gap-2">
-              <SecondaryButton
-                onClick={() => setEditingNickname(false)}
-                className="flex-1"
-              >
-                취소
-              </SecondaryButton>
-              <PrimaryButton
-                onClick={handleSaveNickname}
-                loading={saving}
-                disabled={nickname.trim().length === 0}
-                className="flex-1"
-              >
-                저장
-              </PrimaryButton>
-            </div>
-          </div>
+        {me ? (
+          <Avatar avatarId={me.avatarId} size={48} />
+        ) : (
+          <div className="w-12 h-12 rounded-full flex-shrink-0" style={{ background: "var(--border)" }} />
         )}
-      </div>
+        <div className="flex-1 min-w-0">
+          <span className="text-[16px] font-bold" style={{ color: "var(--text-strong)" }}>
+            {me?.nickname ?? " "}
+          </span>
+          {me?.email && (
+            <p className="text-[12px] mt-0.5 truncate" style={{ color: "var(--text-faint)" }}>
+              {me.email}
+            </p>
+          )}
+        </div>
+        <ChevronIcon />
+      </Link>
 
       <SectionLabel>일반</SectionLabel>
       <div

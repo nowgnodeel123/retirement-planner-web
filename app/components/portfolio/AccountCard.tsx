@@ -1,8 +1,12 @@
-// AccountCard.tsx — 계좌 목록의 개별 행. D-044/D-045: 편집모드에서 삭제(휴지통) 버튼 노출.
-// 토스식: 기관 유형별 컬러 아이콘 + 테두리 없는 카드 + 눌림 피드백
+// AccountCard.tsx — 계좌 목록의 개별 행. 토스식: 기관 유형별 컬러 아이콘 + 테두리 없는 카드 + 눌림 피드백
+// D-175: 전체 목록을 "관리" 버튼으로 편집모드 전환하던 방식을 없애고, iOS 메일/설정
+// 앱처럼 각 행을 좌측으로 스와이프하면 그 항목만 수정·삭제가 드러나는 방식으로 교체
+// (SwipeableRow.tsx). 항상 탭하면 계좌 상세로 이동 — "편집 모드"라는 별도 화면 상태가
+// 사라져 계좌 목록이 平상시엔 순수하게 조회 전용 리스트로 보인다.
 import Link from "next/link";
 import { AccountResponse, AccountSummary, detailTypeLabel, InstitutionType } from "./types";
 import { formatKrw, signed } from "./format";
+import { SwipeableRow } from "./SwipeableRow";
 
 type IconStyle = { bg: string; color: string };
 
@@ -67,41 +71,6 @@ function InstitutionIcon({ type }: { type: InstitutionType }) {
   );
 }
 
-function TrashIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m2 0-.8 12.1a2 2 0 0 1-2 1.9H8.8a2 2 0 0 1-2-1.9L6 7" />
-    </svg>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.8}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
-    </svg>
-  );
-}
-
 function ChevronRightIcon() {
   return (
     <svg
@@ -122,95 +91,58 @@ function ChevronRightIcon() {
 
 export function AccountCard({
   account,
-  editing,
   summary,
   onRename,
   onDelete,
 }: {
   account: AccountResponse;
-  editing: boolean;
   summary?: AccountSummary;
   onRename: () => void;
   onDelete: () => void;
 }) {
-  const body = (
-    <div
-      className={`card flex items-center gap-3 px-4 py-4 ${editing ? "" : "pressable"}`}
-    >
-      <InstitutionIcon type={account.institutionType} />
-
-      <div className="min-w-0 flex-1">
-        <p
-          className="text-[15px] font-semibold truncate"
-          style={{ color: "var(--text-strong)" }}
-        >
-          {account.name}
-        </p>
-        {account.detailType !== "NORMAL" && (
-          <span
-            className="inline-block mt-0.5 text-[11px] font-medium rounded-md px-1.5 py-0.5"
-            style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
-          >
-            {detailTypeLabel[account.detailType]}
-          </span>
-        )}
-      </div>
-
-      {!editing && summary && (
-        <div className="text-right flex-shrink-0">
-          <p
-            className="amount text-[14px] font-semibold"
-            style={{ color: "var(--text-strong)" }}
-          >
-            {formatKrw(summary.totalKrw)}
-          </p>
-          <p
-            className="amount text-[11px] mt-0.5"
-            style={{ color: summary.profitKrw >= 0 ? "var(--gain)" : "var(--loss)" }}
-          >
-            {signed(summary.profitRate, `${Math.abs(summary.profitRate).toFixed(1)}%`)}
-          </p>
-        </div>
-      )}
-
-      {editing ? (
-        <div className="flex items-center gap-1 flex-shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              onRename();
-            }}
-            aria-label={`${account.name} 이름 수정`}
-            className="p-2 rounded-xl transition-colors"
-            style={{ color: "var(--text-sub)" }}
-          >
-            <PencilIcon />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              onDelete();
-            }}
-            aria-label={`${account.name} 삭제`}
-            className="p-2 rounded-xl transition-colors hover:text-[var(--error)]"
-            style={{ color: "var(--text-sub)" }}
-          >
-            <TrashIcon />
-          </button>
-        </div>
-      ) : (
-        <ChevronRightIcon />
-      )}
-    </div>
-  );
-
-  if (editing) return body;
-
   return (
-    <Link href={`/portfolio/accounts/${account.id}`} className="block">
-      {body}
-    </Link>
+    <SwipeableRow onEdit={onRename} onDelete={onDelete}>
+      <Link href={`/portfolio/accounts/${account.id}`} className="block">
+        <div className="card pressable flex items-center gap-3 px-4 py-4">
+          <InstitutionIcon type={account.institutionType} />
+
+          <div className="min-w-0 flex-1">
+            <p
+              className="text-[15px] font-semibold truncate"
+              style={{ color: "var(--text-strong)" }}
+            >
+              {account.name}
+            </p>
+            {account.detailType !== "NORMAL" && (
+              <span
+                className="inline-block mt-0.5 text-[11px] font-medium rounded-md px-1.5 py-0.5"
+                style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
+              >
+                {detailTypeLabel[account.detailType]}
+              </span>
+            )}
+          </div>
+
+          {summary && (
+            <div className="text-right flex-shrink-0">
+              <p
+                className="amount text-[14px] font-semibold"
+                style={{ color: "var(--text-strong)" }}
+              >
+                {formatKrw(summary.totalKrw)}
+              </p>
+              <p
+                className="amount text-[11px] mt-0.5"
+                style={{ color: summary.profitKrw >= 0 ? "var(--gain)" : "var(--loss)" }}
+              >
+                {signed(summary.profitRate, `${Math.abs(summary.profitRate).toFixed(1)}%`)}
+              </p>
+            </div>
+          )}
+
+          <ChevronRightIcon />
+        </div>
+      </Link>
+    </SwipeableRow>
   );
 }

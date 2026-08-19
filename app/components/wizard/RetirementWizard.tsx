@@ -37,6 +37,15 @@ export default function RetirementWizard() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // WHY: 3단계에서 제출 실패로 에러가 뜬 채로 "이전"을 눌러 필드를 고치고
+  // 다시 3단계로 돌아오면, 아직 재제출 전인데도 방금 고친 게 안 먹힌 것처럼
+  // 보이는 낡은 에러 배너가 그대로 남아있던 버그가 있었다(실제 QA에서 발견).
+  // 스텝을 옮길 때는 항상 에러를 함께 지운다.
+  function goToStep(next: WizardStep) {
+    setError(null);
+    setStep(next);
+  }
+
   function handleChange<K extends keyof RetirementFormState>(
     key: K,
     value: RetirementFormState[K],
@@ -135,15 +144,15 @@ export default function RetirementWizard() {
         <Step1BasicInfo
           form={form}
           onChange={handleChange}
-          onNext={() => setStep(2)}
+          onNext={() => goToStep(2)}
         />
       )}
       {step === 2 && (
         <Step2PensionInfo
           form={form}
           onChange={handleChange}
-          onNext={() => setStep(3)}
-          onBack={() => setStep(1)}
+          onNext={() => goToStep(3)}
+          onBack={() => goToStep(1)}
         />
       )}
       {step === 3 && (
@@ -151,7 +160,7 @@ export default function RetirementWizard() {
           form={form}
           onChange={handleChange}
           onSubmit={handleSubmit}
-          onBack={() => setStep(2)}
+          onBack={() => goToStep(2)}
           submitting={submitting}
           error={error}
         />

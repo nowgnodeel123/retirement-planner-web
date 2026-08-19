@@ -76,7 +76,6 @@ export default function PortfolioPage() {
   );
   const [insight, setInsight] = useState<MonthlyInsightResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [editing, setEditing] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<AccountResponse | null>(
     null,
   );
@@ -167,20 +166,8 @@ export default function PortfolioPage() {
           포트폴리오
         </h1>
         <div className="flex items-center gap-1">
-          {accounts && accounts.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setEditing((v) => !v)}
-              className="text-[13px] font-medium px-2.5 py-1.5 rounded-lg transition-colors"
-              style={
-                editing
-                  ? { color: "var(--accent)", background: "var(--accent-soft)" }
-                  : { color: "var(--text-sub)" }
-              }
-            >
-              {editing ? "완료" : "관리"}
-            </button>
-          )}
+          {/* D-175: 전역 "관리" 토글을 없앴다 — 계좌 카드를 왼쪽으로 스와이프하면
+              그 자리에서 바로 수정·삭제가 나온다(AccountCard/SwipeableRow 참고). */}
           <Link
             href="/portfolio/accounts/new"
             aria-label="계좌 추가"
@@ -251,7 +238,6 @@ export default function PortfolioPage() {
                   <AccountCard
                     key={account.id}
                     account={account}
-                    editing={editing}
                     summary={summary?.accounts.find((a) => a.accountId === account.id)}
                     onRename={() => {
                       setRenameError(null);
