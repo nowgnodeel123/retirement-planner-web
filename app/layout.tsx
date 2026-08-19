@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import BottomTabBar from "./components/nav/BottomTabBar";
-import ProfileMenu from "./components/nav/ProfileMenu";
 import ThemeInit from "./components/nav/ThemeInit";
 
 export const metadata: Metadata = {
@@ -17,7 +16,6 @@ export default function RootLayout({
     <html lang="ko" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <ThemeInit />
-        <ProfileMenu />
         {children}
         <BottomTabBar />
       </body>

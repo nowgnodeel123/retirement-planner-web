@@ -42,6 +42,26 @@ function CompassIcon({ active }: { active: boolean }) {
   );
 }
 
+function UserIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={active ? 2.2 : 1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c0-3.9 3.6-7 8-7s8 3.1 8 7" />
+    </svg>
+  );
+}
+
+// D-171: 우측 상단 드롭다운(ProfileMenu)을 없애고 그 안에 있던 항목(마이페이지/
+// 테마/약관/로그아웃)을 하단 탭 3번째 "MY" 화면(app/my/page.tsx)으로 전부 옮겼다.
 const TABS: {
   href: string;
   label: string;
@@ -49,6 +69,7 @@ const TABS: {
 }[] = [
   { href: "/portfolio", label: "포트폴리오", Icon: WalletIcon },
   { href: "/", label: "은퇴시뮬레이션", Icon: CompassIcon },
+  { href: "/my", label: "MY", Icon: UserIcon },
 ];
 
 export default function BottomTabBar() {
@@ -56,7 +77,6 @@ export default function BottomTabBar() {
   const token = useToken();
 
   // WHY: 로그인 전 화면(로그인/카카오 콜백)에서는 로그인 기능만 보여야 한다.
-  // ProfileMenu와 같은 기준(token 유무)으로 표시 여부를 맞춘다.
   if (!token) return null;
 
   return (
