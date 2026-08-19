@@ -157,7 +157,7 @@ export default function MyPage() {
   return (
     <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
       <h1 className="text-[22px] font-bold mb-6" style={{ color: "var(--text-strong)" }}>
-        MY
+        내 정보
       </h1>
 
       {/* 프로필 — 닉네임 탭하면 인라인 수정 */}
