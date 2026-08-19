@@ -194,7 +194,7 @@ export function AccountCard({
               onDelete();
             }}
             aria-label={`${account.name} 삭제`}
-            className="p-2 rounded-xl transition-colors hover:text-red-500"
+            className="p-2 rounded-xl transition-colors hover:text-[var(--error)]"
             style={{ color: "var(--text-sub)" }}
           >
             <TrashIcon />

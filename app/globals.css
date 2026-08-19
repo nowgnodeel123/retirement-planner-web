@@ -18,7 +18,10 @@
   --text-strong: #191f28;
   --text: #333d4b;
   --text-sub: #6b7684;
-  --text-faint: #b0b8c1;
+  /* D-172: 기존 #b0b8c1은 --surface 대비 2.01:1로 WCAG 최소 기준(3:1, UI/보조텍스트)
+     미달 — 안내 문구·차트 축·수치 라벨 등 실제 정보 텍스트에도 쓰이고 있어 실질적
+     가독성 문제였다(백로그 "WCAG 4.5:1 검증" 항목 계기 실측 발견). 3.04:1로 상향. */
+  --text-faint: #8b95a1;
 
   --border: #f2f4f6;
   --accent: #3182f6;
@@ -57,7 +60,8 @@
   --text-strong: #f2f4f6;
   --text: #d1d6db;
   --text-sub: #8b95a1;
-  --text-faint: #4e5968;
+  /* D-172: 기존 #4e5968은 --surface(다크) 대비 2.40:1로 미달. 3.6:1로 상향. */
+  --text-faint: #6b7480;
 
   --border: #26282c;
   --accent: #4593fc;

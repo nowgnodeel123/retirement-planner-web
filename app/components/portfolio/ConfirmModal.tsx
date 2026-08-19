@@ -44,13 +44,17 @@ export function ConfirmModal({
           <SecondaryButton onClick={onCancel} className="flex-1">
             취소
           </SecondaryButton>
+          {/* D-172: bg-red-500 하드코딩 대신 --error 토큰 — 이 앱은 빨강=이익(D-049)이라
+              Tailwind 기본 red를 그대로 쓰면 파괴적 액션에 "이익" 색상을 빌려쓰는 셈이 되고,
+              다크모드에서도 안 바뀐다. PrimaryButton과 동일하게 brightness로 hover 처리. */}
           <button
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 rounded-2xl bg-red-500 text-white py-3.5 text-[15px] font-semibold
-              transition-all duration-150 hover:bg-red-600 active:scale-[0.98]
+            className="flex-1 rounded-2xl text-white py-3.5 text-[15px] font-semibold
+              transition-all duration-150 hover:brightness-110 active:scale-[0.98]
               disabled:opacity-40 disabled:active:scale-100"
+            style={{ background: "var(--error)" }}
           >
             {loading ? "삭제 중..." : confirmLabel}
           </button>
