@@ -1,6 +1,5 @@
 // types.ts
 export type RetirementPensionType = "DB" | "DC";
-export type IsaType = "NONE" | "GENERAL" | "SEOMIN";
 
 export interface RetirementFormState {
   currentAge: number | "";
@@ -25,9 +24,6 @@ export interface RetirementFormState {
   stockEtfMonthlyContribution: number | "";
   stockEtfReturnRate: number | "";
   stockEtfCurrentBalance: number | "";
-  // 이 주식/ETF 투자 전체가 ISA(개인종합자산관리계좌) 안에 있다고 가정할지.
-  // 별도 잔액 입력을 받지 않고 위 stockEtf* 값 전체에 적용한다(위저드 단순화).
-  isaType: IsaType;
 }
 
 export const initialFormState: RetirementFormState = {
@@ -48,7 +44,6 @@ export const initialFormState: RetirementFormState = {
   stockEtfMonthlyContribution: "",
   stockEtfReturnRate: "",
   stockEtfCurrentBalance: "",
-  isaType: "NONE",
 };
 
 // ── 백엔드 SimulationRequestDto와 정확히 매칭되는 전송용 타입 ──
@@ -70,7 +65,6 @@ export interface SimulationRequestPayload {
   stockAssetBalance: number;
   stockReturnRate: number;
   monthlyStockInvestment: number;
-  isaType: IsaType;
 }
 
 const toNumber = (v: number | ""): number => (v === "" ? 0 : v);
@@ -103,7 +97,6 @@ export function toRequestPayload(
     stockAssetBalance: toNumber(form.stockEtfCurrentBalance),
     stockReturnRate: toDecimalRate(form.stockEtfReturnRate),
     monthlyStockInvestment: toNumber(form.stockEtfMonthlyContribution),
-    isaType: form.isaType,
   };
 }
 
@@ -200,7 +193,6 @@ export interface SimulationResponseDto {
     pensionType: string;
     militaryServiceMonths: number;
     childrenCount: number;
-    isaType: string;
   };
   incomeTimeline: IncomeTimelinePoint[];
 }
