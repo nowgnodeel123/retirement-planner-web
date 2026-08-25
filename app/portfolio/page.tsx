@@ -9,7 +9,6 @@ import { AccountCard } from "@/app/components/portfolio/AccountCard";
 import { HoldingsDonutChart } from "@/app/components/portfolio/HoldingsDonutChart";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { RenameAccountModal } from "@/app/components/portfolio/RenameAccountModal";
-import { MonthlyInsightBanner } from "@/app/components/portfolio/MonthlyInsightBanner";
 import { PortfolioSummary } from "@/app/components/portfolio/PortfolioSummary";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
@@ -17,7 +16,6 @@ import {
   AccountResponse,
   institutionLabel,
   InstitutionType,
-  MonthlyInsightResponse,
   PortfolioSummaryResponse,
 } from "@/app/components/portfolio/types";
 
@@ -74,7 +72,6 @@ export default function PortfolioPage() {
   const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(
     null,
   );
-  const [insight, setInsight] = useState<MonthlyInsightResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<AccountResponse | null>(
     null,
@@ -97,16 +94,11 @@ export default function PortfolioPage() {
         ),
       );
 
-    // M9: 대시보드 요약/인사이트는 계좌 목록과 독립적으로 병렬 조회
+    // M9: 대시보드 요약은 계좌 목록과 독립적으로 병렬 조회
     api
       .get<PortfolioSummaryResponse>("/api/portfolio/summary")
       .catch(() => null)
       .then((data) => data && setSummary(data));
-
-    api
-      .get<MonthlyInsightResponse>("/api/portfolio/insights/monthly")
-      .catch(() => null)
-      .then((data) => data && setInsight(data));
   }, []);
 
   async function handleConfirmDelete() {
@@ -214,11 +206,11 @@ export default function PortfolioPage() {
 
       {accounts !== null && accounts.length === 0 && <EmptyState />}
 
-      {/* M9: 대시보드 — 총자산 → 이번 달 인사이트 → 비중(도넛) 순서(D-069) */}
+      {/* M9: 대시보드 — 총자산 → 비중(도넛) 순서. D-181: "이번 달 매수 N건" 인사이트
+          배너는 액션 불가능한 정보라 판단해 제거(D-127/D-128과 같은 판단 기준). */}
       {accounts !== null && accounts.length > 0 && (
         <>
           <PortfolioSummary summary={summary} />
-          <MonthlyInsightBanner insight={insight} />
           <HoldingsDonutChart holdings={summary?.holdings ?? null} />
         </>
       )}

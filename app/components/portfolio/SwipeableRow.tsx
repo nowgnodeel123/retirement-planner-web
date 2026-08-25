@@ -94,6 +94,14 @@ export function SwipeableRow({
     } catch {
       // no-op — capture 실패해도 드래그 트래킹은 계속
     }
+    // WHY: 자식이 <Link>(앵커)라서, 마우스/트랙패드로 누른 채 옆으로 밀면
+    // 브라우저가 기본 "링크 드래그"(고스트 이미지)를 먼저 시작해버려 우리
+    // pointermove 로직이 아예 안 먹히는 문제가 있었다(맥북 트랙패드 실사용
+    // 리포트로 발견) — 터치가 아닌 포인터에서는 네이티브 드래그를 막는다.
+    // 터치는 preventDefault 시 스크롤이 막힐 수 있어 건드리지 않는다.
+    if (e.pointerType !== "touch") {
+      e.preventDefault();
+    }
     startXRef.current = e.clientX;
     startTranslateRef.current = translateX;
     draggedRef.current = false;
@@ -104,7 +112,11 @@ export function SwipeableRow({
   function handlePointerMove(e: React.PointerEvent) {
     if (!draggingActiveRef.current) return;
     const delta = e.clientX - startXRef.current;
-    if (Math.abs(delta) > 6) draggedRef.current = true;
+    // WHY: 6px는 트랙패드로 "그냥 클릭"할 때도 흔히 발생하는 커서 미세 이동
+    // 범위 안에 들어와서, 실제로는 스와이프 의도가 없는데도 draggedRef가
+    // true가 돼 클릭 후 계좌 상세로 안 들어가지는 문제가 있었다(실사용
+    // 리포트로 발견). 진짜 스와이프 의도만 걸러지도록 여유를 더 뒀다.
+    if (Math.abs(delta) > 10) draggedRef.current = true;
     setTranslateX(clamp(startTranslateRef.current + delta));
   }
 
@@ -189,6 +201,11 @@ export function SwipeableRow({
           // 표면색이 되도록 한다.
           background: "var(--surface)",
           borderRadius: 20,
+          // WHY: 텍스트가 있는 카드를 클릭+드래그하면 브라우저 기본 텍스트
+          // 선택 제스처가 우리 pointermove와 경합해 트랙패드에서 스와이프가
+          // 잘 안 먹히는 원인 중 하나였다(맥북 실사용 리포트로 발견).
+          userSelect: "none",
+          WebkitUserSelect: "none",
         }}
       >
         {children}

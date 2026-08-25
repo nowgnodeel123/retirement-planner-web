@@ -81,6 +81,24 @@ export function HoldingsDonutChart({
   const total = slices.reduce((sum, s) => sum + s.value, 0);
   const active = activeIndex !== null ? slices[activeIndex] : null;
 
+  // WHY: 슬라이스가 하나뿐이면(보유 종목 1개, 신규 가입자에게 흔한 경우) 도넛
+  // 전체가 정확히 360도짜리 단일 arc가 되는데, 이때 시작점과 끝점 좌표가
+  // 똑같아져 SVG arc 경로가 퇴화하면서 링 전체가 아니라 작은 조각만 그려지는
+  // 알려진 recharts/d3 렌더링 버그가 있다. 같은 값을 반씩 나눈 두 조각(둘 다
+  // 같은 색)으로 쪼개면 각각 180도 arc가 되어 이 문제를 피할 수 있다 — 화면에
+  // 보이는 색·비중·클릭 동작은 원래 한 조각일 때와 동일하다.
+  const pieData =
+    slices.length === 1
+      ? [
+          { ...slices[0], value: slices[0].value / 2 },
+          { ...slices[0], value: slices[0].value / 2 },
+        ]
+      : slices;
+
+  function pieIndexToSliceIndex(pieIndex: number) {
+    return slices.length === 1 ? 0 : pieIndex;
+  }
+
   function handleClick(index: number) {
     setActiveIndex((prev) => (prev === index ? null : index));
   }
@@ -99,7 +117,7 @@ export function HoldingsDonutChart({
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={slices}
+                data={pieData}
                 dataKey="value"
                 nameKey="label"
                 cx="50%"
@@ -108,14 +126,18 @@ export function HoldingsDonutChart({
                 outerRadius={64}
                 paddingAngle={slices.length > 1 ? 2 : 0}
                 stroke="none"
-                onClick={(_, index) => handleClick(index)}
+                onClick={(_, i) => handleClick(pieIndexToSliceIndex(i))}
               >
-                {slices.map((s, i) => (
+                {pieData.map((s, i) => (
                   <Cell
-                    key={s.key}
+                    key={`${s.key}-${i}`}
                     fill={s.color}
                     className="cursor-pointer"
-                    opacity={activeIndex === null || activeIndex === i ? 1 : 0.35}
+                    opacity={
+                      activeIndex === null || activeIndex === pieIndexToSliceIndex(i)
+                        ? 1
+                        : 0.35
+                    }
                   />
                 ))}
               </Pie>

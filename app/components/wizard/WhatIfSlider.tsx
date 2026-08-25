@@ -16,12 +16,15 @@ const DEBOUNCE_MS = 350;
 export default function WhatIfSlider({
   basePayload,
   baseRetirementAge,
+  baseFeasible,
 }: {
   basePayload: SimulationRequestPayload;
   baseRetirementAge: number;
+  baseFeasible: boolean;
 }) {
   const [extra, setExtra] = useState(0);
   const [previewAge, setPreviewAge] = useState<number | null>(null);
+  const [previewFeasible, setPreviewFeasible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,6 +34,7 @@ export default function WhatIfSlider({
 
     if (extra === 0) {
       setPreviewAge(null);
+      setPreviewFeasible(false);
       setLoading(false);
       setFailed(false);
       return;
@@ -45,7 +49,10 @@ export default function WhatIfSlider({
       };
       api
         .post<SimulationResponseDto>("/api/v1/simulation/calculate", payload)
-        .then((data) => setPreviewAge(data.summary.estimatedRetirementAge))
+        .then((data) => {
+          setPreviewAge(data.summary.estimatedRetirementAge);
+          setPreviewFeasible(data.summary.feasible);
+        })
         .catch(() => setFailed(true))
         .finally(() => setLoading(false));
     }, DEBOUNCE_MS);
@@ -56,7 +63,9 @@ export default function WhatIfSlider({
   }, [extra, basePayload]);
 
   const delta =
-    previewAge !== null ? baseRetirementAge - previewAge : 0;
+    previewAge !== null && baseFeasible && previewFeasible
+      ? baseRetirementAge - previewAge
+      : 0;
 
   return (
     <div
@@ -96,12 +105,19 @@ export default function WhatIfSlider({
         </p>
 
         <div className="text-right">
-          {extra === 0 && (
+          {/* WHY: baseRetirementAge는 infeasible이면 실제 은퇴 나이가 아니라 탐색
+              상한(참고용)이라, 그대로 굵게 보여주면 확정 답처럼 읽힌다. */}
+          {extra === 0 && baseFeasible && (
             <p
               className="text-lg font-bold"
               style={{ color: "var(--text-strong)" }}
             >
               {baseRetirementAge}세
+            </p>
+          )}
+          {extra === 0 && !baseFeasible && (
+            <p className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+              아직 부족해요
             </p>
           )}
           {extra > 0 && loading && (
@@ -114,7 +130,15 @@ export default function WhatIfSlider({
               계산 실패, 다시 시도해주세요
             </p>
           )}
-          {extra > 0 && !loading && !failed && previewAge !== null && (
+          {/* WHY: 미리보기도 infeasible(상한 참고값)일 수 있어 previewFeasible을
+              함께 확인한다 — 그렇지 않으면 "여전히 부족한" 시나리오에도 특정
+              나이를 확정 답처럼 보여주게 된다. */}
+          {extra > 0 && !loading && !failed && previewAge !== null && !previewFeasible && (
+            <p className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+              여전히 부족해요
+            </p>
+          )}
+          {extra > 0 && !loading && !failed && previewAge !== null && previewFeasible && (
             <>
               <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>
                 {previewAge}세
@@ -122,10 +146,15 @@ export default function WhatIfSlider({
               <p
                 className="text-[11px]"
                 style={{
-                  color: delta > 0 ? "var(--gain)" : "var(--text-faint)",
+                  color:
+                    !baseFeasible || delta > 0 ? "var(--gain)" : "var(--text-faint)",
                 }}
               >
-                {delta > 0 ? `${delta}년 앞당겨져요` : "변화 없어요"}
+                {!baseFeasible
+                  ? "목표를 채울 수 있어요"
+                  : delta > 0
+                    ? `${delta}년 앞당겨져요`
+                    : "변화 없어요"}
               </p>
             </>
           )}

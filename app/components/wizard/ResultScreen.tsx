@@ -72,26 +72,38 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
           같은 정보라도 화면이 답을 "차례로 밝혀주는" 느낌을 준다. 기존 rise-in
           keyframe(D-093)을 블록마다 지연시켜 재사용 — 새 애니메이션 추가 없음. */}
       {summary.feasible ? (
-        <div
-          className="relative overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-center mb-5 shadow-[0_8px_24px_rgba(59,130,246,0.25)] rise-in"
-        >
-          <p className="text-[13px] text-blue-100 mb-1.5 font-medium">
+        <div className="text-center mb-5 pt-4 rise-in">
+          <p
+            className="text-[13px] font-bold tracking-wide"
+            style={{ color: "var(--accent)" }}
+          >
             예상 은퇴 가능 나이
           </p>
-          <p className="text-6xl font-bold text-white tracking-tight tabular-nums">
+          <p
+            className="text-7xl font-extrabold tracking-tight tabular-nums mt-2.5"
+            style={{ color: "var(--text-strong)" }}
+          >
             {animatedAge}
-            <span className="text-2xl font-semibold text-blue-100 ml-1">
+            <span
+              className="text-2xl font-bold ml-1"
+              style={{ color: "var(--text-sub)" }}
+            >
               세
             </span>
           </p>
-          <p className="text-[13px] text-blue-50 mt-2.5">
+          <p
+            className="text-[13px] font-semibold mt-3.5"
+            style={{ color: "var(--text-sub)" }}
+          >
             지금부터{" "}
-            <span className="font-semibold text-white">
+            <span style={{ color: "var(--text-strong)" }}>
               {meta.yearsUntilRetirement}년
             </span>{" "}
             뒤예요
           </p>
-          <p className="text-xs text-blue-100/90 mt-2">{summary.message}</p>
+          <p className="text-xs mt-2" style={{ color: "var(--text-faint)" }}>
+            {summary.message}
+          </p>
         </div>
       ) : (
         <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-center mb-5 rise-in">
@@ -140,6 +152,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             timeline={incomeTimeline}
             currentAge={currentAge}
             inflationRate={meta.inflationRate}
+            feasible={summary.feasible}
           />
 
           {/* M16/D-169: 결정론적 모델은 은퇴 후 수익률을 고정값(3%)으로 가정하지만,
@@ -164,7 +177,11 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
 
       {/* ── What-if: "그럼 뭘 바꾸면 나아지는지"에 답하는 인터랙션 ── */}
       <div className="rise-in" style={{ animationDelay: "240ms" }}>
-        <WhatIfSlider basePayload={basePayload} baseRetirementAge={retirementAge} />
+        <WhatIfSlider
+          basePayload={basePayload}
+          baseRetirementAge={retirementAge}
+          baseFeasible={summary.feasible}
+        />
       </div>
 
       {/* ── 액션 ── */}

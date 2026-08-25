@@ -70,8 +70,11 @@ export default function RetirementWizard() {
     if (form.currentAge > 74) return "현재 나이는 74세 이하로 입력해주세요.";
     if (!form.monthlyIncome) return "현재 월 소득을 입력해주세요.";
     if (!form.targetMonthlyExpense) return "목표 은퇴 생활비를 입력해주세요.";
-    if (form.pensionYearsPaid === "")
-      return "국민연금 납입 기간을 입력해주세요.";
+    // WHY: 국민연금 납입 기간을 비워두면 다른 연금 필드(IRP/연금저축)처럼
+    // 0으로 변환돼 전송된다(toRequestPayload). "0년 납입"은 유효한 값이라
+    // 이 필드만 별도로 필수 처리하지 않는다 — 이전에는 비워도 2단계에서는
+    // 넘어가지고 3단계 제출 시점에야 에러가 떴는데, 정작 고쳐야 할 필드는
+    // 2단계에 있어서 혼란스러웠다.
     if (
       typeof form.currentAge === "number" &&
       typeof form.pensionYearsPaid === "number" &&

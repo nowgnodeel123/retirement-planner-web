@@ -462,7 +462,7 @@ export default function LoginPage() {
         <div className="flex items-center justify-center gap-2 mb-2.5">
           <div
             className="w-8 h-8 rounded-[10px] flex items-center justify-center text-white text-[15px] font-extrabold"
-            style={{ background: "linear-gradient(155deg, var(--accent), #1b64da)" }}
+            style={{ background: "linear-gradient(155deg, var(--accent), #0b5a53)" }}
           >
             N
           </div>

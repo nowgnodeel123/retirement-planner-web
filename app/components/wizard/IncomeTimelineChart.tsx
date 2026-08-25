@@ -30,13 +30,16 @@ interface Props {
   timeline: IncomeTimelinePoint[];
   currentAge: number;
   inflationRate: number;
+  feasible: boolean;
 }
 
+// D-181: 브랜드 포인트 컬러가 파랑→틸로 바뀌면서, 국민연금(가장 기초가 되는
+// 소득원)을 틸 계열로 맞춰 브랜드와 자연스럽게 이어지도록 재구성했다.
 const COLORS = {
-  national: "#34d399", // emerald-400 — 국민연금
-  retirementPension: "#60a5fa", // blue-400 — 퇴직연금(DB/DC)
+  national: "#14b8a6", // teal-500 — 국민연금
+  retirementPension: "#64748b", // slate-500 — 퇴직연금(DB/DC)
   privatePension: "#a78bfa", // violet-400 — IRP+연금저축
-  liquid: "#fbbf24", // amber-400 — 주식/ETF
+  liquid: "#f59e0b", // amber-500 — 주식/ETF
   target: "#a3a3a3", // neutral-400
 };
 
@@ -54,6 +57,7 @@ export default function IncomeTimelineChart({
   timeline,
   currentAge,
   inflationRate,
+  feasible,
 }: Props) {
   if (timeline.length === 0) return null;
 
@@ -87,11 +91,13 @@ export default function IncomeTimelineChart({
   const retirementAge = data[0].age;
 
   // recharts는 매 몇 년마다 눈금을 자동으로 못 골라주므로 5년 단위로 직접
-  // 지정한다. 은퇴 나이는 아래 ReferenceLine이 라벨로 따로 표시하므로,
-  // 5년 눈금과 너무 가까워 겹쳐 보이지 않도록 축 눈금에서는 뺀다.
+  // 지정한다. feasible이면 은퇴 나이를 아래 ReferenceLine이 라벨로 따로
+  // 표시하므로, 5년 눈금과 너무 가까워 겹쳐 보이지 않도록 축 눈금에서는 뺀다.
   const tickAges = data
     .map((p) => p.age)
-    .filter((age) => age % 5 === 0 && Math.abs(age - retirementAge) >= 2);
+    .filter(
+      (age) => age % 5 === 0 && (!feasible || Math.abs(age - retirementAge) >= 2),
+    );
 
   return (
     <div>
@@ -131,19 +137,25 @@ export default function IncomeTimelineChart({
             stroke="var(--border)"
             vertical={false}
           />
-          <ReferenceLine
-            x={retirementAge}
-            stroke="var(--accent)"
-            strokeWidth={1.5}
-            label={{
-              value: `${retirementAge}세 은퇴`,
-              position: "insideTopLeft",
-              fill: "var(--accent)",
-              fontSize: 11,
-              fontWeight: 600,
-              offset: 8,
-            }}
-          />
+          {/* WHY: infeasible이면 retirementAge는 실제 은퇴 나이가 아니라 탐색 상한(75세)을
+              참고용으로 돌려준 값이다(SimulationService MAX_SEARCH_AGE). 이 경우에도
+              "OO세 은퇴"라고 확정 라벨을 붙이면 히어로의 "목표를 채우기 어려워요" 경고와
+              모순돼 보인다 — feasible일 때만 표시한다. */}
+          {feasible && (
+            <ReferenceLine
+              x={retirementAge}
+              stroke="var(--accent)"
+              strokeWidth={1.5}
+              label={{
+                value: `${retirementAge}세 은퇴`,
+                position: "insideTopLeft",
+                fill: "var(--accent)",
+                fontSize: 11,
+                fontWeight: 600,
+                offset: 8,
+              }}
+            />
+          )}
           <XAxis
             dataKey="age"
             ticks={tickAges}

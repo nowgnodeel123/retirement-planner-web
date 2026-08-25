@@ -4,28 +4,29 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ─────────────────────────────────────────────
-   디자인 토큰 — 토스/뱅크샐러드 계열 그레이스케일.
+   디자인 토큰 — D-181(UI 리뉴얼): 토스/뱅크샐러드 계열 하늘색 액센트 + 쿨그레이 배경을
+   폐기하고, 뉴트럴 화이트/블랙 배경 + 딥 틸 단일 포인트 컬러 조합으로 교체했다.
    컴포넌트는 반드시 이 토큰만 사용한다(neutral-* 직접 사용 금지).
    다크모드는 토큰 값만 뒤집혀서 컴포넌트 코드에 dark: 분기가 거의 필요 없다.
    ───────────────────────────────────────────── */
 :root {
-  /* 배경 위계: 페이지 < 카드 < 눌린 카드 */
-  --bg: #f2f4f6;
+  /* 배경 위계: 페이지 < 카드 < 눌린 카드. bg/surface를 완전히 같은 흰색으로 두면
+     .card의 배경 대비 분리가 전부 사라지므로, 거의 안 보일 정도로만 톤 차이를 둔다. */
+  --bg: #fafafa;
   --surface: #ffffff;
-  --surface-pressed: #f8f9fa;
+  --surface-pressed: #f4f4f5;
 
   /* 텍스트 위계 */
-  --text-strong: #191f28;
-  --text: #333d4b;
-  --text-sub: #6b7684;
-  /* D-172: 기존 #b0b8c1은 --surface 대비 2.01:1로 WCAG 최소 기준(3:1, UI/보조텍스트)
-     미달 — 안내 문구·차트 축·수치 라벨 등 실제 정보 텍스트에도 쓰이고 있어 실질적
-     가독성 문제였다(백로그 "WCAG 4.5:1 검증" 항목 계기 실측 발견). 3.04:1로 상향. */
-  --text-faint: #8b95a1;
+  --text-strong: #16161a;
+  --text: #2a2a2e;
+  --text-sub: #68686f;
+  /* D-172에서 --surface 대비 3:1(WCAG 최소, UI/보조텍스트) 미달 문제를 겪은 적이
+     있어, 톤을 바꾸면서도 이번에 3.2:1로 재검증한 값만 채택했다(#8f8f97). */
+  --text-faint: #8f8f97;
 
-  --border: #f2f4f6;
-  --accent: #3182f6;
-  --accent-soft: #e8f3ff;
+  --border: #e8e8ec;
+  --accent: #0f766e;
+  --accent-soft: #e8f4f2;
 
   /* 손익 — 토스 계열 팔레트 (D-049: 빨강=이득/파랑=손실) */
   --gain: #f04452;
@@ -53,19 +54,19 @@
 }
 
 .dark {
-  --bg: #101013;
-  --surface: #1b1c1f;
-  --surface-pressed: #242528;
+  --bg: #0a0a0b;
+  --surface: #18181b;
+  --surface-pressed: #202024;
 
-  --text-strong: #f2f4f6;
-  --text: #d1d6db;
-  --text-sub: #8b95a1;
-  /* D-172: 기존 #4e5968은 --surface(다크) 대비 2.40:1로 미달. 3.6:1로 상향. */
-  --text-faint: #6b7480;
+  --text-strong: #f5f5f7;
+  --text: #d4d4d8;
+  --text-sub: #a1a1a8;
+  /* 3.5:1로 재검증(#6e6e76, --surface 다크 대비) — D-172 재발 방지 기준 유지. */
+  --text-faint: #6e6e76;
 
-  --border: #26282c;
-  --accent: #4593fc;
-  --accent-soft: rgba(49, 130, 246, 0.12);
+  --border: #2a2a2e;
+  --accent: #2dd4bf;
+  --accent-soft: rgba(45, 212, 191, 0.16);
 
   --gain: #ff6b76;
   --loss: #5c9eff;
@@ -109,9 +110,11 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* 카드 — 테두리 없이 배경 대비로만 띄운다 */
+/* 카드 — D-181: bg/surface 톤 차이가 거의 없어져서, 얇은 헤어라인 테두리로도
+   구분되게 한다(배경 대비만으로는 화이트-온-화이트라 카드 경계가 안 보임). */
 .card {
   background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
 }
 
