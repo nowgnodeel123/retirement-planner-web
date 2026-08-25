@@ -21,9 +21,11 @@ import {
 
 const SECTION_ORDER: InstitutionType[] = ["BANK", "SECURITIES", "EXCHANGE"];
 
-// D-188(요청): 원+사다리꼴 조합이 기계적이라는 피드백 — 원호(arc) 대신 손으로 그린
-// 것 같은 3차 베지어 곡선 하나로 "웃는 모양" 둥지를 그리고, 알(원)을 그 위에 얹었다.
-// 도형은 여전히 두 개뿐이지만 직선·직각이 하나도 없어 훨씬 부드럽게 읽힌다.
+// D-194: 포트폴리오 대표 이미지로 둥지 아이콘 도입 — 처음엔 다중 선+점으로 그린
+// 버전(잔선이 많아 손그림 느낌), 이어서 원+사다리꼴 조합(직각이 있어 기계적)을
+// 거쳐, 최종적으로 원호(arc) 대신 손으로 그린 것 같은 3차 베지어 곡선 하나로
+// "웃는 모양" 둥지를 그리고 알(원)을 그 위에 얹는 형태로 확정했다. 도형은 여전히
+// 두 개뿐이지만 직선·직각이 하나도 없어 훨씬 부드럽게 읽힌다.
 function NestIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
@@ -101,7 +103,7 @@ export default function PortfolioPage() {
   const [renaming, setRenaming] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  // D-182: 좌측 스와이프(SwipeableRow) 대신 헤더의 관리 토글로 계좌 수정·삭제 진입.
+  // D-193: 좌측 스와이프(SwipeableRow) 대신 헤더의 관리 토글로 계좌 수정·삭제 진입.
   const [manageMode, setManageMode] = useState(false);
 
   useEffect(() => {
@@ -187,7 +189,7 @@ export default function PortfolioPage() {
           </h1>
         </div>
         <div className="flex items-center gap-1">
-          {/* D-182: 좌측 스와이프(SwipeableRow) 대신 다시 관리 토글로 되돌렸다 — 실기기에서
+          {/* D-193: 좌측 스와이프(SwipeableRow) 대신 다시 관리 토글로 되돌렸다 — 실기기에서
               스와이프 제스처가 탭과 자주 혼동돼 계좌 상세로 못 들어가는 문제가 반복됨.
               관리 모드에서는 카드가 링크가 아니라 수정/삭제 아이콘 버튼으로만 반응한다. */}
           {accounts !== null && accounts.length > 0 && (
@@ -227,7 +229,7 @@ export default function PortfolioPage() {
 
       {/* M9: 대시보드 — 총자산 → 비중(도넛) 순서. D-181: "이번 달 매수 N건" 인사이트
           배너는 액션 불가능한 정보라 판단해 제거(D-127/D-128과 같은 판단 기준).
-          D-183: 계좌·자산이 하나도 없어도 총자산 0원 + 빈 도넛을 기본 표시(계좌 목록
+          D-192: 계좌·자산이 하나도 없어도 총자산 0원 + 빈 도넛을 기본 표시(계좌 목록
           로딩만 끝나면 표시, 개수와 무관) — 이전엔 계좌가 0개면 통째로 숨겨졌었다. */}
       {accounts !== null && (
         <>
