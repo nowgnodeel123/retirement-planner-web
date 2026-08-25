@@ -18,6 +18,7 @@ const OTHER_COLOR = "#B0B8C1";
 interface Slice {
   key: string;
   label: string;
+  symbol?: string; // "외 N건" 합산 조각은 단일 티커가 없어 undefined
   color: string;
   value: number;
 }
@@ -27,6 +28,7 @@ function buildSlices(holdings: HoldingSummary[]): Slice[] {
   const toSlice = (h: HoldingSummary, i: number): Slice => ({
     key: h.symbol,
     label: h.name,
+    symbol: h.symbol,
     color: PALETTE[i % PALETTE.length],
     value: h.totalKrw,
   });
@@ -233,11 +235,19 @@ export function HoldingsDonutChart({
                   className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ backgroundColor: s.color }}
                 />
-                <span
-                  className="text-[12px] font-medium truncate"
-                  style={{ color: "var(--text-strong)" }}
-                >
-                  {s.label}
+                <span className="truncate">
+                  <span
+                    className="text-[12px] font-medium"
+                    style={{ color: "var(--text-strong)" }}
+                  >
+                    {s.label}
+                  </span>
+                  {s.symbol && (
+                    <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>
+                      {" "}
+                      {s.symbol}
+                    </span>
+                  )}
                 </span>
               </span>
               <span

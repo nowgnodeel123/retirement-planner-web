@@ -21,32 +21,17 @@ import {
 
 const SECTION_ORDER: InstitutionType[] = ["BANK", "SECURITIES", "EXCHANGE"];
 
-// D-186: 로그인 화면(app/login/page.tsx)의 "N" 정사각 워드마크 대신, 포트폴리오 메인의
-// 대표 이미지는 앱 이름(둥지·nest egg 관용구, D-079)을 형태로 직접 보여주는 둥지 아이콘으로
-// 교체했다 — 알까지 얹어 "자산을 모아둔다"는 은유가 아이콘만 봐도 읽히게 했다.
+// D-188(요청): 원+사다리꼴 조합이 기계적이라는 피드백 — 원호(arc) 대신 손으로 그린
+// 것 같은 3차 베지어 곡선 하나로 "웃는 모양" 둥지를 그리고, 알(원)을 그 위에 얹었다.
+// 도형은 여전히 두 개뿐이지만 직선·직각이 하나도 없어 훨씬 부드럽게 읽힌다.
 function NestIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <circle cx="9" cy="10.5" r="2.1" fill="var(--accent)" />
-      <circle cx="13.4" cy="9.3" r="1.7" fill="var(--accent)" opacity={0.75} />
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="7.6" r="3.3" fill="white" />
       <path
-        d="M2.5 13c1.3 1 2.8 1.5 4.5 1.5s3.2-.5 4.5-1.5c1.3 1 2.8 1.5 4.5 1.5s3.2-.5 4.5-1.5"
-        stroke="var(--accent)"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M4 16.2c2.2 1.6 5 2.5 8 2.5s5.8-.9 8-2.5"
-        stroke="var(--accent)"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M6 19c1.7 1 3.8 1.6 6 1.6s4.3-.6 6-1.6"
-        stroke="var(--accent)"
-        strokeWidth={1.6}
+        d="M5 9.5C5 14.5 8 18 12 18C16 18 19 14.5 19 9.5"
+        stroke="white"
+        strokeWidth={2.5}
         strokeLinecap="round"
         fill="none"
       />
@@ -189,7 +174,7 @@ export default function PortfolioPage() {
         <div className="flex items-center gap-2">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "var(--accent-soft)" }}
+            style={{ background: "var(--accent)" }}
             aria-hidden="true"
           >
             <NestIcon />

@@ -5,7 +5,9 @@
 // 종목명 하나만 검색하면 UnifiedStockSearch가 국내(KRX 로컬 캐시)·해외(Finnhub)
 // 검색을 동시에 호출해 합친 결과를 보여주고, 선택한 종목이 어느 쪽인지에 따라
 // 카테고리가 자동으로 정해진다(이전엔 카테고리 토글을 먼저 눌러야 검색창이 나왔음).
-// 코인은 아직 심볼 검색 API가 없어 기존 수동 입력 유지.
+// D-189(요청): 종목코드는 사용자에게 아예 보여주지 않는다 — 이름으로 검색해 고르면
+// 코드는 내부적으로만 채워진다. 코인도 더는 수동 입력이 아니라 Upbit KRW마켓
+// 검색(CryptoSearch, /api/crypto/search) 자동완성으로 통일했다.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -13,7 +15,6 @@ import { useParams, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import {
   ErrorBanner,
-  Field,
   PrimaryButton,
   SecondaryButton,
   inputClass,
@@ -21,10 +22,11 @@ import {
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { TradeAmountFields } from "@/app/components/portfolio/TradeForm";
 import {
+  AccountDetailType,
   AccountResponse,
   AssetBuyRequest,
-  categoryLabel,
   categoryUnit,
+  CryptoSearchResult,
   DomesticStockSearchResult,
   ForeignStockSearchResult,
   InstitutionType,
@@ -33,9 +35,15 @@ import {
 
 // D-037: 계좌 기관유형이 허용하는 자산 카테고리만 남긴다.
 // 은행 계좌는 이 화면(주식/코인 매수) 대상이 아니다 — 예적금은 D-060 별도 입력 방식, 아직 미구현.
+// D-190(요청, ★핵심): 연금저축·IRP는 세제혜택계좌라 실제로는 지정 상품(ETF·펀드 등)만
+// 거래 가능하고 개별주 매수 자체가 안 된다 — 지금 국내주식 데이터엔 ETF 여부를 구분할
+// 정보가 없어 "개별주만 막기"는 불가능해서, 사용자 확인 후 두 계좌 유형 모두 매수
+// 자체를 막기로 확정(백엔드 AssetService.buy()에도 동일 제약 이중 적용).
 function allowedCategories(
   institutionType: InstitutionType,
+  detailType: AccountDetailType,
 ): TradableAssetCategory[] {
+  if (detailType === "IRP" || detailType === "PENSION_SAVINGS") return [];
   switch (institutionType) {
     case "SECURITIES":
       return ["DOMESTIC_STOCK", "FOREIGN_STOCK"];
@@ -54,7 +62,7 @@ interface UnifiedSearchItem {
   category: "DOMESTIC_STOCK" | "FOREIGN_STOCK";
   symbol: string;
   name: string;
-  sub: string; // 국내: 시장구분(KOSPI/KOSDAQ), 해외: 심볼
+  sub: string; // 국내: 시장구분(KOSPI/KOSDAQ), 해외: 증권 유형(Common Stock 등) — 종목코드는 노출하지 않는다
 }
 
 /**
@@ -111,7 +119,7 @@ function UnifiedStockSearch({
     category: "FOREIGN_STOCK",
     symbol: r.symbol,
     name: r.name,
-    sub: r.symbol,
+    sub: r.type,
   }));
   const looksKorean = /[가-힣]/.test(query);
   const merged = looksKorean
@@ -162,15 +170,108 @@ function UnifiedStockSearch({
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <CategoryBadge category={item.category} />
-                  <span
-                    className="text-[14px] font-medium truncate"
-                    style={{ color: "var(--text-strong)" }}
-                  >
-                    {item.name}
+                  <span className="truncate">
+                    <span
+                      className="text-[14px] font-medium"
+                      style={{ color: "var(--text-strong)" }}
+                    >
+                      {item.name}
+                    </span>{" "}
+                    <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                      {item.symbol}
+                    </span>
                   </span>
                 </span>
                 <span className="text-[11px] flex-shrink-0" style={{ color: "var(--text-faint)" }}>
                   {item.sub}
+                </span>
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CryptoSearchItem {
+  symbol: string;
+  name: string;
+}
+
+/**
+ * 코인 종목 검색(D-189) — Upbit KRW마켓 목록에서 이름/심볼로 매칭한다
+ * (/api/crypto/search). UnifiedStockSearch와 UI는 같은 패턴이지만 카테고리가
+ * 이미 CRYPTO 하나로 고정된 계좌(거래소)에서만 쓰여서 병합 로직이 없다.
+ */
+function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void }) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<CryptoSearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (query.trim().length === 0) {
+      setResults([]);
+      return;
+    }
+    setLoading(true);
+    const timer = setTimeout(() => {
+      api
+        .get<CryptoSearchResult[]>(`/api/crypto/search?keyword=${encodeURIComponent(query.trim())}`)
+        .then(setResults)
+        .catch(() => setResults([]))
+        .finally(() => setLoading(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="코인명 검색 (예: 비트코인, BTC)"
+        className={inputClass}
+        autoComplete="off"
+      />
+      {open && query.trim().length > 0 && (
+        <div
+          className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl border max-h-64 overflow-y-auto shadow-lg"
+          style={{ background: "var(--surface)", borderColor: "var(--border)" }}
+        >
+          {loading && (
+            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+              검색 중...
+            </p>
+          )}
+          {!loading && results.length === 0 && (
+            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+              일치하는 코인이 없어요.
+            </p>
+          )}
+          {!loading &&
+            results.map((item) => (
+              <button
+                key={item.symbol}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onSelect(item);
+                  setOpen(false);
+                }}
+                className="w-full text-left px-4 py-2.5 transition-colors hover:bg-[var(--surface-pressed)]"
+              >
+                <span className="text-[14px] font-medium" style={{ color: "var(--text-strong)" }}>
+                  {item.name}
+                </span>{" "}
+                <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                  {item.symbol}
                 </span>
               </button>
             ))}
@@ -204,7 +305,7 @@ export default function NewAssetPage() {
       const found = all.find((a) => a.id === accountId) ?? null;
       setAccount(found);
       if (found) {
-        const options = allowedCategories(found.institutionType);
+        const options = allowedCategories(found.institutionType, found.detailType);
         // D-170: 증권사 계좌(국내+해외 둘 다 허용)는 검색 결과를 고르기 전까지
         // 카테고리를 비워둔다 — 미리 하나를 찍어두면 "이미 골랐다"는 뜻이 되어
         // UnifiedStockSearch가 자동으로 정해주는 흐름과 어긋난다. 옵션이 하나뿐인
@@ -256,7 +357,8 @@ export default function NewAssetPage() {
     );
   }
 
-  const options = allowedCategories(account.institutionType);
+  const options = allowedCategories(account.institutionType, account.detailType);
+  const isPensionWrapper: AccountDetailType[] = ["IRP", "PENSION_SAVINGS"];
 
   if (options.length === 0) {
     return (
@@ -265,9 +367,19 @@ export default function NewAssetPage() {
           아직 지원하지 않아요
         </p>
         <p className="text-[13px] leading-relaxed mb-6" style={{ color: "var(--text-faint)" }}>
-          은행 계좌의 예적금 입력은 준비 중이에요.
-          <br />
-          주식·코인은 증권사·거래소 계좌에서 추가할 수 있어요.
+          {isPensionWrapper.includes(account.detailType) ? (
+            <>
+              연금저축·IRP는 지정 상품만 거래 가능해
+              <br />
+              개별 매수 등록은 준비 중이에요.
+            </>
+          ) : (
+            <>
+              은행 계좌의 예적금 입력은 준비 중이에요.
+              <br />
+              주식·코인은 증권사·거래소 계좌에서 추가할 수 있어요.
+            </>
+          )}
         </p>
         <button
           onClick={() => router.push(`/portfolio/accounts/${accountId}`)}
@@ -283,7 +395,6 @@ export default function NewAssetPage() {
   // 증권사 계좌(국내+해외 둘 다 허용)인데 아직 검색 결과를 안 골랐으면 category가 null.
   const isDualStockAccount = options.length === 2;
   const isForeign = category === "FOREIGN_STOCK";
-  const isDomestic = category === "DOMESTIC_STOCK";
 
   // D-170: 종목 하나를 고르는 즉시 카테고리까지 함께 확정된다(수동 토글 없음).
   function selectSearchResult(item: {
@@ -307,12 +418,7 @@ export default function NewAssetPage() {
   }
 
   function validate(): string | null {
-    if (!category) return "종목을 검색해서 선택해주세요.";
-    if (!symbol.trim())
-      return isDomestic || isForeign
-        ? "종목을 검색해서 선택해주세요."
-        : "종목코드를 입력해주세요.";
-    if (!name.trim()) return "종목명을 입력해주세요.";
+    if (!category || !symbol.trim() || !name.trim()) return "종목을 검색해서 선택해주세요.";
     if (quantity === "" || quantity <= 0) return "수량을 입력해주세요.";
     if (unitPrice === "" || unitPrice < 0) return "매수 단가를 입력해주세요.";
     if (isForeign && (fx === "" || fx <= 0)) return "환율을 입력해주세요.";
@@ -389,11 +495,16 @@ export default function NewAssetPage() {
                 >
                   <span className="flex items-center gap-2 min-w-0">
                     <CategoryBadge category={category} />
-                    <span
-                      className="text-[15px] font-medium truncate"
-                      style={{ color: "var(--text-strong)" }}
-                    >
-                      {name}
+                    <span className="truncate">
+                      <span
+                        className="text-[15px] font-medium"
+                        style={{ color: "var(--text-strong)" }}
+                      >
+                        {name}
+                      </span>{" "}
+                      <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                        {symbol}
+                      </span>
                     </span>
                   </span>
                   <button
@@ -416,27 +527,48 @@ export default function NewAssetPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="종목코드" unit="">
-              <input
-                type="text"
-                value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
-                placeholder="BTC"
-                className={inputClass}
-                maxLength={30}
-              />
-            </Field>
-            <Field label="종목명" unit="">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="비트코인"
-                className={inputClass}
-                maxLength={100}
-              />
-            </Field>
+          <div className="mb-4">
+            <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
+              종목
+            </label>
+            <div className="mt-1.5">
+              {symbol && name ? (
+                <div
+                  className="flex items-center justify-between rounded-xl border px-3.5 py-3"
+                  style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+                >
+                  <span className="truncate">
+                    <span
+                      className="text-[15px] font-medium"
+                      style={{ color: "var(--text-strong)" }}
+                    >
+                      {name}
+                    </span>{" "}
+                    <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                      {symbol}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSymbol("");
+                      setName("");
+                    }}
+                    className="text-[12px] font-medium flex-shrink-0"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    변경
+                  </button>
+                </div>
+              ) : (
+                <CryptoSearch
+                  onSelect={(item) => {
+                    setSymbol(item.symbol);
+                    setName(item.name);
+                  }}
+                />
+              )}
+            </div>
           </div>
         )}
 
@@ -483,14 +615,6 @@ export default function NewAssetPage() {
           </PrimaryButton>
         </div>
       </div>
-
-      {category === "CRYPTO" && (
-        <p className="text-[12px] text-center mt-4 leading-relaxed" style={{ color: "var(--text-faint)" }}>
-          {categoryLabel[category]} 종목 검색·자동완성은 아직 준비 중이에요.
-          <br />
-          지금은 종목코드와 이름을 직접 입력해주세요.
-        </p>
-      )}
     </div>
   );
 }

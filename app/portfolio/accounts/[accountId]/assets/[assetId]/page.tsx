@@ -356,11 +356,16 @@ export default function AssetDetailPage() {
       {holding && (
         <>
           <div className="mb-1">
-            <h1
-              className="text-[17px] font-bold"
-              style={{ color: "var(--text-strong)" }}
-            >
-              {holding.name}
+            <h1>
+              <span
+                className="text-[17px] font-bold"
+                style={{ color: "var(--text-strong)" }}
+              >
+                {holding.name}
+              </span>{" "}
+              <span className="text-[13px]" style={{ color: "var(--text-faint)" }}>
+                {holding.symbol}
+              </span>
             </h1>
             <div className="mt-1">
               <CategoryBadge

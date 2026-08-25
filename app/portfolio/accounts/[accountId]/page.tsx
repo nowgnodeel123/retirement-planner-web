@@ -435,11 +435,16 @@ export default function AccountDetailPage() {
                 <div className="flex items-start justify-between gap-3">
                   {/* 좌: 종목 정보 */}
                   <div className="min-w-0">
-                    <p
-                      className="text-[15px] font-semibold truncate"
-                      style={{ color: "var(--text-strong)" }}
-                    >
-                      {h.name}
+                    <p className="truncate">
+                      <span
+                        className="text-[15px] font-semibold"
+                        style={{ color: "var(--text-strong)" }}
+                      >
+                        {h.name}
+                      </span>{" "}
+                      <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                        {h.symbol}
+                      </span>
                     </p>
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
                       <CategoryBadge category={category} />
@@ -570,11 +575,16 @@ export default function AccountDetailPage() {
                     style={{ opacity: 0.75 }}
                   >
                     <div className="min-w-0">
-                      <p
-                        className="text-[14px] font-semibold truncate"
-                        style={{ color: "var(--text)" }}
-                      >
-                        {h.name}
+                      <p className="truncate">
+                        <span
+                          className="text-[14px] font-semibold"
+                          style={{ color: "var(--text)" }}
+                        >
+                          {h.name}
+                        </span>{" "}
+                        <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                          {h.symbol}
+                        </span>
                       </p>
                       <div className="mt-1 flex items-center gap-2 flex-wrap">
                         <CategoryBadge category={category} />

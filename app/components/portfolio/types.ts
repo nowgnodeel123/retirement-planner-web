@@ -59,6 +59,12 @@ export interface ForeignStockSearchResult {
   type: string;
 }
 
+// GET /api/crypto/search 응답 — CryptoSearchResult 그대로 직렬화됨
+export interface CryptoSearchResult {
+  symbol: string;
+  name: string;
+}
+
 export interface AssetBuyRequest {
   accountId: number;
   symbol: string;
