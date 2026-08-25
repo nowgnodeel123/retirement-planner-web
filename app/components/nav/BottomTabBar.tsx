@@ -1,19 +1,18 @@
-// BottomTabBar.tsx — D-078: 하단 탭바(아이콘+라벨), 포트폴리오/내 정보/은퇴시뮬레이션 3탭.
-// 다크모드: neutral-*/blue-* 하드코딩을 디자인 토큰(CSS 변수)으로 전환 (Ui.tsx와 동일 유형 수정)
-// D-181(UI 리뉴얼): D-172~D-177에서 쓰던 "떠있는 원형 FAB" 가운데 탭을 폐기하고,
-// 세 탭을 같은 높이로 나란히 배치하는 통상적인 탭바로 되돌렸다 — 좌우(포트폴리오/
-// 은퇴시뮬레이션) 두 탭은 활성 아이콘 뒤에 accent-soft 원형 배경을 두고, 탭 전환 시
-// 그 원이 다음 탭 위치로 슬라이드한다(퍼센트 기반 left + CSS transition).
-// WHY(가운데 "내 정보" 탭 차별화): 좌우 두 탭은 콘텐츠 화면(포트폴리오/시뮬레이션)이고
-// 가운데는 계정/설정 진입점이라는 성격이 달라 구분감이 필요하다는 요청 — 원형 슬라이드
-// 인디케이터 대신 다이아몬드(45도 회전 사각형) 배지 + 별도 그린 톤(--tab-my)을 항상
-// 씌워서 "여기는 다른 종류의 탭"이라는 걸 아이콘 모양만으로도 알 수 있게 했다. 슬라이드
-// 인디케이터는 좌우 두 탭 사이에서만 움직이고 가운데에서는 사라진다.
+// BottomTabBar.tsx — 하단 내비게이션.
+// D-182(요청): 포트폴리오/은퇴시뮬레이션 2탭을 하나의 박스(세그먼트 컨트롤)로 묶고,
+// "내 정보"는 그 옆에 별도로 분리된 메뉴 버튼(≡ 3줄 아이콘)으로 뺐다. 이 버튼을
+// 누르면 위로 슬라이드하는 팝업 메뉴가 뜨고, 여기서 내 정보/알림 설정/화면 테마에
+// 바로 접근한다 — 이전엔 "내 정보" 자체가 세 번째 탭이었지만(D-181), 콘텐츠 탭
+// (포트폴리오/시뮬레이션)과 설정류 진입점의 성격이 다르다는 사용자 피드백을 반영해
+// 물리적으로도 분리했다. 좌우 2탭 사이의 슬라이드 인디케이터(어떤 탭이 선택됐는지
+// 보여주는 애니메이션)는 기존 것을 그대로 유지한다.
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useToken } from "@/lib/auth";
+import { setTheme, useTheme } from "@/lib/theme";
 
 function WalletIcon({ active }: { active: boolean }) {
   return (
@@ -28,9 +27,6 @@ function WalletIcon({ active }: { active: boolean }) {
       strokeLinejoin="round"
     >
       <path d="M3 7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v2h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" />
-      {/* WHY(완성도): 이전엔 길이 0짜리 path에 round linecap을 얹어 점을 그리는
-          트릭을 썼는데, 확대해보면 살짝 타원으로 뭉개져 보였다. 실제 원(circle)
-          으로 바꿔 지갑 잠금 부분이 어느 배율에서도 또렷한 점으로 보이게 했다. */}
       <circle cx="16" cy="13" r="0.9" fill="currentColor" stroke="none" />
     </svg>
   );
@@ -57,8 +53,8 @@ function CompassIcon({ active }: { active: boolean }) {
 function UserIcon({ active }: { active: boolean }) {
   return (
     <svg
-      width="19"
-      height="19"
+      width="18"
+      height="18"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -66,12 +62,25 @@ function UserIcon({ active }: { active: boolean }) {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* WHY(아이콘 다듬기): 기존엔 머리(원)와 몸통(단순 호)이 이어지는 지점이
-          뾰족하게 맞물려 보였다. 머리를 살짝 올리고 어깨선을 더 완만한 곡선으로
-          바꿔 아이콘 자체의 완성도를 높였다 — 다이아몬드 안에서 작게 보일 때도
-          실루엣이 매끈하게 읽힌다. */}
       <circle cx="12" cy="7.6" r="3.6" />
       <path d="M4.5 19.5c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7" />
+    </svg>
+  );
+}
+
+function BellIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+    </svg>
+  );
+}
+
+function HamburgerIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
@@ -89,12 +98,6 @@ const TABS: {
     isActive: (p) => p.startsWith("/portfolio"),
   },
   {
-    href: "/my",
-    label: "내 정보",
-    Icon: UserIcon,
-    isActive: (p) => p.startsWith("/my"),
-  },
-  {
     href: "/",
     label: "은퇴시뮬레이션",
     Icon: CompassIcon,
@@ -102,92 +105,183 @@ const TABS: {
   },
 ];
 
+function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const theme = useTheme();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute bottom-full right-0 mb-2 z-30 w-[208px] rounded-2xl overflow-hidden menu-slide-up"
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.16)",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          onClose();
+          router.push("/my");
+        }}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
+        style={{ background: myActive ? "var(--accent-soft)" : "transparent" }}
+      >
+        <span style={{ color: myActive ? "var(--accent)" : "var(--text-sub)" }}>
+          <UserIcon active={myActive} />
+        </span>
+        <span
+          className="text-[14px] font-medium flex-1"
+          style={{ color: myActive ? "var(--accent)" : "var(--text-strong)" }}
+        >
+          내 정보
+        </span>
+      </button>
+
+      <div className="h-px" style={{ background: "var(--border)" }} />
+
+      <div className="w-full flex items-center gap-2.5 px-4 py-3 opacity-50">
+        <span style={{ color: "var(--text-sub)" }}>
+          <BellIcon />
+        </span>
+        <span className="text-[14px] font-medium flex-1" style={{ color: "var(--text-strong)" }}>
+          알림 설정
+        </span>
+        <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+          준비중
+        </span>
+      </div>
+
+      <div className="h-px" style={{ background: "var(--border)" }} />
+
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="text-[14px] font-medium" style={{ color: "var(--text-strong)" }}>
+          화면 테마
+        </span>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            onClick={() => setTheme("light")}
+            className="text-[12px] font-medium px-2.5 py-1 rounded-lg border"
+            style={
+              theme === "light"
+                ? { borderColor: "var(--accent)", color: "var(--accent)" }
+                : { borderColor: "var(--border)", color: "var(--text-sub)" }
+            }
+          >
+            라이트
+          </button>
+          <button
+            type="button"
+            onClick={() => setTheme("dark")}
+            className="text-[12px] font-medium px-2.5 py-1 rounded-lg border"
+            style={
+              theme === "dark"
+                ? { borderColor: "var(--accent)", color: "var(--accent)" }
+                : { borderColor: "var(--border)", color: "var(--text-sub)" }
+            }
+          >
+            다크
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BottomTabBar() {
   const pathname = usePathname();
   const token = useToken();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // WHY: 로그인 전 화면(로그인/카카오 콜백)에서는 로그인 기능만 보여야 한다.
   if (!token) return null;
 
   const activeIndex = TABS.findIndex((tab) => tab.isActive(pathname));
+  const myActive = pathname.startsWith("/my");
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur-md">
-      <div className="max-w-[420px] mx-auto relative grid grid-cols-3 pb-[env(safe-area-inset-bottom)]">
-        {/* 활성 탭 표시 — 좌우(0/2) 두 탭 사이에서만 슬라이드한다. 가운데(1)는 아래
-            다이아몬드 배지가 그 역할을 대신하므로 이 원은 숨긴다. */}
+      <div className="max-w-[420px] mx-auto flex items-stretch gap-2 px-4 py-2 pb-[calc(env(safe-area-inset-bottom)+8px)]">
+        {/* 포트폴리오/은퇴시뮬레이션 — 둘만 담긴 박스, 세그먼트 컨트롤 스타일로 선택된
+            쪽이 스르륵 슬라이드하는 인디케이터를 그대로 유지한다. */}
         <div
-          className="absolute top-2.5 w-11 h-11 rounded-full pointer-events-none"
-          style={{
-            background: "var(--accent-soft)",
-            left:
-              activeIndex >= 0
-                ? `calc((100% / 3) * ${activeIndex} + (100% / 6) - 22px)`
-                : `calc((100% / 6) - 22px)`,
-            opacity: activeIndex >= 0 && activeIndex !== 1 ? 1 : 0,
-            transition: "left 320ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease",
-          }}
-        />
-
-        {TABS.map((tab, i) => {
-          const active = i === activeIndex;
-          const isMyTab = i === 1;
-          return (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              className="relative flex flex-col items-center gap-1 py-2.5"
-            >
-              {isMyTab ? (
-                // WHY(라인 정렬): 다이아몬드를 좌우 탭과 다른 w-9(36px) 박스에 바로
-                // 넣었더니, 좌우 아이콘 슬롯(w-11=44px)보다 8px 작아서 그 아래 라벨이
-                // 8px 위로 붙어 세 탭의 글자 줄이 어긋나 보였다(실사용 피드백으로 발견).
-                // 좌우와 동일한 44px 슬롯으로 감싸고, 그 안에서만 다이아몬드를 원하는
-                // 크기로 중앙 정렬해야 라벨 줄이 항상 같은 높이에 온다.
-                <span className="w-11 h-11 flex items-center justify-center">
-                  {/* WHY(완성도): 활성일 때 은은한 그림자를 얹어 눌린 배지가 아니라
-                      살짝 떠 있는 배지처럼 보이게 했다 — 다른 두 탭의 평면적인
-                      accent-soft 원과는 다른 종류의 탭이라는 인상을 강화한다. */}
-                  <span
-                    className="w-9 h-9 flex items-center justify-center transition-all"
-                    style={{
-                      transform: "rotate(45deg)",
-                      borderRadius: 10,
-                      background: active ? "var(--tab-my)" : "var(--tab-my-soft)",
-                      border: active ? "none" : "1.5px solid var(--tab-my)",
-                      boxShadow: active ? "0 3px 8px -2px var(--tab-my)" : "none",
-                    }}
-                  >
-                    <span style={{ transform: "rotate(-45deg)", color: active ? "#fff" : "var(--tab-my)" }}>
-                      <tab.Icon active={active} />
-                    </span>
-                  </span>
-                </span>
-              ) : (
-                <span
-                  className="w-11 h-11 flex items-center justify-center"
-                  style={{ color: active ? "var(--accent)" : "var(--text-faint)" }}
+          className="relative flex-1 rounded-2xl border p-1"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div className="relative grid grid-cols-2">
+            <div
+              className="absolute inset-y-0 w-1/2 rounded-xl pointer-events-none"
+              style={{
+                background: "var(--accent-soft)",
+                left: activeIndex === 1 ? "50%" : "0%",
+                opacity: activeIndex >= 0 ? 1 : 0,
+                transition: "left 320ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease",
+              }}
+            />
+            {TABS.map((tab, i) => {
+              const active = i === activeIndex;
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className="relative z-10 flex flex-col items-center gap-1 py-2"
                 >
-                  <tab.Icon active={active} />
-                </span>
-              )}
-              <span
-                className="text-[11px] font-medium"
-                style={{
-                  color: isMyTab
-                    ? active
-                      ? "var(--tab-my)"
-                      : "var(--text-sub)"
-                    : active
-                      ? "var(--accent)"
-                      : "var(--text-sub)",
-                }}
-              >
-                {tab.label}
-              </span>
-            </Link>
-          );
-        })}
+                  <span style={{ color: active ? "var(--accent)" : "var(--text-faint)" }}>
+                    <tab.Icon active={active} />
+                  </span>
+                  <span
+                    className="text-[11px] font-medium"
+                    style={{ color: active ? "var(--accent)" : "var(--text-sub)" }}
+                  >
+                    {tab.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 내 정보/알림 설정/화면 테마 — ≡ 메뉴 버튼, 눌리면 위로 슬라이드하는 팝업 */}
+        <div className="relative flex">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label="메뉴"
+            className="flex flex-col items-center justify-center gap-1 px-4 rounded-2xl border transition-colors"
+            style={{
+              borderColor: myActive || menuOpen ? "var(--accent)" : "var(--border)",
+              color: myActive ? "var(--accent)" : "var(--text-faint)",
+              background: menuOpen ? "var(--accent-soft)" : "transparent",
+            }}
+          >
+            <HamburgerIcon />
+            <span
+              className="text-[11px] font-medium"
+              style={{ color: myActive ? "var(--accent)" : "var(--text-sub)" }}
+            >
+              메뉴
+            </span>
+          </button>
+          {menuOpen && <NavMenu myActive={myActive} onClose={() => setMenuOpen(false)} />}
+        </div>
       </div>
     </nav>
   );

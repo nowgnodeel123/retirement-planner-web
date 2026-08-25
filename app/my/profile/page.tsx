@@ -36,19 +36,11 @@ type VerifyCodeResponse = { verified: boolean };
 const TODAY = new Date().toISOString().slice(0, 10);
 const CODE_TTL_MS = 5 * 60 * 1000; // 백엔드 PhoneVerificationService.CODE_TTL과 동일(5분)
 
-function ChevronIcon() {
+function PencilIcon() {
   return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="var(--text-faint)"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m9 6 6 6-6 6" />
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
     </svg>
   );
 }
@@ -520,20 +512,25 @@ export default function ProfileEditPage() {
                 style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--text-strong)" }}
               />
             ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setNickname(me?.nickname ?? "");
-                  setNicknameError(null);
-                  setEditingNickname(true);
-                }}
-                className="flex items-center gap-1.5"
-              >
-                <span className="text-[16px] font-bold" style={{ color: "var(--text-strong)" }}>
+              <div className="flex items-center gap-2">
+                <span className="text-[16px] font-bold truncate" style={{ color: "var(--text-strong)" }}>
                   {me?.nickname ?? " "}
                 </span>
-                <ChevronIcon />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNickname(me?.nickname ?? "");
+                    setNicknameError(null);
+                    setEditingNickname(true);
+                  }}
+                  aria-label="닉네임 수정"
+                  className="flex items-center gap-1 flex-shrink-0 text-[12px] font-medium px-2 py-1 rounded-lg"
+                  style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
+                >
+                  <PencilIcon />
+                  수정
+                </button>
+              </div>
             )}
             {me?.email && (
               <p className="text-[12px] mt-0.5 truncate" style={{ color: "var(--text-faint)" }}>

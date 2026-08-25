@@ -7,7 +7,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { clearTokens, getRefreshToken } from "@/lib/auth";
-import { setTheme, useTheme } from "@/lib/theme";
 import { api } from "@/lib/api";
 import { Avatar } from "@/app/components/profile/Avatar";
 
@@ -114,7 +113,6 @@ function MenuRow({
 
 export default function MyPage() {
   const router = useRouter();
-  const theme = useTheme();
 
   const [me, setMe] = useState<MeResponse | null>(null);
 
@@ -170,46 +168,8 @@ export default function MyPage() {
         <ChevronIcon />
       </Link>
 
-      <SectionLabel>일반</SectionLabel>
-      <div
-        className="rounded-2xl border px-4 py-3.5"
-        style={{ borderColor: "var(--border)", background: "var(--surface)" }}
-      >
-        <div className="flex items-center justify-between">
-          <span className="text-[15px] font-medium" style={{ color: "var(--text-strong)" }}>
-            화면 테마
-          </span>
-          <div className="flex gap-1.5">
-            <button
-              type="button"
-              onClick={() => setTheme("light")}
-              className="text-[12px] font-medium px-3 py-1.5 rounded-lg border"
-              style={
-                theme === "light"
-                  ? { borderColor: "var(--accent)", color: "var(--accent)" }
-                  : { borderColor: "var(--border)", color: "var(--text-sub)" }
-              }
-            >
-              라이트
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme("dark")}
-              className="text-[12px] font-medium px-3 py-1.5 rounded-lg border"
-              style={
-                theme === "dark"
-                  ? { borderColor: "var(--accent)", color: "var(--accent)" }
-                  : { borderColor: "var(--border)", color: "var(--text-sub)" }
-              }
-            >
-              다크
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="mt-2 space-y-1">
-        <MenuRow label="알림 설정" disabled badge="준비중" />
-      </div>
+      {/* D-184: 화면 테마/알림 설정은 하단 내비 ≡ 메뉴(NavMenu)에 이미 있어 여기서는
+          제거 — 같은 항목이 두 군데에 있으면 어느 쪽이 진짜인지 헷갈린다는 지적 반영. */}
 
       <SectionLabel>지원</SectionLabel>
       <div className="space-y-1">

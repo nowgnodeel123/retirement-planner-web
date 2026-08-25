@@ -75,7 +75,48 @@ export function HoldingsDonutChart({
     );
   }
 
-  if (holdings.length === 0) return null;
+  // D-183: 보유 종목이 하나도 없어도(계좌 미등록 또는 자산 미등록) 차트 자체는
+  // 기본으로 노출한다 — 빈 회색 링 + "0원"만 다르고 레이아웃은 데이터가 있을 때와 동일.
+  if (holdings.length === 0) {
+    return (
+      <div className="mb-7 rise-in">
+        <p
+          className="text-[13px] font-semibold mb-2.5 px-1"
+          style={{ color: "var(--text-sub)" }}
+        >
+          비중
+        </p>
+        <div className="flex items-center gap-4">
+          <div
+            className="relative flex-shrink-0 rounded-full flex items-center justify-center"
+            style={{
+              width: 140,
+              height: 140,
+              border: "14px solid var(--border)",
+            }}
+          >
+            <div className="flex flex-col items-center px-3 text-center">
+              <p className="text-[10px]" style={{ color: "var(--text-sub)" }}>
+                총 비중
+              </p>
+              <p
+                className="amount text-[11px] font-bold mt-0.5"
+                style={{ color: "var(--text-strong)" }}
+              >
+                {formatKrw(0)}
+              </p>
+            </div>
+          </div>
+          <p
+            className="flex-1 text-[13px] leading-relaxed"
+            style={{ color: "var(--text-faint)" }}
+          >
+            아직 등록된 보유 자산이 없어요
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const slices = buildSlices(holdings);
   const total = slices.reduce((sum, s) => sum + s.value, 0);

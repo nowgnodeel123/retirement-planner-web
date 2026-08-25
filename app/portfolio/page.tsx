@@ -83,6 +83,8 @@ export default function PortfolioPage() {
   const [renaming, setRenaming] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  // D-182: 좌측 스와이프(SwipeableRow) 대신 헤더의 관리 토글로 계좌 수정·삭제 진입.
+  const [manageMode, setManageMode] = useState(false);
 
   useEffect(() => {
     api
@@ -151,15 +153,37 @@ export default function PortfolioPage() {
   return (
     <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
       <div className="flex items-center justify-between mb-6">
-        <h1
-          className="text-[22px] font-bold"
-          style={{ color: "var(--text-strong)" }}
-        >
-          포트폴리오
-        </h1>
+        <div className="flex items-center gap-2">
+          {/* 네스트 아이콘 — 로그인 화면(app/login/page.tsx)의 로고마크와 동일 스타일 */}
+          <div
+            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-white text-[13px] font-extrabold flex-shrink-0"
+            style={{ background: "linear-gradient(155deg, var(--accent), #0b5a53)" }}
+            aria-hidden="true"
+          >
+            N
+          </div>
+          <h1
+            className="text-[22px] font-bold"
+            style={{ color: "var(--text-strong)" }}
+          >
+            포트폴리오
+          </h1>
+        </div>
         <div className="flex items-center gap-1">
-          {/* D-175: 전역 "관리" 토글을 없앴다 — 계좌 카드를 왼쪽으로 스와이프하면
-              그 자리에서 바로 수정·삭제가 나온다(AccountCard/SwipeableRow 참고). */}
+          {/* D-182: 좌측 스와이프(SwipeableRow) 대신 다시 관리 토글로 되돌렸다 — 실기기에서
+              스와이프 제스처가 탭과 자주 혼동돼 계좌 상세로 못 들어가는 문제가 반복됨.
+              관리 모드에서는 카드가 링크가 아니라 수정/삭제 아이콘 버튼으로만 반응한다. */}
+          {accounts !== null && accounts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setManageMode((v) => !v)}
+              aria-label={manageMode ? "관리 완료" : "계좌 관리"}
+              className="p-2 rounded-lg transition-colors text-[13px] font-semibold"
+              style={{ color: manageMode ? "var(--accent)" : "var(--text-sub)" }}
+            >
+              {manageMode ? "완료" : "관리"}
+            </button>
+          )}
           <Link
             href="/portfolio/accounts/new"
             aria-label="계좌 추가"
@@ -184,6 +208,17 @@ export default function PortfolioPage() {
 
       {error && <ErrorBanner message={error} />}
 
+      {/* M9: 대시보드 — 총자산 → 비중(도넛) 순서. D-181: "이번 달 매수 N건" 인사이트
+          배너는 액션 불가능한 정보라 판단해 제거(D-127/D-128과 같은 판단 기준).
+          D-183: 계좌·자산이 하나도 없어도 총자산 0원 + 빈 도넛을 기본 표시(계좌 목록
+          로딩만 끝나면 표시, 개수와 무관) — 이전엔 계좌가 0개면 통째로 숨겨졌었다. */}
+      {accounts !== null && (
+        <>
+          <PortfolioSummary summary={summary} />
+          <HoldingsDonutChart holdings={summary?.holdings ?? null} />
+        </>
+      )}
+
       {accounts === null && !error && (
         <div className="space-y-2.5">
           {[0, 1, 2].map((i) => (
@@ -206,15 +241,6 @@ export default function PortfolioPage() {
 
       {accounts !== null && accounts.length === 0 && <EmptyState />}
 
-      {/* M9: 대시보드 — 총자산 → 비중(도넛) 순서. D-181: "이번 달 매수 N건" 인사이트
-          배너는 액션 불가능한 정보라 판단해 제거(D-127/D-128과 같은 판단 기준). */}
-      {accounts !== null && accounts.length > 0 && (
-        <>
-          <PortfolioSummary summary={summary} />
-          <HoldingsDonutChart holdings={summary?.holdings ?? null} />
-        </>
-      )}
-
       {accounts !== null && accounts.length > 0 && (
         <div className="space-y-7 rise-in">
           {grouped.map((section) => (
@@ -231,6 +257,7 @@ export default function PortfolioPage() {
                     key={account.id}
                     account={account}
                     summary={summary?.accounts.find((a) => a.accountId === account.id)}
+                    manageMode={manageMode}
                     onRename={() => {
                       setRenameError(null);
                       setPendingRename(account);
