@@ -354,6 +354,13 @@ export default function ProfileEditPage() {
   const [profileError, setProfileError] = useState<string | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // 이메일(로그인 아이디) 변경
+  const [changingEmail, setChangingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [savingEmail, setSavingEmail] = useState(false);
+
   // 휴대전화번호 변경
   const [changingPhone, setChangingPhone] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
@@ -409,6 +416,26 @@ export default function ProfileEditPage() {
       setProfileError(e instanceof ApiError ? e.message : "저장에 실패했어요.");
     } finally {
       setSavingProfile(false);
+    }
+  }
+
+  async function handleSaveEmail() {
+    setSavingEmail(true);
+    setEmailError(null);
+    try {
+      const updated = await api.patch<MeResponse>("/api/users/me/email", {
+        email: newEmail,
+        currentPassword: emailPassword,
+      });
+      setMe(updated);
+      setChangingEmail(false);
+      setNewEmail("");
+      setEmailPassword("");
+      setToast("이메일이 변경됐어요.");
+    } catch (e) {
+      setEmailError(e instanceof ApiError ? e.message : "변경에 실패했어요.");
+    } finally {
+      setSavingEmail(false);
     }
   }
 
@@ -586,6 +613,72 @@ export default function ProfileEditPage() {
             >
               저장
             </PrimaryButton>
+
+            <div className="h-px my-4" style={{ background: "var(--border)" }} />
+
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[13px] font-medium" style={{ color: "var(--text-sub)" }}>
+                이메일 (로그인 아이디)
+              </span>
+              {!changingEmail && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNewEmail(me?.email ?? "");
+                    setEmailError(null);
+                    setChangingEmail(true);
+                  }}
+                  className="text-[12px] font-medium"
+                  style={{ color: "var(--accent)" }}
+                >
+                  변경
+                </button>
+              )}
+            </div>
+            {!changingEmail ? (
+              <p className="text-[15px] font-semibold" style={{ color: "var(--text-strong)" }}>
+                {me?.email ?? "-"}
+              </p>
+            ) : (
+              <div className="mt-2 flex flex-col gap-2">
+                <input
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="새 이메일"
+                  className={inputClass}
+                  autoComplete="email"
+                />
+                <PasswordInput
+                  value={emailPassword}
+                  onChange={setEmailPassword}
+                  placeholder="현재 비밀번호로 확인"
+                  autoComplete="current-password"
+                />
+                {emailError && <ErrorBanner message={emailError} />}
+                <div className="flex gap-2">
+                  <SecondaryButton
+                    onClick={() => {
+                      setChangingEmail(false);
+                      setNewEmail("");
+                      setEmailPassword("");
+                      setEmailError(null);
+                    }}
+                    className="flex-1"
+                  >
+                    취소
+                  </SecondaryButton>
+                  <PrimaryButton
+                    onClick={handleSaveEmail}
+                    loading={savingEmail}
+                    disabled={newEmail.trim().length === 0 || emailPassword.length === 0}
+                    className="flex-1"
+                  >
+                    저장
+                  </PrimaryButton>
+                </div>
+              </div>
+            )}
 
             <div className="h-px my-4" style={{ background: "var(--border)" }} />
 

@@ -68,8 +68,14 @@ export interface SimulationRequestPayload {
 }
 
 const toNumber = (v: number | ""): number => (v === "" ? 0 : v);
-// 폼은 "5"(=5%)로 받고, 백엔드는 0.05를 기대하므로 반드시 100으로 나눠야 함
-const toDecimalRate = (v: number | ""): number => (v === "" ? 0 : v / 100);
+// 폼은 "5"(=5%)로 받고, 백엔드는 0.05를 기대하므로 반드시 100으로 나눠야 함.
+// WHY(defaultPercent): 예전엔 비워두면 0%(수익률 없음)로 전송돼, 화면엔 "모르겠다면
+// 연 7% 정도가 무난해요" 같은 안내가 있으면서도 실제로는 정반대로 가장 비관적인
+// 값이 계산에 들어가던 버그였다 — 자기소개/은퇴가능나이가 실제보다 훨씬 늦게 나오거나
+// 아예 infeasible로 나오는 원인이 될 수 있었다(실제 QA로 재현). 안내 문구가 말하는
+// 값(백엔드 SimulationRequestDto의 기본값과 동일)을 빈 값의 실제 기본값으로 쓴다.
+const toDecimalRate = (v: number | "", defaultPercent: number): number =>
+  v === "" ? defaultPercent / 100 : v / 100;
 
 /** 폼 상태 → 백엔드 요청 바디로 변환. 필드명·단위 불일치를 여기서 전부 해소한다. */
 export function toRequestPayload(
@@ -90,12 +96,13 @@ export function toRequestPayload(
     ),
     currentPensionSavingsBalance: toNumber(form.pensionSavingsCurrentBalance),
     targetMonthlyExpense: toNumber(form.targetMonthlyExpense),
-    irpReturnRate: toDecimalRate(form.irpReturnRate),
+    // 기본값은 백엔드 SimulationRequestDto의 필드 기본값과 동일하게 맞춘다(5/4/6/7%).
+    irpReturnRate: toDecimalRate(form.irpReturnRate, 5),
     // DB형이면 이 값은 백엔드에서 아예 안 쓰이지만, 필드 자체는 항상 보냄
-    pensionReturnRate: toDecimalRate(form.dcReturnRate),
-    pensionSavingsReturnRate: toDecimalRate(form.pensionSavingsReturnRate),
+    pensionReturnRate: toDecimalRate(form.dcReturnRate, 4),
+    pensionSavingsReturnRate: toDecimalRate(form.pensionSavingsReturnRate, 6),
     stockAssetBalance: toNumber(form.stockEtfCurrentBalance),
-    stockReturnRate: toDecimalRate(form.stockEtfReturnRate),
+    stockReturnRate: toDecimalRate(form.stockEtfReturnRate, 7),
     monthlyStockInvestment: toNumber(form.stockEtfMonthlyContribution),
   };
 }

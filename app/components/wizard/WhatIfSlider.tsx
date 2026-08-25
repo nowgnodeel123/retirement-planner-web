@@ -9,8 +9,10 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { SimulationRequestPayload, SimulationResponseDto } from "./types";
 
-const MAX_EXTRA = 100; // 만원
-const STEP = 5;
+// WHY(칩으로 교체): 연속 드래그 슬라이더는 "굳이 드래그까지 해야 하나" 싶은
+// 마찰이 있고, 실제로는 몇 개 금액대만 눌러보는 용도라 프리셋 칩이 더 가볍다
+// — 탭 한 번으로 바로 결과가 나온다(실사용 피드백 반영).
+const PRESETS = [10, 30, 50, 100]; // 만원
 const DEBOUNCE_MS = 350;
 
 export default function WhatIfSlider({
@@ -79,22 +81,25 @@ export default function WhatIfSlider({
         매달 주식·ETF에 더 투자하면?
       </p>
 
-      <input
-        type="range"
-        min={0}
-        max={MAX_EXTRA}
-        step={STEP}
-        value={extra}
-        onChange={(e) => setExtra(Number(e.target.value))}
-        className="w-full accent-[var(--accent)]"
-        aria-label="월 추가 투자액"
-      />
-      <div
-        className="flex justify-between text-[11px] mt-1"
-        style={{ color: "var(--text-faint)" }}
-      >
-        <span>+0만원</span>
-        <span>+{MAX_EXTRA}만원</span>
+      <div className="flex gap-1.5" role="group" aria-label="월 추가 투자액 선택">
+        {PRESETS.map((p) => {
+          const selected = extra === p;
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => setExtra(selected ? 0 : p)}
+              className="flex-1 rounded-xl py-2 text-[13px] font-semibold border transition-colors"
+              style={
+                selected
+                  ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--accent)" }
+                  : { borderColor: "var(--border)", background: "var(--surface)", color: "var(--text-sub)" }
+              }
+            >
+              +{p}만원
+            </button>
+          );
+        })}
       </div>
 
       <div className="mt-4 flex items-center justify-between">

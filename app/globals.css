@@ -49,6 +49,11 @@
   --category-cash: #94a3b8;
   --category-crypto: #e879a8;
 
+  /* 하단 탭바 "내 정보" 탭 전용 — 좌우(포트폴리오/은퇴시뮬레이션)는 실제 콘텐츠 탭이고
+     가운데는 계정 진입점이라는 성격 차이를 색으로 구분한다(--accent와는 다른 색조). */
+  --tab-my: #16a34a;
+  --tab-my-soft: #e7f6ec;
+
   --background: var(--bg);
   --foreground: var(--text);
 }
@@ -78,6 +83,9 @@
 
   --warning: #fbbf24;
   --warning-soft: rgba(251, 191, 36, 0.14);
+
+  --tab-my: #4ade80;
+  --tab-my-soft: rgba(74, 222, 128, 0.16);
 
   --background: var(--bg);
   --foreground: var(--text);

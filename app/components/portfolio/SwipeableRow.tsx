@@ -55,6 +55,11 @@ export function SwipeableRow({
   const startXRef = useRef(0);
   const startTranslateRef = useRef(0);
   const draggedRef = useRef(false);
+  // WHY: 이미 열려 있던 행을 다시 탭해 "닫기"로 취급해야 하는 경우와, 방금
+  // 이 제스처의 드래그로 막 열린 행에 뒤이어 오는 마무리 클릭을 구분하기 위한
+  // 값. 제스처 시작 시점(pointerdown)의 열림 상태를 기억해둔다 — 자세한 이유는
+  // handleForegroundClick 주석 참고.
+  const wasOpenAtGestureStartRef = useRef(false);
 
   const close = () => setTranslateX(0);
 
@@ -94,18 +99,17 @@ export function SwipeableRow({
     } catch {
       // no-op — capture 실패해도 드래그 트래킹은 계속
     }
-    // WHY: 자식이 <Link>(앵커)라서, 마우스/트랙패드로 누른 채 옆으로 밀면
-    // 브라우저가 기본 "링크 드래그"(고스트 이미지)를 먼저 시작해버려 우리
-    // pointermove 로직이 아예 안 먹히는 문제가 있었다(맥북 트랙패드 실사용
-    // 리포트로 발견) — 터치가 아닌 포인터에서는 네이티브 드래그를 막는다.
-    // 터치는 preventDefault 시 스크롤이 막힐 수 있어 건드리지 않는다.
-    if (e.pointerType !== "touch") {
-      e.preventDefault();
-    }
+    // WHY(수정): 이전엔 여기서 e.preventDefault()로 네이티브 링크 드래그를
+    // 막았는데, 이게 마우스 포인터에 setPointerCapture와 겹치면서 뒤따르는
+    // click 이벤트의 타깃까지 이 wrapper로 강제되는 브라우저 부작용을 일으켜
+    // 평범한 탭조차 <Link> 네비게이션이 아예 안 일어나는 회귀가 있었다(실사용
+    // 리포트로 발견). 네이티브 드래그 자체는 아래 style의
+    // WebkitUserDrag:"none"으로 막고, 여기선 preventDefault를 호출하지 않는다.
     startXRef.current = e.clientX;
     startTranslateRef.current = translateX;
     draggedRef.current = false;
     draggingActiveRef.current = true;
+    wasOpenAtGestureStartRef.current = translateX !== 0;
     setDragging(true);
   }
 
@@ -120,10 +124,19 @@ export function SwipeableRow({
     setTranslateX(clamp(startTranslateRef.current + delta));
   }
 
-  function finishDrag() {
+  function finishDrag(e: React.PointerEvent) {
     if (!draggingActiveRef.current) return;
     draggingActiveRef.current = false;
     setDragging(false);
+    // WHY: 캡처를 여기서 명시적으로 풀어둔다 — pointerup 이후 곧바로 오는
+    // 마우스 호환 이벤트(click 포함)가 이 시점 이후의 캡처 상태를 기준으로
+    // 타깃을 다시 계산하게 해서, 클릭 타깃이 실제 커서 위치가 아니라 이
+    // wrapper로 강제 고정되는 부작용을 줄인다.
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {
+      // no-op
+    }
     setTranslateX((prev) => {
       const shouldOpen = prev < -ACTION_WIDTH / 2;
       if (shouldOpen) {
@@ -135,13 +148,24 @@ export function SwipeableRow({
     });
   }
 
-  // 스와이프로 이미 열려있는 상태에서의 탭은 "탐색"이 아니라 "닫기"로 취급한다.
-  // 드래그가 실제로 있었던 탭(6px 이상 이동)도 우발적 네비게이션을 막기 위해 막는다.
+  // 스와이프로 "이미" 열려있던 행을 다시 탭한 경우만 "닫기"로 취급한다.
+  // WHY: 예전엔 draggedRef.current(방금 이 제스처에서 드래그가 있었는지)만
+  // 봐서, 행을 여는 바로 그 드래그가 끝난 직후 뒤따르는 마무리 클릭까지
+  // "닫기"로 처리해버려 — 스와이프로 열자마자 바로 다시 닫혀서 수정/삭제
+  // 버튼을 누를 새가 없는 버그가 있었다(실사용 리포트로 발견). 제스처
+  // "시작 시점"에 이미 열려 있었는지(wasOpenAtGestureStartRef)만 닫기
+  // 기준으로 삼고, 방금 막 연 제스처의 마무리 클릭은 내비게이션만 막아둔다
+  // (finishDrag가 이미 정한 열림 상태를 그대로 둔다).
   function handleForegroundClick(e: React.MouseEvent) {
-    if (translateX !== 0 || draggedRef.current) {
+    if (wasOpenAtGestureStartRef.current) {
       e.preventDefault();
       e.stopPropagation();
       close();
+      return;
+    }
+    if (draggedRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
     }
   }
 
@@ -206,7 +230,12 @@ export function SwipeableRow({
           // 잘 안 먹히는 원인 중 하나였다(맥북 실사용 리포트로 발견).
           userSelect: "none",
           WebkitUserSelect: "none",
-        }}
+          // WHY: 이전엔 pointerdown에서 e.preventDefault()로 네이티브 링크 드래그
+          // (고스트 이미지)를 막았는데, click 이벤트 타깃을 이 wrapper로 고정시키는
+          // 부작용이 있었다. CSS만으로 네이티브 드래그를 막으면 그 부작용 없이
+          // 같은 효과를 낸다.
+          WebkitUserDrag: "none",
+        } as React.CSSProperties}
       >
         {children}
       </div>

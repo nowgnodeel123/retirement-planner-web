@@ -89,15 +89,26 @@ export default function IncomeTimelineChart({
   });
 
   const retirementAge = data[0].age;
+  // WHY: 시뮬레이터가 가정하는 기대수명(90세, 백엔드 LIFE_EXPECTANCY)까지만 계산해
+  // 내려주므로 데이터의 마지막 지점은 89세다. 5년 단위 눈금만 찍으면(85세까지) 차트가
+  // 마지막에 아무 라벨 없이 뚝 끊긴 것처럼 보인다는 지적이 있어, 마지막 지점을 항상
+  // 눈금으로 명시해 "여기가 가정한 생애의 끝"이라는 게 보이게 한다.
+  const lastAge = data[data.length - 1].age;
 
   // recharts는 매 몇 년마다 눈금을 자동으로 못 골라주므로 5년 단위로 직접
   // 지정한다. feasible이면 은퇴 나이를 아래 ReferenceLine이 라벨로 따로
   // 표시하므로, 5년 눈금과 너무 가까워 겹쳐 보이지 않도록 축 눈금에서는 뺀다.
-  const tickAges = data
-    .map((p) => p.age)
-    .filter(
-      (age) => age % 5 === 0 && (!feasible || Math.abs(age - retirementAge) >= 2),
-    );
+  const tickAges = [
+    ...data
+      .map((p) => p.age)
+      .filter(
+        (age) =>
+          age % 5 === 0 &&
+          (!feasible || Math.abs(age - retirementAge) >= 2) &&
+          Math.abs(age - lastAge) >= 2,
+      ),
+    lastAge,
+  ].sort((a, b) => a - b);
 
   return (
     <div>
