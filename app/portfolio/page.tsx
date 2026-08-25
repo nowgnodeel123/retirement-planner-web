@@ -21,6 +21,39 @@ import {
 
 const SECTION_ORDER: InstitutionType[] = ["BANK", "SECURITIES", "EXCHANGE"];
 
+// D-186: 로그인 화면(app/login/page.tsx)의 "N" 정사각 워드마크 대신, 포트폴리오 메인의
+// 대표 이미지는 앱 이름(둥지·nest egg 관용구, D-079)을 형태로 직접 보여주는 둥지 아이콘으로
+// 교체했다 — 알까지 얹어 "자산을 모아둔다"는 은유가 아이콘만 봐도 읽히게 했다.
+function NestIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <circle cx="9" cy="10.5" r="2.1" fill="var(--accent)" />
+      <circle cx="13.4" cy="9.3" r="1.7" fill="var(--accent)" opacity={0.75} />
+      <path
+        d="M2.5 13c1.3 1 2.8 1.5 4.5 1.5s3.2-.5 4.5-1.5c1.3 1 2.8 1.5 4.5 1.5s3.2-.5 4.5-1.5"
+        stroke="var(--accent)"
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M4 16.2c2.2 1.6 5 2.5 8 2.5s5.8-.9 8-2.5"
+        stroke="var(--accent)"
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        fill="none"
+      />
+      <path
+        d="M6 19c1.7 1 3.8 1.6 6 1.6s4.3-.6 6-1.6"
+        stroke="var(--accent)"
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
 function EmptyState() {
   return (
     <div className="flex flex-col items-center text-center pt-20 px-6 rise-in">
@@ -154,13 +187,12 @@ export default function PortfolioPage() {
     <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          {/* 네스트 아이콘 — 로그인 화면(app/login/page.tsx)의 로고마크와 동일 스타일 */}
           <div
-            className="w-7 h-7 rounded-[8px] flex items-center justify-center text-white text-[13px] font-extrabold flex-shrink-0"
-            style={{ background: "linear-gradient(155deg, var(--accent), #0b5a53)" }}
+            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            style={{ background: "var(--accent-soft)" }}
             aria-hidden="true"
           >
-            N
+            <NestIcon />
           </div>
           <h1
             className="text-[22px] font-bold"

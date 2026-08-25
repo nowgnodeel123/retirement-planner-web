@@ -1,17 +1,21 @@
 // BottomTabBar.tsx — 하단 내비게이션.
 // D-182(요청): 포트폴리오/은퇴시뮬레이션 2탭을 하나의 박스(세그먼트 컨트롤)로 묶고,
 // "내 정보"는 그 옆에 별도로 분리된 메뉴 버튼(≡ 3줄 아이콘)으로 뺐다. 이 버튼을
-// 누르면 위로 슬라이드하는 팝업 메뉴가 뜨고, 여기서 내 정보/알림 설정/화면 테마에
+// 누르면 위로 슬라이드하는 팝업 메뉴가 뜨고, 여기서 내 정보/화면 테마/로그아웃에
 // 바로 접근한다 — 이전엔 "내 정보" 자체가 세 번째 탭이었지만(D-181), 콘텐츠 탭
 // (포트폴리오/시뮬레이션)과 설정류 진입점의 성격이 다르다는 사용자 피드백을 반영해
 // 물리적으로도 분리했다. 좌우 2탭 사이의 슬라이드 인디케이터(어떤 탭이 선택됐는지
 // 보여주는 애니메이션)는 기존 것을 그대로 유지한다.
+// D-185: 알림 설정(준비중 항목)은 MY 탭(app/my/page.tsx)으로 다시 옮기고, 대신 여기에
+// 로그아웃을 추가했다 — MY 탭의 "계정" 섹션은 이제 회원탈퇴로 바뀌어 로그아웃 자리가
+// 없어졌고, ≡ 메뉴는 "빠른 조작" 성격이라 세션을 끊는 로그아웃이 더 잘 맞는다.
 "use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useToken } from "@/lib/auth";
+import { clearTokens, getRefreshToken, useToken } from "@/lib/auth";
+import { api } from "@/lib/api";
 import { setTheme, useTheme } from "@/lib/theme";
 
 function WalletIcon({ active }: { active: boolean }) {
@@ -68,11 +72,12 @@ function UserIcon({ active }: { active: boolean }) {
   );
 }
 
-function BellIcon() {
+function LogoutIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="M16 17l5-5-5-5" />
+      <path d="M21 12H9" />
     </svg>
   );
 }
@@ -125,6 +130,24 @@ function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void
     };
   }, [onClose]);
 
+  // RTR 도입(D-161/M14) — 로컬 토큰만 지우면 서버에 남은 refreshToken이 계속
+  // 유효해서(탈취 시 재사용 가능) 서버 쪽도 함께 무효화한다. D-185: 이 로그아웃은
+  // 원래 MY 탭(app/my/page.tsx)에 있었지만, 그 자리는 회원탈퇴로 바뀌고 로그아웃은
+  // 여기 ≡ 메뉴로 옮겨왔다.
+  async function handleLogout() {
+    onClose();
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        await api.post<void>("/api/auth/logout", { refreshToken });
+      } catch {
+        // best-effort — 로컬 로그아웃은 아래에서 무조건 진행
+      }
+    }
+    clearTokens();
+    router.push("/");
+  }
+
   return (
     <div
       ref={ref}
@@ -154,20 +177,6 @@ function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void
           내 정보
         </span>
       </button>
-
-      <div className="h-px" style={{ background: "var(--border)" }} />
-
-      <div className="w-full flex items-center gap-2.5 px-4 py-3 opacity-50">
-        <span style={{ color: "var(--text-sub)" }}>
-          <BellIcon />
-        </span>
-        <span className="text-[14px] font-medium flex-1" style={{ color: "var(--text-strong)" }}>
-          알림 설정
-        </span>
-        <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
-          준비중
-        </span>
-      </div>
 
       <div className="h-px" style={{ background: "var(--border)" }} />
 
@@ -202,6 +211,21 @@ function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void
           </button>
         </div>
       </div>
+
+      <div className="h-px" style={{ background: "var(--border)" }} />
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="w-full flex items-center gap-2.5 px-4 py-3 text-left transition-colors"
+      >
+        <span style={{ color: "var(--error)" }}>
+          <LogoutIcon />
+        </span>
+        <span className="text-[14px] font-medium" style={{ color: "var(--error)" }}>
+          로그아웃
+        </span>
+      </button>
     </div>
   );
 }
@@ -259,7 +283,7 @@ export default function BottomTabBar() {
           </div>
         </div>
 
-        {/* 내 정보/알림 설정/화면 테마 — ≡ 메뉴 버튼, 눌리면 위로 슬라이드하는 팝업 */}
+        {/* 내 정보/화면 테마/로그아웃 — ≡ 메뉴 버튼, 눌리면 위로 슬라이드하는 팝업 */}
         <div className="relative flex">
           <button
             type="button"

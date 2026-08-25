@@ -6,9 +6,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { clearTokens, getRefreshToken } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { clearTokens } from "@/lib/auth";
+import { api, ApiError } from "@/lib/api";
 import { Avatar } from "@/app/components/profile/Avatar";
+import { WithdrawModal } from "@/app/components/profile/WithdrawModal";
 
 type MeResponse = {
   id: number;
@@ -115,24 +116,28 @@ export default function MyPage() {
   const router = useRouter();
 
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
+  const [withdrawError, setWithdrawError] = useState<string | null>(null);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
 
   useEffect(() => {
     api.get<MeResponse>("/api/users/me").then(setMe);
   }, []);
 
-  // RTR 도입(D-161/M14) — 로컬 토큰만 지우면 서버에 남은 refreshToken이 계속
-  // 유효해서(탈취 시 재사용 가능) 서버 쪽도 함께 무효화한다.
-  async function handleLogout() {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      try {
-        await api.post<void>("/api/auth/logout", { refreshToken });
-      } catch {
-        // best-effort — 로컬 로그아웃은 아래에서 무조건 진행
-      }
+  // 로그아웃은 하단 내비 ≡ 메뉴(NavMenu, BottomTabBar.tsx)로 이동했다 — 여기 "계정"
+  // 섹션의 마지막 행은 세션을 끊는 액션이 아니라 계정 자체를 없애는 회원탈퇴다.
+  async function handleWithdraw(currentPassword: string | null) {
+    setWithdrawing(true);
+    setWithdrawError(null);
+    try {
+      await api.delete("/api/users/me", { currentPassword });
+      clearTokens();
+      router.push("/");
+    } catch (e) {
+      setWithdrawError(e instanceof ApiError ? e.message : "탈퇴 처리 중 문제가 발생했어요.");
+    } finally {
+      setWithdrawing(false);
     }
-    clearTokens();
-    router.push("/");
   }
 
   return (
@@ -168,8 +173,13 @@ export default function MyPage() {
         <ChevronIcon />
       </Link>
 
-      {/* D-184: 화면 테마/알림 설정은 하단 내비 ≡ 메뉴(NavMenu)에 이미 있어 여기서는
-          제거 — 같은 항목이 두 군데에 있으면 어느 쪽이 진짜인지 헷갈린다는 지적 반영. */}
+      {/* D-185: 화면 테마는 하단 내비 ≡ 메뉴에만 두고(D-184), 알림 설정은 다시 여기로 —
+          ≡ 메뉴는 로그아웃까지 들어가며 "빠른 조작" 성격이 강해지고, 알림 설정처럼
+          당장 켤 수 없는(준비중) 항목은 마이페이지의 일반 설정 목록에 있는 편이 자연스럽다. */}
+      <SectionLabel>일반</SectionLabel>
+      <div className="space-y-1">
+        <MenuRow label="알림 설정" disabled badge="준비중" />
+      </div>
 
       <SectionLabel>지원</SectionLabel>
       <div className="space-y-1">
@@ -183,8 +193,25 @@ export default function MyPage() {
 
       <SectionLabel>계정</SectionLabel>
       <div className="space-y-1 mb-8">
-        <MenuRow label="로그아웃" onClick={handleLogout} danger />
+        <MenuRow
+          label="회원탈퇴"
+          onClick={() => {
+            setWithdrawError(null);
+            setShowWithdrawModal(true);
+          }}
+          danger
+        />
       </div>
+
+      {showWithdrawModal && (
+        <WithdrawModal
+          isLocal={me?.provider === "LOCAL"}
+          loading={withdrawing}
+          error={withdrawError}
+          onConfirm={handleWithdraw}
+          onCancel={() => setShowWithdrawModal(false)}
+        />
+      )}
     </div>
   );
 }
