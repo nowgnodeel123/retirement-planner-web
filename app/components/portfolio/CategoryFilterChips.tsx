@@ -5,23 +5,36 @@
 
 import { categoryLabel, TradableAssetCategory } from "@/app/components/portfolio/types";
 
-const OPTIONS: { key: TradableAssetCategory | null; label: string }[] = [
-  { key: null, label: "전체" },
-  { key: "DOMESTIC_STOCK", label: categoryLabel.DOMESTIC_STOCK },
-  { key: "FOREIGN_STOCK", label: categoryLabel.FOREIGN_STOCK },
-  { key: "CRYPTO", label: categoryLabel.CRYPTO },
+const ALL_CATEGORIES: TradableAssetCategory[] = [
+  "DOMESTIC_STOCK",
+  "FOREIGN_STOCK",
+  "CRYPTO",
 ];
 
 export function CategoryFilterChips({
   value,
   onChange,
+  allowed,
 }: {
   value: TradableAssetCategory | null;
   onChange: (value: TradableAssetCategory | null) => void;
+  // 계좌가 다루는 카테고리로 필터를 좁힌다(증권사 → 국내/해외만 등). 생략 시 전체.
+  allowed?: TradableAssetCategory[];
 }) {
+  const categories = (allowed ?? ALL_CATEGORIES).filter((c) =>
+    ALL_CATEGORIES.includes(c),
+  );
+  // 카테고리가 1종뿐이면 필터가 의미 없으므로 칩 로우 자체를 숨긴다.
+  if (categories.length <= 1) return null;
+
+  const options: { key: TradableAssetCategory | null; label: string }[] = [
+    { key: null, label: "전체" },
+    ...categories.map((c) => ({ key: c, label: categoryLabel[c] })),
+  ];
+
   return (
     <div className="flex gap-1.5 overflow-x-auto pb-1">
-      {OPTIONS.map((opt) => {
+      {options.map((opt) => {
         const active = opt.key === value;
         return (
           <button

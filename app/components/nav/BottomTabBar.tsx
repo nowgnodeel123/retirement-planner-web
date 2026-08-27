@@ -103,10 +103,10 @@ const TABS: {
     isActive: (p) => p.startsWith("/portfolio"),
   },
   {
-    href: "/",
+    href: "/simulator",
     label: "은퇴시뮬레이션",
     Icon: CompassIcon,
-    isActive: (p) => p === "/",
+    isActive: (p) => p.startsWith("/simulator"),
   },
 ];
 

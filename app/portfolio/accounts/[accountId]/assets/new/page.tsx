@@ -21,6 +21,8 @@ import {
 } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { TradeAmountFields } from "@/app/components/portfolio/TradeForm";
+import { allowedCategories } from "@/app/components/portfolio/accountRules";
+import { useDealBasRate } from "@/app/components/portfolio/useDealBasRate";
 import {
   AccountDetailType,
   AccountResponse,
@@ -29,30 +31,8 @@ import {
   CryptoSearchResult,
   DomesticStockSearchResult,
   ForeignStockSearchResult,
-  InstitutionType,
   TradableAssetCategory,
 } from "@/app/components/portfolio/types";
-
-// D-037: 계좌 기관유형이 허용하는 자산 카테고리만 남긴다.
-// 은행 계좌는 이 화면(주식/코인 매수) 대상이 아니다 — 예적금은 D-060 별도 입력 방식, 아직 미구현.
-// D-198(요청, ★핵심): 연금저축·IRP는 세제혜택계좌라 실제로는 지정 상품(ETF·펀드 등)만
-// 거래 가능하고 개별주 매수 자체가 안 된다 — 지금 국내주식 데이터엔 ETF 여부를 구분할
-// 정보가 없어 "개별주만 막기"는 불가능해서, 사용자 확인 후 두 계좌 유형 모두 매수
-// 자체를 막기로 확정(백엔드 AssetService.buy()에도 동일 제약 이중 적용).
-function allowedCategories(
-  institutionType: InstitutionType,
-  detailType: AccountDetailType,
-): TradableAssetCategory[] {
-  if (detailType === "IRP" || detailType === "PENSION_SAVINGS") return [];
-  switch (institutionType) {
-    case "SECURITIES":
-      return ["DOMESTIC_STOCK", "FOREIGN_STOCK"];
-    case "EXCHANGE":
-      return ["CRYPTO"];
-    case "BANK":
-      return [];
-  }
-}
 
 function todayString() {
   return new Date().toISOString().slice(0, 10);
@@ -296,9 +276,16 @@ export default function NewAssetPage() {
   const [unitPrice, setUnitPrice] = useState<number | "">("");
   const [fx, setFx] = useState<number | "">("");
   const [fxBaseDate, setFxBaseDate] = useState<string | null>(null);
+  const [fxTouched, setFxTouched] = useState(false);
   const [tradeDate, setTradeDate] = useState(todayString());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 거래일 기준 매매기준율 자동조회 — 사용자가 직접 수정하기 전까지만 자동으로 채운다.
+  const { rate: autoFx, baseDate: autoFxBaseDate } = useDealBasRate(
+    tradeDate,
+    category === "FOREIGN_STOCK" && !fxTouched,
+  );
 
   useEffect(() => {
     api.get<AccountResponse[]>("/api/accounts").then((all) => {
@@ -315,19 +302,11 @@ export default function NewAssetPage() {
     });
   }, [accountId]);
 
-  // D-087: 과거 환율 이력은 저장하지 않아 "가장 최근 매매기준율"만 기본값으로
-  // 채운다. 사용자가 이미 입력했으면 덮어쓰지 않는다.
   useEffect(() => {
-    if (category !== "FOREIGN_STOCK" || fx !== "") return;
-    api
-      .get<{ dealBasR: number; baseDate: string }>("/api/exchange-rates/USD")
-      .then((rate) => {
-        setFx(rate.dealBasR);
-        setFxBaseDate(rate.baseDate);
-      })
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [category]);
+    if (category !== "FOREIGN_STOCK" || fxTouched || autoFx === null) return;
+    setFx(autoFx);
+    setFxBaseDate(autoFxBaseDate);
+  }, [category, fxTouched, autoFx, autoFxBaseDate]);
 
   if (account === undefined) {
     return (
@@ -415,6 +394,7 @@ export default function NewAssetPage() {
     setName("");
     setFx("");
     setFxBaseDate(null);
+    setFxTouched(false);
   }
 
   function validate(): string | null {
@@ -586,15 +566,16 @@ export default function NewAssetPage() {
           onFxChange={(v) => {
             setFx(v);
             setFxBaseDate(null);
+            setFxTouched(true);
           }}
+          fxHint={
+            !fxTouched && fxBaseDate
+              ? `${fxBaseDate} 고시 매매기준율로 채웠어요 · 직접 수정 가능`
+              : null
+          }
           tradeDate={tradeDate}
           onTradeDateChange={setTradeDate}
         />
-        {isForeign && fxBaseDate && (
-          <p className="text-[12px] -mt-3 mb-4" style={{ color: "var(--text-faint)" }}>
-            {fxBaseDate} 매매기준율로 미리 채웠어요. 과거 거래라면 그 시점 환율로 직접 수정해주세요.
-          </p>
-        )}
 
         {error && (
           <div className="mt-5">

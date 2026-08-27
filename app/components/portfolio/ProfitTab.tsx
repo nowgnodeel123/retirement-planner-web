@@ -32,10 +32,24 @@ function ProfitSkeletonCard() {
   );
 }
 
-export function ProfitTab({ accountId }: { accountId: number }) {
+export function ProfitTab({
+  accountId,
+  allowed,
+}: {
+  accountId: number;
+  allowed?: TradableAssetCategory[];
+}) {
   const [period, setPeriod] = useState<ProfitPeriod>("MONTH");
   const [category, setCategory] = useState<TradableAssetCategory | null>(null);
   const [periodModalOpen, setPeriodModalOpen] = useState(false);
+
+  // 선택된 카테고리가 계좌가 다루지 않는 값으로 남지 않도록 정리
+  useEffect(() => {
+    if (category && allowed && !allowed.includes(category)) setCategory(null);
+  }, [category, allowed]);
+
+  const showChips = (allowed ?? ["DOMESTIC_STOCK", "FOREIGN_STOCK", "CRYPTO"])
+    .length > 1;
 
   return (
     <div className="rise-in">
@@ -77,9 +91,15 @@ export function ProfitTab({ accountId }: { accountId: number }) {
         </div>
       </div>
 
-      <div className="mb-4">
-        <CategoryFilterChips value={category} onChange={setCategory} />
-      </div>
+      {showChips && (
+        <div className="mb-4">
+          <CategoryFilterChips
+            value={category}
+            onChange={setCategory}
+            allowed={allowed}
+          />
+        </div>
+      )}
 
       {/* 기간/카테고리가 바뀌면 key로 새로 마운트해 이전 응답이 잠깐 남아있는 것을 방지 —
           effect 안에서 setData(null)로 수동 리셋하지 않고 리마운트로 초기 state를 되찾는다. */}

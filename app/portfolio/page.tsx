@@ -1,45 +1,63 @@
-// app/portfolio/page.tsx — 포트폴리오 탭 진입 화면
-// M9: 대시보드(총자산→인사이트 배너→비중 도넛, D-069 순서) + 기존 계좌 목록
+// app/portfolio/page.tsx — 로그인 후 기본 진입 화면.
+// D-201: 헤더에 사용자 닉네임 + 둥지 아이콘. 총자산 → 등급 도넛 → 정렬 컨트롤 → 계좌 리스트.
+//        계좌 수정/삭제는 카드를 좌측 스와이프하면 나오는 원형 버튼으로(관리 토글 폐지).
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { AccountCard } from "@/app/components/portfolio/AccountCard";
+import { SwipeAccountRow } from "@/app/components/portfolio/SwipeAccountRow";
 import { HoldingsDonutChart } from "@/app/components/portfolio/HoldingsDonutChart";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { RenameAccountModal } from "@/app/components/portfolio/RenameAccountModal";
 import { PortfolioSummary } from "@/app/components/portfolio/PortfolioSummary";
 import { Toast } from "@/app/components/portfolio/Toast";
+import {
+  SortModal,
+  HoldingSortKey,
+  SortDirection,
+} from "@/app/components/portfolio/SortModal";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import {
   AccountResponse,
-  institutionLabel,
-  InstitutionType,
+  AccountSummary,
   PortfolioSummaryResponse,
 } from "@/app/components/portfolio/types";
 
-const SECTION_ORDER: InstitutionType[] = ["BANK", "SECURITIES", "EXCHANGE"];
-
-// D-194: 포트폴리오 대표 이미지로 둥지 아이콘 도입 — 처음엔 다중 선+점으로 그린
-// 버전(잔선이 많아 손그림 느낌), 이어서 원+사다리꼴 조합(직각이 있어 기계적)을
-// 거쳐, 최종적으로 원호(arc) 대신 손으로 그린 것 같은 3차 베지어 곡선 하나로
-// "웃는 모양" 둥지를 그리고 알(원)을 그 위에 얹는 형태로 확정했다. 도형은 여전히
-// 두 개뿐이지만 직선·직각이 하나도 없어 훨씬 부드럽게 읽힌다.
+// D-201: 둥지 아이콘 — 미니멀. 달걀(세로 타원) 하나 + 그 아래 초승달 모양의 둥지 그릇.
+// 둘 다 흰색 실루엣, 사이의 얇은 틈은 배경(accent)색이 그대로 비쳐 알과 둥지가 분리돼 읽힌다.
 function NestIcon() {
   return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="7.6" r="3.3" fill="white" />
-      <path
-        d="M5 9.5C5 14.5 8 18 12 18C16 18 19 14.5 19 9.5"
-        stroke="white"
-        strokeWidth={2.5}
-        strokeLinecap="round"
-        fill="none"
-      />
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+      <ellipse cx="12" cy="9.5" rx="3.6" ry="4.4" />
+      <path d="M3 11.5Q3 21 12 21 21 21 21 11.5 21 15.6 12 15.6 3 15.6 3 11.5Z" />
     </svg>
   );
 }
+
+function SortIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 6h18M6 12h12M10 18h4" />
+    </svg>
+  );
+}
+
+const SORT_LABEL: Record<HoldingSortKey, string> = {
+  value: "금액순",
+  profitRate: "수익률순",
+  name: "이름순",
+};
 
 function EmptyState() {
   return (
@@ -87,41 +105,80 @@ function EmptyState() {
   );
 }
 
+function sortAccounts(
+  accounts: AccountResponse[],
+  summaries: Map<number, AccountSummary>,
+  key: HoldingSortKey,
+  dir: SortDirection,
+): AccountResponse[] {
+  return [...accounts].sort((a, b) => {
+    if (key === "name") {
+      const cmp = a.name.localeCompare(b.name, "ko");
+      return dir === "asc" ? cmp : -cmp;
+    }
+    const sa = summaries.get(a.id);
+    const sb = summaries.get(b.id);
+    const av = sa ? (key === "profitRate" ? sa.profitRate : sa.totalKrw) : null;
+    const bv = sb ? (key === "profitRate" ? sb.profitRate : sb.totalKrw) : null;
+    // 평가금액·손익 정보가 없는 계좌(은행 등)는 방향과 무관하게 항상 뒤로.
+    if (av === null && bv === null) return a.name.localeCompare(b.name, "ko");
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    return dir === "asc" ? av - bv : bv - av;
+  });
+}
+
 export default function PortfolioPage() {
   const [accounts, setAccounts] = useState<AccountResponse[] | null>(null);
-  const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(
-    null,
-  );
+  const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
+  const [nickname, setNickname] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<AccountResponse | null>(
-    null,
-  );
-  const [deleting, setDeleting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const [sortKey, setSortKey] = useState<HoldingSortKey>("value");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  const [sortOpen, setSortOpen] = useState(false);
+
   const [pendingRename, setPendingRename] = useState<AccountResponse | null>(
     null,
   );
   const [renaming, setRenaming] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  // D-193: 좌측 스와이프(SwipeableRow) 대신 헤더의 관리 토글로 계좌 수정·삭제 진입.
-  const [manageMode, setManageMode] = useState(false);
+
+  const [pendingDelete, setPendingDelete] = useState<AccountResponse | null>(
+    null,
+  );
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api
       .get<AccountResponse[]>("/api/accounts")
       .then(setAccounts)
       .catch((e) =>
-        setError(
-          e instanceof ApiError ? e.message : "계좌를 불러오지 못했어요.",
-        ),
+        setError(e instanceof ApiError ? e.message : "계좌를 불러오지 못했어요."),
       );
 
-    // M9: 대시보드 요약은 계좌 목록과 독립적으로 병렬 조회
     api
       .get<PortfolioSummaryResponse>("/api/portfolio/summary")
       .catch(() => null)
       .then((data) => data && setSummary(data));
+
+    api
+      .get<{ nickname: string }>("/api/users/me")
+      .then((me) => setNickname(me.nickname))
+      .catch(() => {});
   }, []);
+
+  const summaryMap = useMemo(() => {
+    const m = new Map<number, AccountSummary>();
+    for (const s of summary?.accounts ?? []) m.set(s.accountId, s);
+    return m;
+  }, [summary]);
+
+  const sortedAccounts = useMemo(
+    () => sortAccounts(accounts ?? [], summaryMap, sortKey, sortDir),
+    [accounts, summaryMap, sortKey, sortDir],
+  );
 
   async function handleConfirmDelete() {
     if (!pendingDelete) return;
@@ -133,9 +190,7 @@ export default function PortfolioPage() {
       );
       setToast("계좌가 삭제되었어요.");
     } catch (e) {
-      setError(
-        e instanceof ApiError ? e.message : "삭제 중 문제가 발생했어요.",
-      );
+      setError(e instanceof ApiError ? e.message : "삭제 중 문제가 발생했어요.");
     } finally {
       setDeleting(false);
       setPendingDelete(null);
@@ -165,15 +220,12 @@ export default function PortfolioPage() {
     }
   }
 
-  const grouped = SECTION_ORDER.map((type) => ({
-    type,
-    items: (accounts ?? []).filter((a) => a.institutionType === type),
-  })).filter((g) => g.items.length > 0);
+  const hasAccounts = accounts !== null && accounts.length > 0;
 
   return (
-    <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
+    <div className="max-w-[420px] w-full mx-auto px-5 pt-7 pb-24">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
             style={{ background: "var(--accent)" }}
@@ -181,60 +233,52 @@ export default function PortfolioPage() {
           >
             <NestIcon />
           </div>
-          <h1
-            className="text-[22px] font-bold"
-            style={{ color: "var(--text-strong)" }}
-          >
-            포트폴리오
-          </h1>
-        </div>
-        <div className="flex items-center gap-1">
-          {/* D-193: 좌측 스와이프(SwipeableRow) 대신 다시 관리 토글로 되돌렸다 — 실기기에서
-              스와이프 제스처가 탭과 자주 혼동돼 계좌 상세로 못 들어가는 문제가 반복됨.
-              관리 모드에서는 카드가 링크가 아니라 수정/삭제 아이콘 버튼으로만 반응한다. */}
-          {accounts !== null && accounts.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setManageMode((v) => !v)}
-              aria-label={manageMode ? "관리 완료" : "계좌 관리"}
-              className="p-2 rounded-lg transition-colors text-[13px] font-semibold"
-              style={{ color: manageMode ? "var(--accent)" : "var(--text-sub)" }}
+          {nickname === null ? (
+            <span
+              className="inline-block w-20 h-4 rounded-md animate-pulse"
+              style={{ background: "var(--border)" }}
+              aria-hidden="true"
+            />
+          ) : (
+            <h1
+              className="text-[20px] font-bold truncate"
+              style={{ color: "var(--text-strong)" }}
             >
-              {manageMode ? "완료" : "관리"}
-            </button>
+              {nickname}
+            </h1>
           )}
-          <Link
-            href="/portfolio/accounts/new"
-            aria-label="계좌 추가"
-            className="p-2 rounded-lg transition-colors"
-            style={{ color: "var(--text-sub)" }}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </Link>
         </div>
+
+        <Link
+          href="/portfolio/accounts/new"
+          aria-label="계좌 추가"
+          className="p-2 rounded-lg flex-shrink-0"
+          style={{ color: "var(--text-sub)" }}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </Link>
       </div>
 
       {error && <ErrorBanner message={error} />}
 
-      {/* M9: 대시보드 — 총자산 → 비중(도넛) 순서. D-181: "이번 달 매수 N건" 인사이트
-          배너는 액션 불가능한 정보라 판단해 제거(D-127/D-128과 같은 판단 기준).
-          D-192: 계좌·자산이 하나도 없어도 총자산 0원 + 빈 도넛을 기본 표시(계좌 목록
-          로딩만 끝나면 표시, 개수와 무관) — 이전엔 계좌가 0개면 통째로 숨겨졌었다. */}
       {accounts !== null && (
         <>
           <PortfolioSummary summary={summary} />
-          <HoldingsDonutChart holdings={summary?.holdings ?? null} />
+          <HoldingsDonutChart
+            holdings={summary?.holdings ?? null}
+            totalAssetKrw={summary?.totalKrw ?? null}
+          />
         </>
       )}
 
@@ -260,34 +304,61 @@ export default function PortfolioPage() {
 
       {accounts !== null && accounts.length === 0 && <EmptyState />}
 
-      {accounts !== null && accounts.length > 0 && (
-        <div className="space-y-7 rise-in">
-          {grouped.map((section) => (
-            <div key={section.type}>
-              <p
-                className="text-[13px] font-semibold mb-2.5 px-1"
-                style={{ color: "var(--text-sub)" }}
-              >
-                {institutionLabel[section.type]}
-              </p>
-              <div className="space-y-2.5">
-                {section.items.map((account) => (
-                  <AccountCard
-                    key={account.id}
-                    account={account}
-                    summary={summary?.accounts.find((a) => a.accountId === account.id)}
-                    manageMode={manageMode}
-                    onRename={() => {
-                      setRenameError(null);
-                      setPendingRename(account);
+      {hasAccounts && (
+        <>
+          {/* 정렬 컨트롤 — 파이차트 아래, 계좌 리스트 위. "≡ 금액순" 형태로 현재 정렬을 노출.
+              계좌가 2개 이상일 때만(1개는 정렬 의미 없음). */}
+          {accounts.length >= 2 && (
+            <div className="flex justify-end mb-2.5 px-1">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setSortOpen((v) => !v)}
+                  className="pressable flex items-center gap-1.5 text-[13px] font-semibold px-2 py-1 rounded-lg"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  <SortIcon />
+                  {SORT_LABEL[sortKey]}
+                </button>
+                {sortOpen && (
+                  <SortModal
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    onApply={(key, dir) => {
+                      setSortKey(key);
+                      setSortDir(dir);
+                      setSortOpen(false);
                     }}
-                    onDelete={() => setPendingDelete(account)}
+                    onClose={() => setSortOpen(false)}
                   />
-                ))}
+                )}
               </div>
             </div>
-          ))}
-        </div>
+          )}
+
+          <div className="space-y-2.5">
+            {sortedAccounts.map((account, i) => (
+              <div
+                key={account.id}
+                className="rise-in"
+                style={{ animationDelay: `${Math.min(i * 45, 270)}ms` }}
+              >
+                <SwipeAccountRow
+                  onEdit={() => {
+                    setRenameError(null);
+                    setPendingRename(account);
+                  }}
+                  onDelete={() => setPendingDelete(account)}
+                >
+                  <AccountCard
+                    account={account}
+                    summary={summaryMap.get(account.id)}
+                  />
+                </SwipeAccountRow>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
       {pendingDelete && (

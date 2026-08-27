@@ -17,6 +17,7 @@ import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { TradeForm } from "@/app/components/portfolio/TradeForm";
+import { useDealBasRate } from "@/app/components/portfolio/useDealBasRate";
 import {
   AssetBuyRequest,
   AssetHoldingResponse,
@@ -35,6 +36,12 @@ function todayString() {
 
 function formatQuantity(qty: number) {
   return qty % 1 === 0 ? qty.toLocaleString() : qty.toString();
+}
+
+function fxHintText(touched: boolean, baseDate: string | null) {
+  return !touched && baseDate
+    ? `${baseDate} 고시 매매기준율로 채웠어요 · 직접 수정 가능`
+    : null;
 }
 
 function formatMoney(value: number, currency: string) {
@@ -90,6 +97,7 @@ export default function AssetDetailPage() {
   const [buyQuantity, setBuyQuantity] = useState<number | "">("");
   const [buyUnitPrice, setBuyUnitPrice] = useState<number | "">("");
   const [buyFx, setBuyFx] = useState<number | "">("");
+  const [buyFxTouched, setBuyFxTouched] = useState(false);
   const [buyTradeDate, setBuyTradeDate] = useState(todayString());
   const [buySubmitting, setBuySubmitting] = useState(false);
   const [buyFormError, setBuyFormError] = useState<string | null>(null);
@@ -98,6 +106,7 @@ export default function AssetDetailPage() {
   const [quantity, setQuantity] = useState<number | "">("");
   const [unitPrice, setUnitPrice] = useState<number | "">("");
   const [fx, setFx] = useState<number | "">("");
+  const [fxTouched, setFxTouched] = useState(false);
   const [tradeDate, setTradeDate] = useState(todayString());
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -109,6 +118,7 @@ export default function AssetDetailPage() {
   const [exDividendDate, setExDividendDate] = useState("");
   const [amount, setAmount] = useState<number | "">("");
   const [dividendFx, setDividendFx] = useState<number | "">("");
+  const [dividendFxTouched, setDividendFxTouched] = useState(false);
   const [dividendSubmitting, setDividendSubmitting] = useState(false);
   const [dividendFormError, setDividendFormError] = useState<string | null>(
     null,
@@ -159,6 +169,29 @@ export default function AssetDetailPage() {
     holding?.category === "DOMESTIC_STOCK" ||
     holding?.category === "FOREIGN_STOCK";
 
+  // 거래일/지급일 기준 매매기준율 자동조회 — 각 폼이 열려 있고 해외주식이며
+  // 사용자가 아직 환율을 직접 수정하지 않았을 때만 자동으로 채운다.
+  const buyRate = useDealBasRate(
+    buyTradeDate,
+    isForeign && buyOpen && !buyFxTouched,
+  );
+  const sellRate = useDealBasRate(tradeDate, isForeign && sellOpen && !fxTouched);
+  const dividendRate = useDealBasRate(
+    payDate,
+    isForeign && dividendOpen && !dividendFxTouched,
+  );
+
+  useEffect(() => {
+    if (buyRate.rate !== null && !buyFxTouched) setBuyFx(buyRate.rate);
+  }, [buyRate.rate, buyFxTouched]);
+  useEffect(() => {
+    if (sellRate.rate !== null && !fxTouched) setFx(sellRate.rate);
+  }, [sellRate.rate, fxTouched]);
+  useEffect(() => {
+    if (dividendRate.rate !== null && !dividendFxTouched)
+      setDividendFx(dividendRate.rate);
+  }, [dividendRate.rate, dividendFxTouched]);
+
   const combinedHistory = useMemo(() => {
     if (transactions === null || dividends === null) return null;
     return combineHistory(transactions, dividends);
@@ -199,6 +232,7 @@ export default function AssetDetailPage() {
       setBuyQuantity("");
       setBuyUnitPrice("");
       setBuyFx("");
+      setBuyFxTouched(false);
       setBuyTradeDate(todayString());
       setToast("매수 거래가 등록되었어요.");
       loadAll();
@@ -242,6 +276,7 @@ export default function AssetDetailPage() {
       setQuantity("");
       setUnitPrice("");
       setFx("");
+      setFxTouched(false);
       setTradeDate(todayString());
       loadAll();
     } catch (e) {
@@ -286,6 +321,7 @@ export default function AssetDetailPage() {
       setExDividendDate("");
       setAmount("");
       setDividendFx("");
+      setDividendFxTouched(false);
       setToast("배당 기록이 추가되었어요.");
       loadAll();
     } catch (e) {
@@ -428,7 +464,11 @@ export default function AssetDetailPage() {
               isForeign={isForeign}
               fxLabel="매수 시점 환율"
               fx={buyFx}
-              onFxChange={setBuyFx}
+              onFxChange={(v) => {
+                setBuyFx(v);
+                setBuyFxTouched(true);
+              }}
+              fxHint={fxHintText(buyFxTouched, buyRate.baseDate)}
               tradeDate={buyTradeDate}
               onTradeDateChange={setBuyTradeDate}
               formError={buyFormError}
@@ -450,7 +490,11 @@ export default function AssetDetailPage() {
               isForeign={isForeign}
               fxLabel="매도 시점 환율"
               fx={fx}
-              onFxChange={setFx}
+              onFxChange={(v) => {
+                setFx(v);
+                setFxTouched(true);
+              }}
+              fxHint={fxHintText(fxTouched, sellRate.baseDate)}
               tradeDate={tradeDate}
               onTradeDateChange={setTradeDate}
               formError={formError}
@@ -511,14 +555,27 @@ export default function AssetDetailPage() {
                 />
               </Field>
               {isForeign && (
-                <Field label="지급 시점 환율" unit="원">
-                  <NumberInput
-                    value={dividendFx}
-                    onChange={setDividendFx}
-                    allowDecimal
-                    placeholder="1,350.00"
-                  />
-                </Field>
+                <>
+                  <Field label="지급 시점 환율" unit="원">
+                    <NumberInput
+                      value={dividendFx}
+                      onChange={(v) => {
+                        setDividendFx(v);
+                        setDividendFxTouched(true);
+                      }}
+                      allowDecimal
+                      placeholder="1,350.00"
+                    />
+                  </Field>
+                  {fxHintText(dividendFxTouched, dividendRate.baseDate) && (
+                    <p
+                      className="text-[12px] -mt-3 mb-4"
+                      style={{ color: "var(--text-faint)" }}
+                    >
+                      {fxHintText(dividendFxTouched, dividendRate.baseDate)}
+                    </p>
+                  )}
+                </>
               )}
 
               {dividendFormError && (

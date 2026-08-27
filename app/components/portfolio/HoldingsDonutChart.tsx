@@ -1,19 +1,40 @@
-// HoldingsDonutChart.tsx — M9 대시보드 도넛차트, 카테고리가 아니라 종목별 비중으로 표시.
-// (구 CategoryDonutChart.tsx를 대체 — "국내주식 40%"가 아니라 "삼성전자 20%"처럼 보여달라는
-// 요청 반영) D-071(상위 5개 색상표시 + 나머지 "기타") / D-072("외 N건" 라벨) /
-// D-073(순수 빨강·파랑 제외 채도 상향 팔레트) / D-074(탭으로 하이라이트) 원칙은 그대로 유지.
-// 범례를 차트 아래가 아니라 오른쪽에 배치.
+// HoldingsDonutChart.tsx — M9 대시보드 도넛차트, 종목별 비중.
+// D-073(순수 빨강·파랑 제외 팔레트) / D-074(탭으로 하이라이트) 유지.
+// D-201: 범례는 차트 오른쪽에 위→아래 5개씩 채워 넘치면 오른쪽 열로. 도넛 가운데는
+// 금액 대신 등급 엠블럼(TierEmblem). 11개 이상이면 상위 9개 + "외 N개".
 "use client";
 
 import { useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { formatKrw } from "./format";
 import { HoldingSummary } from "./types";
+import { tierOf } from "./tier";
+import { TierEmblem } from "./TierEmblem";
 
-// D-073: 손익 색상(빨강/파랑)과 혼동되지 않는 채도 상향 팔레트. 카테고리 배지와 같은 5색을
-// 종목 슬라이스에도 순환 적용 — 의미는 "카테고리"에서 "종목 순서"로 바뀌었지만 톤은 유지.
-const PALETTE = ["#A78BFA", "#2DD4BF", "#E879A8", "#FBBF24", "#94A3B8"];
+// 범례를 5개씩 세로로 채우고, 넘치면 두 번째 열로. (열 우선 채움)
+const LEGEND_ROWS = 5;
+const legendGridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateRows: `repeat(${LEGEND_ROWS}, auto)`,
+  gridAutoFlow: "column",
+  gridAutoColumns: "minmax(0, 1fr)",
+};
+
+// D-073: 손익 색상(순수 빨강/파랑)과 혼동되지 않는 채도 상향 팔레트. 범례를 최대 9종목까지
+// 보여주므로(그 이상은 "외 N건"), 5색 순환으로는 인접 슬라이스 색이 겹쳐 10색으로 확장했다.
+const PALETTE = [
+  "#A78BFA", // 보라
+  "#2DD4BF", // 청록
+  "#E879A8", // 분홍
+  "#FBBF24", // 노랑
+  "#94A3B8", // 회청
+  "#818CF8", // 남보라
+  "#34D399", // 초록
+  "#F472B6", // 진분홍
+  "#FB923C", // 주황
+  "#22D3EE", // 하늘
+];
 const OTHER_COLOR = "#B0B8C1";
+const MAX_NAMED_SLICES = 9;
 
 interface Slice {
   key: string;
@@ -33,27 +54,36 @@ function buildSlices(holdings: HoldingSummary[]): Slice[] {
     value: h.totalKrw,
   });
 
-  if (sorted.length <= 5) return sorted.map(toSlice);
+  // 종목 10개 이하면 전부 표시, 11개 이상이면 상위 9개 + "외 N건"(합계 10칸 = 범례 5×2).
+  if (sorted.length <= MAX_NAMED_SLICES + 1) return sorted.map(toSlice);
 
-  const top5 = sorted.slice(0, 5).map(toSlice);
-  const rest = sorted.slice(5);
+  const top = sorted.slice(0, MAX_NAMED_SLICES).map(toSlice);
+  const rest = sorted.slice(MAX_NAMED_SLICES);
   const restValue = rest.reduce((sum, h) => sum + h.totalKrw, 0);
 
   return [
-    ...top5,
+    ...top,
     {
       key: "OTHER",
-      label: `외 ${rest.length}건`,
+      label: `외 ${rest.length}개`,
       color: OTHER_COLOR,
       value: restValue,
     },
   ];
 }
 
+// 도넛 가운데 — 등급을 광물 아이콘 + 그 아래 색깔 있는 등급 이름으로. 금액은 넣지 않는다
+// (상단 총자산과 중복). "등급"이라는 글자도 뺀다(D-201).
+function TierCenter({ totalAssetKrw }: { totalAssetKrw: number | null }) {
+  return <TierEmblem tier={tierOf(totalAssetKrw)} />;
+}
+
 export function HoldingsDonutChart({
   holdings,
+  totalAssetKrw = null,
 }: {
   holdings: HoldingSummary[] | null;
+  totalAssetKrw?: number | null;
 }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -77,8 +107,8 @@ export function HoldingsDonutChart({
     );
   }
 
-  // D-192: 보유 종목이 하나도 없어도(계좌 미등록 또는 자산 미등록) 차트 자체는
-  // 기본으로 노출한다 — 빈 회색 링 + "0원"만 다르고 레이아웃은 데이터가 있을 때와 동일.
+  // D-192: 보유 종목이 하나도 없어도 차트는 기본 노출 — 빈 회색 링 + 등급(언랭크)만
+  // 다르고 레이아웃은 데이터가 있을 때와 동일. 신규 사용자에게 "언랭크"가 온보딩 신호가 된다.
   if (holdings.length === 0) {
     return (
       <div className="mb-7 rise-in">
@@ -98,15 +128,7 @@ export function HoldingsDonutChart({
             }}
           >
             <div className="flex flex-col items-center px-3 text-center">
-              <p className="text-[10px]" style={{ color: "var(--text-sub)" }}>
-                총 비중
-              </p>
-              <p
-                className="amount text-[11px] font-bold mt-0.5"
-                style={{ color: "var(--text-strong)" }}
-              >
-                {formatKrw(0)}
-              </p>
+              <TierCenter totalAssetKrw={totalAssetKrw} />
             </div>
           </div>
           <p
@@ -156,7 +178,10 @@ export function HoldingsDonutChart({
       </p>
 
       <div className="flex items-center gap-4">
-        <div className="relative flex-shrink-0" style={{ width: 140, height: 140 }}>
+        <div
+          className="relative flex-shrink-0 fade-in"
+          style={{ width: 140, height: 140 }}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -169,6 +194,9 @@ export function HoldingsDonutChart({
                 outerRadius={64}
                 paddingAngle={slices.length > 1 ? 2 : 0}
                 stroke="none"
+                // 등장 애니메이션 비활성화 — 리사이즈/측정 타이밍과 겹치면 슬라이스가
+                // 0도 근처에서 얼어붙어 링이 안 그려지는 recharts 버그가 있었다(D-201).
+                isAnimationActive={false}
                 onClick={(_, i) => handleClick(pieIndexToSliceIndex(i))}
               >
                 {pieData.map((s, i) => (
@@ -205,53 +233,34 @@ export function HoldingsDonutChart({
                 </p>
               </>
             ) : (
-              <>
-                <p className="text-[10px]" style={{ color: "var(--text-sub)" }}>
-                  총 비중
-                </p>
-                <p
-                  className="amount text-[11px] font-bold mt-0.5 truncate w-full"
-                  style={{ color: "var(--text-strong)" }}
-                >
-                  {formatKrw(total)}
-                </p>
-              </>
+              <TierCenter totalAssetKrw={totalAssetKrw} />
             )}
           </div>
         </div>
 
-        {/* 범례 — 차트 오른쪽 배치. 탭으로도 하이라이트 가능(작은 조각은 직접 탭하기 어려움 보완) */}
-        <div className="flex-1 min-w-0 space-y-1.5">
+        {/* 범례 — 차트 오른쪽 배치. 위→아래로 5개 채우고 넘치면 오른쪽 열로(열 우선).
+            탭으로도 하이라이트 가능. 종목명이 길면 truncate, 티커는 공간상 생략. */}
+        <div className="flex-1 min-w-0 gap-x-2.5 gap-y-1" style={legendGridStyle}>
           {slices.map((s, i) => (
             <button
               key={s.key}
               type="button"
               onClick={() => handleClick(i)}
-              className="w-full flex items-center justify-between px-1 py-0.5 rounded-lg transition-opacity"
-              style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.45 }}
+              className="flex items-center gap-1 min-w-0 py-0.5 rounded transition-opacity"
+              style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.4 }}
             >
-              <span className="flex items-center gap-1.5 min-w-0">
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: s.color }}
-                />
-                <span className="truncate">
-                  <span
-                    className="text-[12px] font-medium"
-                    style={{ color: "var(--text-strong)" }}
-                  >
-                    {s.label}
-                  </span>
-                  {s.symbol && (
-                    <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>
-                      {" "}
-                      {s.symbol}
-                    </span>
-                  )}
-                </span>
+              <span
+                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                style={{ backgroundColor: s.color }}
+              />
+              <span
+                className="text-[11px] font-medium truncate min-w-0 flex-1 text-left"
+                style={{ color: "var(--text-strong)" }}
+              >
+                {s.label}
               </span>
               <span
-                className="amount text-[12px] flex-shrink-0"
+                className="amount text-[10px] flex-shrink-0"
                 style={{ color: "var(--text-sub)" }}
               >
                 {total > 0 ? `${((s.value / total) * 100).toFixed(1)}%` : "0%"}

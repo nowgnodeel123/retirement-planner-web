@@ -27,6 +27,7 @@ export function TradeAmountFields({
   fxLabel,
   fx,
   onFxChange,
+  fxHint,
   tradeDate,
   onTradeDateChange,
 }: {
@@ -41,6 +42,8 @@ export function TradeAmountFields({
   fxLabel: string;
   fx: number | "";
   onFxChange: (v: number | "") => void;
+  // 거래일 기준 매매기준율을 자동으로 채웠을 때 그 근거를 안내하는 문구(선택)
+  fxHint?: string | null;
   tradeDate: string;
   onTradeDateChange: (v: string) => void;
 }) {
@@ -72,6 +75,14 @@ export function TradeAmountFields({
             placeholder="1,350.00"
           />
         </Field>
+      )}
+      {isForeign && fxHint && (
+        <p
+          className="text-[12px] -mt-3 mb-4"
+          style={{ color: "var(--text-faint)" }}
+        >
+          {fxHint}
+        </p>
       )}
       <div className="mb-1">
         <label

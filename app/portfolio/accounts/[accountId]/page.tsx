@@ -14,6 +14,8 @@ import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { ProfitTab } from "@/app/components/portfolio/ProfitTab";
 import { TaxTab } from "@/app/components/portfolio/TaxTab";
+import { RenameAccountModal } from "@/app/components/portfolio/RenameAccountModal";
+import { allowedCategories } from "@/app/components/portfolio/accountRules";
 import { formatKrw, formatMoney, signed } from "@/app/components/portfolio/format";
 import {
   HoldingSortKey,
@@ -105,7 +107,7 @@ export default function AccountDetailPage() {
   const [holdings, setHoldings] = useState<AssetHoldingResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // M10(D-065): 계좌 상세 3탭(자산/수익/세금). 세금 탭은 M11 스코프 — 플레이스홀더만 노출.
+  // M10(D-065): 계좌 상세 3탭(자산/수익/세금).
   const [activeTab, setActiveTab] = useState<"ASSETS" | "PROFIT" | "TAX">(
     "ASSETS",
   );
@@ -117,6 +119,30 @@ export default function AccountDetailPage() {
 
   // M7: 정리한 자산(전량매도) 섹션 — 기본 접힘.
   const [clearedOpen, setClearedOpen] = useState(false);
+
+  // D-201: 계좌 이름 수정은 이 화면에서(제목 옆 연필). 포트폴리오 리스트에선 스와이프로 진입.
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
+
+  async function handleRename(name: string) {
+    setRenaming(true);
+    setRenameError(null);
+    try {
+      const updated = await api.patch<AccountResponse>(
+        `/api/accounts/${accountId}/name`,
+        { name },
+      );
+      setAccount(updated);
+      setRenameOpen(false);
+    } catch (e) {
+      setRenameError(
+        e instanceof ApiError ? e.message : "이름 수정 중 문제가 발생했어요.",
+      );
+    } finally {
+      setRenaming(false);
+    }
+  }
 
   useEffect(() => {
     // 단건 조회 API가 없어 목록에서 찾는다 — GET /api/accounts/{id}는 백로그 후보.
@@ -176,6 +202,22 @@ export default function AccountDetailPage() {
     [activeHoldings, sortKey, sortDir],
   );
 
+  // 탭 노출 정책:
+  //  - 은행 계좌(D-060): 입금 히스토리만 다뤄 실현손익·세금 개념이 없음 → 자산 탭만.
+  //  - 연금저축·IRP·ISA: 세제혜택(과세이연/비과세·저율분리과세) 계좌라 양도소득세·2천만원
+  //    배당 판정 대상이 아님 → 세금 탭 숨김. 수익(실현손익·배당) 탭은 유지.
+  //  - 그 외 일반 계좌: 자산/수익/세금 3탭.
+  const showProfit = !!account && account.institutionType !== "BANK";
+  const showTax = showProfit && account!.detailType === "NORMAL";
+  const profitCategories = account
+    ? allowedCategories(account.institutionType, account.detailType)
+    : [];
+
+  useEffect(() => {
+    if (activeTab === "PROFIT" && !showProfit) setActiveTab("ASSETS");
+    if (activeTab === "TAX" && !showTax) setActiveTab("ASSETS");
+  }, [activeTab, showProfit, showTax]);
+
   if (account === null) {
     return (
       <div className="max-w-[420px] mx-auto px-5 pt-16 text-center">
@@ -216,17 +258,45 @@ export default function AccountDetailPage() {
       </button>
 
       <div className="mb-1">
-        <h1
-          className="text-[17px] font-bold"
-          style={{ color: "var(--text-strong)" }}
-        >
-          {account?.name ?? (
-            <span
-              className="inline-block w-32 h-6 rounded-md animate-pulse"
-              style={{ background: "var(--border)" }}
-            />
+        <div className="flex items-center gap-2">
+          <h1
+            className="text-[17px] font-bold"
+            style={{ color: "var(--text-strong)" }}
+          >
+            {account?.name ?? (
+              <span
+                className="inline-block w-32 h-6 rounded-md animate-pulse"
+                style={{ background: "var(--border)" }}
+              />
+            )}
+          </h1>
+          {account && (
+            <button
+              type="button"
+              onClick={() => {
+                setRenameError(null);
+                setRenameOpen(true);
+              }}
+              aria-label="계좌 이름 수정"
+              className="p-1 rounded-md flex-shrink-0"
+              style={{ color: "var(--text-faint)" }}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.9}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
+              </svg>
+            </button>
           )}
-        </h1>
+        </div>
         {account && (
           <p
             className="text-[12px] mt-0.5"
@@ -239,49 +309,52 @@ export default function AccountDetailPage() {
         )}
       </div>
 
-      {/* M10(D-065): 자산/수익/세금 3탭 — 은행 계좌는 입금 히스토리만 다뤄(D-060)
-          실현손익·세금 개념 자체가 없으므로 자산 탭만 보여준다 */}
-      {account && account.institutionType !== "BANK" && (
-        <div
-          className="flex mb-5 border-b"
-          style={{ borderColor: "var(--border)" }}
-        >
-          {(
-            [
-              { key: "ASSETS" as const, label: "자산" },
-              { key: "PROFIT" as const, label: "수익" },
-              { key: "TAX" as const, label: "세금" },
-            ]
-          ).map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className="flex-1 text-center py-2.5 text-[13px] font-semibold relative"
-              style={{
-                color:
-                  activeTab === tab.key ? "var(--text-strong)" : "var(--text-faint)",
-              }}
-            >
-              {tab.label}
-              {activeTab === tab.key && (
-                <span
-                  className="absolute left-0 right-0 -bottom-px h-[2px]"
-                  style={{ background: "var(--accent)" }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
+      {/* 탭 노출 정책은 위 showProfit/showTax 주석 참조. 탭이 자산 하나뿐이면 탭바를 숨긴다. */}
+      {(() => {
+        const tabs: { key: "ASSETS" | "PROFIT" | "TAX"; label: string }[] = [
+          { key: "ASSETS", label: "자산" },
+          ...(showProfit
+            ? [{ key: "PROFIT" as const, label: "수익" }]
+            : []),
+          ...(showTax ? [{ key: "TAX" as const, label: "세금" }] : []),
+        ];
+        if (tabs.length <= 1) return null;
+        return (
+          <div
+            className="flex mb-5 border-b"
+            style={{ borderColor: "var(--border)" }}
+          >
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className="flex-1 text-center py-2.5 text-[13px] font-semibold relative"
+                style={{
+                  color:
+                    activeTab === tab.key
+                      ? "var(--text-strong)"
+                      : "var(--text-faint)",
+                }}
+              >
+                {tab.label}
+                {activeTab === tab.key && (
+                  <span
+                    className="absolute left-0 right-0 -bottom-px h-[2px]"
+                    style={{ background: "var(--accent)" }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
+
+      {activeTab === "PROFIT" && showProfit && (
+        <ProfitTab accountId={accountId} allowed={profitCategories} />
       )}
 
-      {activeTab === "PROFIT" && account?.institutionType !== "BANK" && (
-        <ProfitTab accountId={accountId} />
-      )}
-
-      {activeTab === "TAX" && account?.institutionType !== "BANK" && (
-        <TaxTab accountId={accountId} />
-      )}
+      {activeTab === "TAX" && showTax && <TaxTab accountId={accountId} />}
 
       {activeTab === "ASSETS" && (
       <>
@@ -610,6 +683,16 @@ export default function AccountDetailPage() {
         </div>
       )}
       </>
+      )}
+
+      {renameOpen && account && (
+        <RenameAccountModal
+          currentName={account.name}
+          loading={renaming}
+          error={renameError}
+          onConfirm={handleRename}
+          onCancel={() => setRenameOpen(false)}
+        />
       )}
     </div>
   );
