@@ -1,9 +1,11 @@
 // Step3InvestmentAssets.tsx
-import { RetirementFormState } from "./types";
+import { PrefilledField, RetirementFormState } from "./types";
 import {
   ErrorBanner,
   Hint,
+  NoticeBanner,
   NumberInput,
+  PrefillBadge,
   PrimaryButton,
   ProgressBar,
   SecondaryButton,
@@ -22,6 +24,10 @@ interface Props {
   onBack: () => void;
   submitting: boolean;
   error: string | null;
+  /** D-218: 포트폴리오에서 자동으로 채워진 필드 */
+  prefilled: PrefilledField[];
+  /** D-218: 프리필 금액이 실제보다 작을 수 있는 사유(시세 미조회·현금 제외). 없으면 null */
+  prefillNotice: string | null;
 }
 
 export default function Step3InvestmentAssets({
@@ -31,6 +37,8 @@ export default function Step3InvestmentAssets({
   onBack,
   submitting,
   error,
+  prefilled,
+  prefillNotice,
 }: Props) {
   return (
     <WizardCard>
@@ -81,7 +89,13 @@ export default function Step3InvestmentAssets({
           <Hint>모르겠다면 연 7% 정도가 무난해요.</Hint>
         </div>
 
-        <SmallField label="현재 잔액" unit="만원">
+        <SmallField
+          label="현재 잔액"
+          unit="만원"
+          badge={
+            prefilled.includes("stockEtfCurrentBalance") ? <PrefillBadge /> : null
+          }
+        >
           <NumberInput
             value={form.stockEtfCurrentBalance}
             onChange={(v) => onChange("stockEtfCurrentBalance", v)}
@@ -91,6 +105,10 @@ export default function Step3InvestmentAssets({
           />
         </SmallField>
       </SectionCard>
+
+      {/* D-218: 프리필이 실제 자산보다 적게 잡혔을 수 있다는 안내.
+          금액 입력 바로 아래·제출 버튼 위에 둬서 지금 바로 고칠 수 있게 한다. */}
+      {prefillNotice && <NoticeBanner>{prefillNotice}</NoticeBanner>}
 
       {/* WHY: 검증/서버 에러를 버튼 바로 위, 현재 화면에 즉시 표시한다.
           화면 이동이나 스크롤 없이 무엇이 문제인지 바로 보인다. */}

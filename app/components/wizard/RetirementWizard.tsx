@@ -1,10 +1,13 @@
 // RetirementWizard.tsx
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  applyPrefill,
   initialFormState,
+  PrefilledField,
   RetirementFormState,
+  SimulationPrefillResponse,
   SimulationRequestPayload,
   SimulationResponseDto,
   toRequestPayload,
@@ -36,6 +39,45 @@ export default function RetirementWizard() {
     useState<SimulationRequestPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // D-218: 포트폴리오에서 채워진 필드와, 채우면서 빠진 금액에 대한 안내.
+  const [prefilled, setPrefilled] = useState<PrefilledField[]>([]);
+  const [prefillNotice, setPrefillNotice] = useState<string | null>(null);
+
+  // 프리필 응답이 도착한 시점의 최신 폼을 읽기 위한 미러. setForm 업데이터 안에서
+  // setPrefilled를 부르면 상태 업데이터가 부수효과를 갖게 되므로(StrictMode 이중 호출)
+  // 폼 스냅샷을 ref로 따로 들고 있는다.
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  });
+
+  // WHY 실패해도 아무것도 안 하는가: 프리필은 편의 기능이지 필수 경로가 아니다.
+  // 시세 서버가 죽어도 위저드는 지금까지처럼 빈 폼으로 그냥 동작해야 한다(조용히 degrade).
+  // 반대로 "성공했는데 일부가 빠진" 경우는 조용히 넘어가면 안 된다 — 아래 notice 참조.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const prefill = await api.get<SimulationPrefillResponse>(
+          "/api/v1/simulation/prefill",
+        );
+        if (cancelled) return;
+        const { form: next, prefilled: filled } = applyPrefill(
+          formRef.current,
+          prefill,
+        );
+        setForm(next);
+        setPrefilled(filled);
+        setPrefillNotice(buildPrefillNotice(prefill));
+      } catch {
+        // 무시 — 수기 입력으로 진행
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // WHY: 3단계에서 제출 실패로 에러가 뜬 채로 "이전"을 눌러 필드를 고치고
   // 다시 3단계로 돌아오면, 아직 재제출 전인데도 방금 고친 게 안 먹힌 것처럼
@@ -148,6 +190,7 @@ export default function RetirementWizard() {
           form={form}
           onChange={handleChange}
           onNext={() => goToStep(2)}
+          prefilled={prefilled}
         />
       )}
       {step === 2 && (
@@ -156,6 +199,7 @@ export default function RetirementWizard() {
           onChange={handleChange}
           onNext={() => goToStep(3)}
           onBack={() => goToStep(1)}
+          prefilled={prefilled}
         />
       )}
       {step === 3 && (
@@ -166,6 +210,8 @@ export default function RetirementWizard() {
           onBack={() => goToStep(2)}
           submitting={submitting}
           error={error}
+          prefilled={prefilled}
+          prefillNotice={prefillNotice}
         />
       )}
       {step === "analyzing" && <AnalyzingScreen />}
@@ -178,4 +224,25 @@ export default function RetirementWizard() {
       )}
     </div>
   );
+}
+
+/**
+ * D-218: 프리필 금액이 실제보다 작을 수 있는 두 가지 사유를 사용자에게 그대로 알린다.
+ * 여기서 침묵하면 사용자는 "내 자산 다 반영됐구나" 하고 넘어가고, 그 결과 은퇴 가능
+ * 나이가 실제보다 늦게 나온다 — 시뮬레이터에서 가장 나쁜 실패 방식이다.
+ */
+function buildPrefillNotice(prefill: SimulationPrefillResponse): string | null {
+  const parts: string[] = [];
+  if (prefill.excludedCount > 0) {
+    parts.push(
+      `시세를 가져오지 못한 자산 ${prefill.excludedCount}건이 빠져 있어요`,
+    );
+  }
+  if (prefill.excludedCashAmount > 0) {
+    parts.push(
+      `현금 ${prefill.excludedCashAmount.toLocaleString()}만원은 투자수익률이 붙지 않도록 빼고 채웠어요`,
+    );
+  }
+  if (parts.length === 0) return null;
+  return `${parts.join(", ")}. 실제와 다르면 직접 고쳐주세요.`;
 }

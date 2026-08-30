@@ -107,6 +107,62 @@ export function toRequestPayload(
   };
 }
 
+// ── D-218: 포트폴리오 프리필 ──
+// 백엔드 SimulationPrefillResponseDto와 정확히 매칭. 금액은 전부 만원 단위로
+// 내려오므로(서버에서 한 번만 환산) 폼에 그대로 넣으면 된다.
+export interface SimulationPrefillResponse {
+  currentAge: number | null;
+  currentIrpBalance: number;
+  currentPensionSavingsBalance: number;
+  stockAssetBalance: number;
+  excludedCount: number;
+  excludedCashAmount: number;
+}
+
+/**
+ * 프리필로 채워진 필드 — 각 입력 옆에 "불러옴" 배지를 붙이는 데 쓴다.
+ * 숫자 필드로만 좁힌다: 퇴직연금 유형(DB/DC) 같은 문자열 필드에 금액을 넣는 실수를
+ * 타입 단계에서 막는다.
+ */
+export type PrefilledField = {
+  [K in keyof RetirementFormState]: RetirementFormState[K] extends number | ""
+    ? K
+    : never;
+}[keyof RetirementFormState];
+
+/**
+ * 프리필 응답을 폼 상태에 반영한다.
+ *
+ * WHY 0은 채우지 않는가: 포트폴리오에 IRP 계좌가 아예 없으면 0이 내려온다. 그걸 "0"으로
+ * 찍어두면 사용자가 다른 데서 굴리는 IRP가 있어도 이미 입력된 것처럼 보여 그냥 넘어가게
+ * 된다. 빈칸으로 두면 placeholder 안내가 보이고 직접 입력하게 된다.
+ *
+ * WHY 이미 입력된 값은 덮지 않는가: 프리필은 마운트 시 1회지만, 응답이 늦게 도착하는
+ * 동안 사용자가 이미 타이핑을 시작했을 수 있다. 사용자가 친 값이 항상 이긴다.
+ */
+export function applyPrefill(
+  form: RetirementFormState,
+  prefill: SimulationPrefillResponse,
+): { form: RetirementFormState; prefilled: PrefilledField[] } {
+  const next: RetirementFormState = { ...form };
+  const numericFields = next as Record<PrefilledField, number | "">;
+  const prefilled: PrefilledField[] = [];
+
+  const fill = (key: PrefilledField, value: number | null) => {
+    if (value === null || value <= 0) return;
+    if (numericFields[key] !== "") return;
+    numericFields[key] = value;
+    prefilled.push(key);
+  };
+
+  fill("currentAge", prefill.currentAge);
+  fill("irpCurrentBalance", prefill.currentIrpBalance);
+  fill("pensionSavingsCurrentBalance", prefill.currentPensionSavingsBalance);
+  fill("stockEtfCurrentBalance", prefill.stockAssetBalance);
+
+  return { form: next, prefilled };
+}
+
 // ── 결과 화면 타임라인 차트 한 점 ──
 // 퇴직연금(DB/DC)과 IRP+연금저축은 서로 다른 입력 경로를 가진 별개
 // 상품이라 분리해서 내려온다(D-131) — 합쳐서 보여주면 "IRP를 안 넣었는데

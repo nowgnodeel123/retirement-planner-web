@@ -1,8 +1,9 @@
 // Step1BasicInfo.tsx
-import { RetirementFormState } from "./types";
+import { PrefilledField, RetirementFormState } from "./types";
 import {
   Field,
   Hint,
+  PrefillBadge,
   NumberInput,
   PrimaryButton,
   ProgressBar,
@@ -17,9 +18,16 @@ interface Props {
     value: RetirementFormState[K],
   ) => void;
   onNext: () => void;
+  /** D-218: 포트폴리오/프로필에서 자동으로 채워진 필드 */
+  prefilled: PrefilledField[];
 }
 
-export default function Step1BasicInfo({ form, onChange, onNext }: Props) {
+export default function Step1BasicInfo({
+  form,
+  onChange,
+  onNext,
+  prefilled,
+}: Props) {
   return (
     <WizardCard>
       <ProgressBar step={0} total={3} />
@@ -35,7 +43,11 @@ export default function Step1BasicInfo({ form, onChange, onNext }: Props) {
           몇 살에 은퇴할 수 있는지 계산의 출발점이 돼요.
         </p>
 
-        <Field label="현재 나이" unit="세">
+        <Field
+          label="현재 나이"
+          unit="세"
+          badge={prefilled.includes("currentAge") ? <PrefillBadge /> : null}
+        >
           <NumberInput
             value={form.currentAge}
             onChange={(v) => onChange("currentAge", v)}

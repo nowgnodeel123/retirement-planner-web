@@ -158,10 +158,12 @@ export function ProgressBar({ step, total }: { step: number; total: number }) {
 export function Field({
   label,
   unit,
+  badge,
   children,
 }: {
   label: string;
   unit: string;
+  badge?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -169,6 +171,7 @@ export function Field({
       <label className="text-sm text-[var(--text-sub)] font-medium">
         {label}
       </label>
+      {badge}
       <div className="flex items-center gap-2 mt-1.5">
         {children}
         <span className="text-sm text-[var(--text-faint)] whitespace-nowrap">
@@ -182,10 +185,12 @@ export function Field({
 export function SmallField({
   label,
   unit,
+  badge,
   children,
 }: {
   label: string;
   unit: string;
+  badge?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -193,12 +198,57 @@ export function SmallField({
       <label className="text-xs text-[var(--text-sub)] font-medium">
         {label}
       </label>
+      {badge}
       <div className="flex items-center gap-1.5 mt-1">
         {children}
         <span className="text-xs text-[var(--text-faint)] whitespace-nowrap">
           {unit}
         </span>
       </div>
+    </div>
+  );
+}
+
+/**
+ * D-218: 이 입력값이 사용자가 친 게 아니라 포트폴리오에서 자동으로 채워졌음을 알리는 배지.
+ * WHY 굳이 표시하는가: 값이 말없이 들어차 있으면 사용자는 그게 어디서 온 숫자인지 모른 채
+ * 그냥 넘어간다. 출처를 밝혀야 "내 계좌 기준이구나"를 이해하고, 틀렸을 때 고칠 생각을 한다.
+ */
+export function PrefillBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 ml-1.5 align-middle rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent)]">
+      <svg className="w-2.5 h-2.5" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M9 2a1 1 0 012 0v9.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V2z" />
+        <path d="M3 15a1 1 0 112 0v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1z" />
+      </svg>
+      불러옴
+    </span>
+  );
+}
+
+/**
+ * D-218: 프리필이 실제 자산보다 적게 잡혔을 수 있다는 경고.
+ * 대시보드는 시세 미조회 자산을 조용히 빼도 되지만(총자산이 조금 작게 보일 뿐),
+ * 시뮬레이터에서는 그게 곧 "은퇴 나이가 실제보다 늦게 나오는 틀린 답"이 된다.
+ * 그래서 여기서만은 degrade를 반드시 눈에 보이게 만든다.
+ */
+export function NoticeBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2 rounded-xl border border-[var(--warning)]/25 bg-[var(--warning-soft)] px-4 py-3 mb-4">
+      <svg
+        className="w-4 h-4 text-[var(--warning)] mt-0.5 flex-shrink-0"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+      >
+        <path
+          fillRule="evenodd"
+          d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+          clipRule="evenodd"
+        />
+      </svg>
+      <p className="text-[13px] text-[var(--warning)] leading-relaxed">
+        {children}
+      </p>
     </div>
   );
 }

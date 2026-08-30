@@ -1,10 +1,11 @@
 // Step2PensionInfo.tsx
 // 다크모드: neutral-*/blue-*/white 하드코딩을 디자인 토큰으로 전환
-import { RetirementFormState } from "./types";
+import { PrefilledField, RetirementFormState } from "./types";
 import {
   Field,
   Hint,
   NumberInput,
+  PrefillBadge,
   PrimaryButton,
   ProgressBar,
   SecondaryButton,
@@ -21,6 +22,8 @@ interface Props {
   ) => void;
   onNext: () => void;
   onBack: () => void;
+  /** D-218: 포트폴리오에서 자동으로 채워진 필드 */
+  prefilled: PrefilledField[];
 }
 
 export default function Step2PensionInfo({
@@ -28,6 +31,7 @@ export default function Step2PensionInfo({
   onChange,
   onNext,
   onBack,
+  prefilled,
 }: Props) {
   return (
     <WizardCard>
@@ -142,6 +146,7 @@ export default function Step2PensionInfo({
           contributionPlaceholder="예) 25"
           form={form}
           onChange={onChange}
+          prefilled={prefilled}
         />
 
         {/* 연금저축 */}
@@ -154,6 +159,7 @@ export default function Step2PensionInfo({
           contributionPlaceholder="예) 50"
           form={form}
           onChange={onChange}
+          prefilled={prefilled}
           noBorderBottom
         />
       </SectionCard>
@@ -223,16 +229,19 @@ function PensionProductFields({
   contributionPlaceholder,
   form,
   onChange,
+  prefilled,
   noBorderBottom,
 }: {
   title: string;
-  contributionKey: keyof RetirementFormState;
-  rateKey: keyof RetirementFormState;
-  balanceKey: keyof RetirementFormState;
+  // PrefilledField(숫자 필드)로 좁힌다 — balanceKey를 그대로 prefilled 조회에 쓰기 때문.
+  contributionKey: PrefilledField;
+  rateKey: PrefilledField;
+  balanceKey: PrefilledField;
   hint: string;
   contributionPlaceholder: string;
   form: RetirementFormState;
   onChange: Props["onChange"];
+  prefilled: PrefilledField[];
   noBorderBottom?: boolean;
 }) {
   return (
@@ -271,7 +280,11 @@ function PensionProductFields({
       <div className="mb-2.5">
         <Hint>{hint}</Hint>
       </div>
-      <SmallField label="기존 잔액" unit="만원">
+      <SmallField
+        label="기존 잔액"
+        unit="만원"
+        badge={prefilled.includes(balanceKey) ? <PrefillBadge /> : null}
+      >
         <NumberInput
           value={form[balanceKey] as number | ""}
           onChange={(v) => onChange(balanceKey, v as never)}
