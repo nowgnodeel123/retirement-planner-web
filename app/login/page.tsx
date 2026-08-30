@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { api, API_BASE_URL, ApiError } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
 import { ErrorBanner, inputClass, PrimaryButton, SecondaryButton } from "@/app/components/wizard/Ui";
+import { NestMark } from "@/app/components/brand/NestMark";
 
 type Mode = "login" | "signup" | "findEmail" | "resetPassword";
 type Gender = "MALE" | "FEMALE";
@@ -460,12 +461,7 @@ export default function LoginPage() {
     >
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-2.5">
-          <div
-            className="w-8 h-8 rounded-[10px] flex items-center justify-center text-white text-[15px] font-extrabold"
-            style={{ background: "linear-gradient(155deg, var(--accent), #0b5a53)" }}
-          >
-            N
-          </div>
+          <NestMark size={34} />
           <p className="text-2xl font-bold tracking-tight text-[var(--text-strong)]">
             NEST
           </p>
