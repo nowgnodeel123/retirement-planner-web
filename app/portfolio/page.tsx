@@ -3,14 +3,15 @@
 //        계좌 수정/삭제는 카드를 좌측 스와이프하면 나오는 원형 버튼으로(관리 토글 폐지).
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { AccountCard } from "@/app/components/portfolio/AccountCard";
-import { SwipeAccountRow } from "@/app/components/portfolio/SwipeAccountRow";
+import { SwipeRow } from "@/app/components/portfolio/SwipeRow";
 import { HoldingsDonutChart } from "@/app/components/portfolio/HoldingsDonutChart";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
-import { RenameAccountModal } from "@/app/components/portfolio/RenameAccountModal";
+import { RenameModal } from "@/app/components/portfolio/RenameModal";
 import { PortfolioSummary } from "@/app/components/portfolio/PortfolioSummary";
 import { Toast } from "@/app/components/portfolio/Toast";
 import {
@@ -19,22 +20,12 @@ import {
   SortDirection,
 } from "@/app/components/portfolio/SortModal";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
+import { NestMark } from "@/app/components/brand/NestMark";
 import {
   AccountResponse,
   AccountSummary,
   PortfolioSummaryResponse,
 } from "@/app/components/portfolio/types";
-
-// D-201: 둥지 아이콘 — 미니멀. 달걀(세로 타원) 하나 + 그 아래 초승달 모양의 둥지 그릇.
-// 둘 다 흰색 실루엣, 사이의 얇은 틈은 배경(accent)색이 그대로 비쳐 알과 둥지가 분리돼 읽힌다.
-function NestIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-      <ellipse cx="12" cy="9.5" rx="3.6" ry="4.4" />
-      <path d="M3 11.5Q3 21 12 21 21 21 21 11.5 21 15.6 12 15.6 3 15.6 3 11.5Z" />
-    </svg>
-  );
-}
 
 function SortIcon() {
   return (
@@ -57,6 +48,7 @@ const SORT_LABEL: Record<HoldingSortKey, string> = {
   value: "금액순",
   profitRate: "수익률순",
   name: "이름순",
+  manual: "내 순서",
 };
 
 function EmptyState() {
@@ -112,6 +104,12 @@ function sortAccounts(
   dir: SortDirection,
 ): AccountResponse[] {
   return [...accounts].sort((a, b) => {
+    if (key === "manual") {
+      // 아직 순서를 지정한 적 없는 계좌는 뒤로, 그 안에서는 등록순(id).
+      const ao = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
+      const bo = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
+      return ao !== bo ? ao - bo : a.id - b.id;
+    }
     if (key === "name") {
       const cmp = a.name.localeCompare(b.name, "ko");
       return dir === "asc" ? cmp : -cmp;
@@ -129,14 +127,18 @@ function sortAccounts(
 }
 
 export default function PortfolioPage() {
+  const router = useRouter();
   const [accounts, setAccounts] = useState<AccountResponse[] | null>(null);
   const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  const [sortKey, setSortKey] = useState<HoldingSortKey>("value");
-  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  // 사용자가 직접 고른 정렬. null이면 아직 안 골랐다는 뜻이라 아래에서 기본값을 정한다.
+  const [pickedSort, setPickedSort] = useState<{
+    key: HoldingSortKey;
+    dir: SortDirection;
+  } | null>(null);
   const [sortOpen, setSortOpen] = useState(false);
 
   const [pendingRename, setPendingRename] = useState<AccountResponse | null>(
@@ -150,6 +152,16 @@ export default function PortfolioPage() {
   );
   const [deleting, setDeleting] = useState(false);
 
+  // 총자산·등급 도넛·종목별 비중의 단일 소스. 계좌가 지워지면 이 요약도 다시 받아와야 한다.
+  const loadSummary = useCallback(
+    () =>
+      api
+        .get<PortfolioSummaryResponse>("/api/portfolio/summary")
+        .then((data) => setSummary(data))
+        .catch(() => {}),
+    [],
+  );
+
   useEffect(() => {
     api
       .get<AccountResponse[]>("/api/accounts")
@@ -158,22 +170,27 @@ export default function PortfolioPage() {
         setError(e instanceof ApiError ? e.message : "계좌를 불러오지 못했어요."),
       );
 
-    api
-      .get<PortfolioSummaryResponse>("/api/portfolio/summary")
-      .catch(() => null)
-      .then((data) => data && setSummary(data));
+    loadSummary();
 
     api
       .get<{ nickname: string }>("/api/users/me")
       .then((me) => setNickname(me.nickname))
       .catch(() => {});
-  }, []);
+  }, [loadSummary]);
 
   const summaryMap = useMemo(() => {
     const m = new Map<number, AccountSummary>();
     for (const s of summary?.accounts ?? []) m.set(s.accountId, s);
     return m;
   }, [summary]);
+
+  // 한 번이라도 순서를 정했다면 기본 보기를 내 순서로 맞춘다 —
+  // "편집하러 들어가기"와 "내 순서로 보기"를 따로 배우지 않아도 되게.
+  // 이펙트에서 setState 하면 목록이 한 번 다른 순서로 그려졌다가 다시 그려진다(연쇄 렌더).
+  // 사용자가 정렬을 직접 고르기 전까지는 파생값으로 계산한다.
+  const hasManualOrder = accounts?.some((a) => a.sortOrder !== null) ?? false;
+  const sortKey = pickedSort?.key ?? (hasManualOrder ? "manual" : "value");
+  const sortDir = pickedSort?.dir ?? (hasManualOrder ? "asc" : "desc");
 
   const sortedAccounts = useMemo(
     () => sortAccounts(accounts ?? [], summaryMap, sortKey, sortDir),
@@ -188,6 +205,9 @@ export default function PortfolioPage() {
       setAccounts(
         (prev) => prev?.filter((a) => a.id !== pendingDelete.id) ?? null,
       );
+      // 서버는 FK ON DELETE CASCADE(V2)로 하위 자산·거래·배당까지 지운다.
+      // 요약은 마운트 시 1회만 받아오던 탓에 지워진 계좌의 자산이 총자산·도넛에 그대로 남아 있었다.
+      await loadSummary();
       setToast("계좌가 삭제되었어요.");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "삭제 중 문제가 발생했어요.");
@@ -226,13 +246,7 @@ export default function PortfolioPage() {
     <div className="max-w-[420px] w-full mx-auto px-5 pt-7 pb-24">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2 min-w-0">
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "var(--accent)" }}
-            aria-hidden="true"
-          >
-            <NestIcon />
-          </div>
+          <NestMark size={32} />
           {nickname === null ? (
             <span
               className="inline-block w-20 h-4 rounded-md animate-pulse"
@@ -325,8 +339,12 @@ export default function PortfolioPage() {
                     sortKey={sortKey}
                     sortDir={sortDir}
                     onApply={(key, dir) => {
-                      setSortKey(key);
-                      setSortDir(dir);
+                      // "사용자 설정"은 정렬 옵션이 아니라 순서 편집 화면 진입이다.
+                      if (key === "manual") {
+                        router.push("/portfolio/order");
+                        return;
+                      }
+                      setPickedSort({ key, dir });
                       setSortOpen(false);
                     }}
                     onClose={() => setSortOpen(false)}
@@ -343,7 +361,7 @@ export default function PortfolioPage() {
                 className="rise-in"
                 style={{ animationDelay: `${Math.min(i * 45, 270)}ms` }}
               >
-                <SwipeAccountRow
+                <SwipeRow
                   onEdit={() => {
                     setRenameError(null);
                     setPendingRename(account);
@@ -354,7 +372,7 @@ export default function PortfolioPage() {
                     account={account}
                     summary={summaryMap.get(account.id)}
                   />
-                </SwipeAccountRow>
+                </SwipeRow>
               </div>
             ))}
           </div>
@@ -372,7 +390,8 @@ export default function PortfolioPage() {
       )}
 
       {pendingRename && (
-        <RenameAccountModal
+        <RenameModal
+          title="계좌 이름 수정"
           currentName={pendingRename.name}
           loading={renaming}
           error={renameError}

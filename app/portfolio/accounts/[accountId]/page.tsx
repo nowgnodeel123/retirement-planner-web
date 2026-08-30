@@ -6,7 +6,7 @@
 // 전체를 내려주므로(GET /api/assets) 이 구분은 프론트 전용이며 API 변경 없음.
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
@@ -14,9 +14,11 @@ import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { ProfitTab } from "@/app/components/portfolio/ProfitTab";
 import { TaxTab } from "@/app/components/portfolio/TaxTab";
-import { RenameAccountModal } from "@/app/components/portfolio/RenameAccountModal";
+import { RenameModal } from "@/app/components/portfolio/RenameModal";
+import { SwipeRow } from "@/app/components/portfolio/SwipeRow";
+import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { allowedCategories } from "@/app/components/portfolio/accountRules";
-import { formatKrw, formatMoney, signed } from "@/app/components/portfolio/format";
+import { formatKrw, formatMoney, profitColor, signed } from "@/app/components/portfolio/format";
 import {
   HoldingSortKey,
   SortDirection,
@@ -25,10 +27,10 @@ import {
 import {
   AccountResponse,
   AssetHoldingResponse,
+  AssetCategory,
   categoryUnit,
   detailTypeLabel,
   institutionLabel,
-  TradableAssetCategory,
 } from "@/app/components/portfolio/types";
 
 function formatQuantity(qty: number) {
@@ -46,12 +48,27 @@ function getSortValue(
   return h.evaluationAmount;
 }
 
+// 정렬 버튼에 지금 무슨 기준으로 보고 있는지 그대로 띄운다 — "내 순서"가 생기면서
+// 버튼이 "정렬"이라고만 되어 있으면 현재 상태를 알 수 없게 됐다(포트폴리오 메인과 동일 규칙).
+const SORT_LABEL: Record<HoldingSortKey, string> = {
+  value: "금액순",
+  profitRate: "수익률순",
+  name: "이름순",
+  manual: "내 순서",
+};
+
 function sortHoldings(
   list: AssetHoldingResponse[],
   key: HoldingSortKey,
   dir: SortDirection,
 ): AssetHoldingResponse[] {
   return [...list].sort((a, b) => {
+    if (key === "manual") {
+      // 아직 순서를 지정한 적 없는 자산은 뒤로, 그 안에서는 등록순(assetId).
+      const ao = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
+      const bo = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
+      return ao !== bo ? ao - bo : a.assetId - b.assetId;
+    }
     if (key === "name") {
       const cmp = a.name.localeCompare(b.name, "ko");
       return dir === "asc" ? cmp : -cmp;
@@ -113,14 +130,26 @@ export default function AccountDetailPage() {
   );
 
   // M7: 정렬(D-054) — 기본값은 평가금액 내림차순(비중 큰 자산부터).
-  const [sortKey, setSortKey] = useState<HoldingSortKey>("value");
-  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+  // 사용자가 직접 고른 정렬. null이면 아직 안 골랐다는 뜻이라 아래에서 기본값을 정한다.
+  const [pickedSort, setPickedSort] = useState<{
+    key: HoldingSortKey;
+    dir: SortDirection;
+  } | null>(null);
   const [sortModalOpen, setSortModalOpen] = useState(false);
 
   // M7: 정리한 자산(전량매도) 섹션 — 기본 접힘.
   const [clearedOpen, setClearedOpen] = useState(false);
 
   // D-201: 계좌 이름 수정은 이 화면에서(제목 옆 연필). 포트폴리오 리스트에선 스와이프로 진입.
+  // 종목(자산) 수정/삭제 — 계좌와 동일하게 좌측 스와이프로 노출한다.
+  const [assetRenameTarget, setAssetRenameTarget] =
+    useState<AssetHoldingResponse | null>(null);
+  const [assetRenaming, setAssetRenaming] = useState(false);
+  const [assetRenameError, setAssetRenameError] = useState<string | null>(null);
+  const [assetDeleteTarget, setAssetDeleteTarget] =
+    useState<AssetHoldingResponse | null>(null);
+  const [assetDeleting, setAssetDeleting] = useState(false);
+
   const [renameOpen, setRenameOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -144,21 +173,28 @@ export default function AccountDetailPage() {
     }
   }
 
+  // 자산 목록의 단일 소스 — 이름 수정·삭제 후에도 같은 경로로 다시 받는다.
+  const loadHoldings = useCallback(
+    () =>
+      api
+        .get<AssetHoldingResponse[]>(`/api/assets?accountId=${accountId}`)
+        .then(setHoldings)
+        .catch((e) =>
+          setError(
+            e instanceof ApiError ? e.message : "자산을 불러오지 못했어요.",
+          ),
+        ),
+    [accountId],
+  );
+
   useEffect(() => {
     // 단건 조회 API가 없어 목록에서 찾는다 — GET /api/accounts/{id}는 백로그 후보.
     api
       .get<AccountResponse[]>("/api/accounts")
       .then((all) => setAccount(all.find((a) => a.id === accountId) ?? null));
 
-    api
-      .get<AssetHoldingResponse[]>(`/api/assets?accountId=${accountId}`)
-      .then(setHoldings)
-      .catch((e) =>
-        setError(
-          e instanceof ApiError ? e.message : "자산을 불러오지 못했어요.",
-        ),
-      );
-  }, [accountId]);
+    loadHoldings();
+  }, [accountId, loadHoldings]);
 
   // 토스/도미노식 요약: 총 평가금액(원화 환산) + 총 손익. 시세 없는 자산은 제외하고 캡션 안내.
   const summary = useMemo(() => {
@@ -197,10 +233,48 @@ export default function AccountDetailPage() {
     () => (holdings ?? []).filter((h) => h.quantity <= 0),
     [holdings],
   );
+  // 순서를 정한 적 있으면 기본 보기를 내 순서로. 이펙트+setState로 하면 목록이 한 번
+  // 다른 순서로 그려졌다 다시 그려지므로(연쇄 렌더) 파생값으로 계산한다.
+  const hasManualOrder = holdings?.some((h) => h.sortOrder !== null) ?? false;
+  const sortKey = pickedSort?.key ?? (hasManualOrder ? "manual" : "value");
+  const sortDir = pickedSort?.dir ?? (hasManualOrder ? "asc" : "desc");
+
   const sortedActiveHoldings = useMemo(
     () => sortHoldings(activeHoldings, sortKey, sortDir),
     [activeHoldings, sortKey, sortDir],
   );
+
+  async function handleAssetRename(name: string) {
+    if (!assetRenameTarget) return;
+    setAssetRenaming(true);
+    setAssetRenameError(null);
+    try {
+      await api.patch(`/api/assets/${assetRenameTarget.assetId}/name`, { name });
+      setAssetRenameTarget(null);
+      loadHoldings();
+    } catch (e) {
+      setAssetRenameError(
+        e instanceof ApiError ? e.message : "이름 수정에 실패했어요.",
+      );
+    } finally {
+      setAssetRenaming(false);
+    }
+  }
+
+  async function handleAssetDelete() {
+    if (!assetDeleteTarget) return;
+    setAssetDeleting(true);
+    try {
+      await api.delete(`/api/assets/${assetDeleteTarget.assetId}`);
+      setAssetDeleteTarget(null);
+      loadHoldings();
+    } catch (e) {
+      setAssetDeleteTarget(null);
+      setError(e instanceof ApiError ? e.message : "삭제 중 문제가 발생했어요.");
+    } finally {
+      setAssetDeleting(false);
+    }
+  }
 
   // 탭 노출 정책:
   //  - 은행 계좌(D-060): 입금 히스토리만 다뤄 실현손익·세금 개념이 없음 → 자산 탭만.
@@ -374,7 +448,7 @@ export default function AccountDetailPage() {
             <span
               className="amount text-[14px] font-semibold"
               style={{
-                color: summary.profitKrw >= 0 ? "var(--gain)" : "var(--loss)",
+                color: profitColor(summary.profitKrw),
               }}
             >
               {signed(summary.profitKrw, formatKrw(summary.profitKrw))} (
@@ -425,15 +499,19 @@ export default function AccountDetailPage() {
                 >
                   <path d="M3 6h18M6 12h12M10 18h4" />
                 </svg>
-                정렬
+                {SORT_LABEL[sortKey]}
               </button>
               {sortModalOpen && (
                 <SortModal
                   sortKey={sortKey}
                   sortDir={sortDir}
                   onApply={(key, dir) => {
-                    setSortKey(key);
-                    setSortDir(dir);
+                    // "사용자 설정"은 정렬 옵션이 아니라 순서 편집 화면 진입이다.
+                    if (key === "manual") {
+                      router.push(`/portfolio/accounts/${accountId}/order`);
+                      return;
+                    }
+                    setPickedSort({ key, dir });
                     setSortModalOpen(false);
                   }}
                   onClose={() => setSortModalOpen(false)}
@@ -495,16 +573,14 @@ export default function AccountDetailPage() {
       {activeHoldings.length > 0 && (
         <div className="space-y-2.5 rise-in">
           {sortedActiveHoldings.map((h) => {
-            const category = h.category as TradableAssetCategory;
-            const priceUnavailable = h.quantity > 0 && h.currentPrice === null;
-            const isGain = (h.profitAmount ?? 0) >= 0;
+            const category = h.category as AssetCategory;
+            const isCash = category === "CASH";
+            // 현금은 시세 조회 대상이 아니라 currentPrice가 원래 null이다 —
+            // 이걸 "시세 조회 실패"로 읽으면 안 된다.
+            const priceUnavailable =
+              !isCash && h.quantity > 0 && h.currentPrice === null;
 
-            return (
-              <Link
-                key={h.assetId}
-                href={`/portfolio/accounts/${accountId}/assets/${h.assetId}`}
-                className="card px-4 py-4 block active:scale-[0.99] transition-transform"
-              >
+            const inner = (
                 <div className="flex items-start justify-between gap-3">
                   {/* 좌: 종목 정보 */}
                   <div className="min-w-0">
@@ -515,9 +591,11 @@ export default function AccountDetailPage() {
                       >
                         {h.name}
                       </span>{" "}
-                      <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
-                        {h.symbol}
-                      </span>
+                      {!isCash && (
+                        <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                          {h.symbol}
+                        </span>
+                      )}
                     </p>
                     <div className="mt-1 flex items-center gap-2 flex-wrap">
                       <CategoryBadge category={category} />
@@ -530,14 +608,16 @@ export default function AccountDetailPage() {
                         </span>
                       )}
                     </div>
-                    <p
-                      className="amount text-[12px] mt-1.5"
-                      style={{ color: "var(--text-sub)" }}
-                    >
-                      {formatQuantity(h.quantity)}
-                      {categoryUnit[category] ?? ""} · 평단{" "}
-                      {formatMoney(h.averagePrice, h.currency)}
-                    </p>
+                    {!isCash && (
+                      <p
+                        className="amount text-[12px] mt-1.5"
+                        style={{ color: "var(--text-sub)" }}
+                      >
+                        {formatQuantity(h.quantity)}
+                        {categoryUnit[category] ?? ""} · 평단{" "}
+                        {formatMoney(h.averagePrice, h.currency)}
+                      </p>
+                    )}
                   </div>
 
                   {/* 우: 평가금액(주역) + 손익(색상) */}
@@ -562,7 +642,7 @@ export default function AccountDetailPage() {
                             <p
                               className="amount text-[12px] font-semibold mt-0.5"
                               style={{
-                                color: isGain ? "var(--gain)" : "var(--loss)",
+                                color: profitColor(h.profitAmount),
                               }}
                             >
                               {signed(
@@ -577,7 +657,7 @@ export default function AccountDetailPage() {
                               )
                             </p>
                           )}
-                          {category === "FOREIGN_STOCK" &&
+                          {h.currency !== "KRW" &&
                             h.krwEvaluationAmount !== null && (
                               <p
                                 className="amount text-[11px] mt-0.5"
@@ -597,7 +677,24 @@ export default function AccountDetailPage() {
                     )}
                   </div>
                 </div>
-              </Link>
+            );
+
+            return (
+              <SwipeRow
+                key={h.assetId}
+                onEdit={() => {
+                  setAssetRenameError(null);
+                  setAssetRenameTarget(h);
+                }}
+                onDelete={() => setAssetDeleteTarget(h)}
+              >
+                <Link
+                  href={`/portfolio/accounts/${accountId}/assets/${h.assetId}`}
+                  className="card px-4 py-4 block active:scale-[0.99] transition-transform"
+                >
+                  {inner}
+                </Link>
+              </SwipeRow>
             );
           })}
         </div>
@@ -639,10 +736,17 @@ export default function AccountDetailPage() {
           {clearedOpen && (
             <div className="space-y-2 rise-in">
               {clearedHoldings.map((h) => {
-                const category = h.category as TradableAssetCategory;
+                const category = h.category as AssetCategory;
                 return (
-                  <Link
+                  <SwipeRow
                     key={h.assetId}
+                    onEdit={() => {
+                      setAssetRenameError(null);
+                      setAssetRenameTarget(h);
+                    }}
+                    onDelete={() => setAssetDeleteTarget(h)}
+                  >
+                  <Link
                     href={`/portfolio/accounts/${accountId}/assets/${h.assetId}`}
                     className="card px-4 py-3.5 flex items-center justify-between gap-3 active:scale-[0.99] transition-transform"
                     style={{ opacity: 0.75 }}
@@ -676,6 +780,7 @@ export default function AccountDetailPage() {
                       평단 {formatMoney(h.averagePrice, h.currency)}
                     </p>
                   </Link>
+                  </SwipeRow>
                 );
               })}
             </div>
@@ -685,8 +790,30 @@ export default function AccountDetailPage() {
       </>
       )}
 
+      {assetRenameTarget && (
+        <RenameModal
+          title="종목 이름 수정"
+          currentName={assetRenameTarget.name}
+          loading={assetRenaming}
+          error={assetRenameError}
+          onConfirm={handleAssetRename}
+          onCancel={() => setAssetRenameTarget(null)}
+        />
+      )}
+
+      {assetDeleteTarget && (
+        <ConfirmModal
+          title="이 종목을 삭제할까요?"
+          description={`"${assetDeleteTarget.name}"의 매매 내역과 배당 기록도 모두 함께 삭제돼요. 이 작업은 되돌릴 수 없어요.`}
+          loading={assetDeleting}
+          onConfirm={handleAssetDelete}
+          onCancel={() => setAssetDeleteTarget(null)}
+        />
+      )}
+
       {renameOpen && account && (
-        <RenameAccountModal
+        <RenameModal
+          title="계좌 이름 수정"
           currentName={account.name}
           loading={renaming}
           error={renameError}

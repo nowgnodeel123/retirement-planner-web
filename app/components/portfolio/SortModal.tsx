@@ -2,11 +2,13 @@
 // M7: D-054 — 보유자산 정렬. 실제 증권사 앱처럼 정렬 버튼 바로 아래 작은 드롭다운으로
 // 표시(기존 큰 바텀시트 모달에서 변경 — 사용자 실기기 검증 중 피드백 반영).
 // 옵션 선택 즉시 적용 후 닫힘(별도 "적용" 버튼 없음) — 드롭다운 관례.
+// "사용자 설정"을 고르면 각 행에 손잡이(≡)가 나타나고, 그걸 잡고 끌어 순서를 바꾼다.
 "use client";
 
 import { useEffect, useRef } from "react";
 
-export type HoldingSortKey = "value" | "profitRate" | "name";
+// "manual" = 사용자가 끌어서 직접 정한 순서(서버 sort_order). 다른 키는 전부 조회 시점 계산.
+export type HoldingSortKey = "value" | "profitRate" | "name" | "manual";
 export type SortDirection = "desc" | "asc";
 
 const SORT_OPTIONS: {
@@ -19,6 +21,7 @@ const SORT_OPTIONS: {
   { key: "profitRate", dir: "desc", label: "수익률 높은순" },
   { key: "profitRate", dir: "asc", label: "수익률 낮은순" },
   { key: "name", dir: "asc", label: "이름순" },
+  { key: "manual", dir: "asc", label: "사용자 설정" },
 ];
 
 export function SortModal({

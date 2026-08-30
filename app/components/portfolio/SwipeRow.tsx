@@ -1,4 +1,6 @@
-// SwipeAccountRow.tsx — 좌측 스와이프로 수정·삭제 원형 버튼을 노출한다.
+// SwipeRow.tsx — 좌측 스와이프로 수정·삭제 원형 버튼을 노출한다.
+// 계좌 목록과 계좌 안 자산(종목) 목록이 함께 쓴다(원래 SwipeAccountRow였으나
+// 구현이 계좌에 의존하는 데가 없어 기능 중립 이름으로 바꿨다).
 // D-201: 세 가지 입력을 모두 받는다 —
 //   1) 터치 드래그(모바일, 1차 표면)
 //   2) 마우스 클릭-드래그(데스크톱)
@@ -38,7 +40,7 @@ function TrashIcon() {
   );
 }
 
-export function SwipeAccountRow({
+export function SwipeRow({
   children,
   onEdit,
   onDelete,

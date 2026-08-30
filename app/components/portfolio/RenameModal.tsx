@@ -1,16 +1,19 @@
-// RenameAccountModal.tsx — 계좌 이름 수정 모달. ConfirmModal과 동일한 시각 패턴.
+// RenameModal.tsx — 이름 수정 모달. ConfirmModal과 동일한 시각 패턴.
+// 계좌와 자산(종목)이 함께 쓴다 — title만 다르다.
 "use client";
 
 import { useState } from "react";
 import { PrimaryButton, SecondaryButton, inputClass } from "@/app/components/wizard/Ui";
 
-export function RenameAccountModal({
+export function RenameModal({
+  title,
   currentName,
   loading,
   error,
   onConfirm,
   onCancel,
 }: {
+  title: string;
   currentName: string;
   loading?: boolean;
   error?: string | null;
@@ -34,7 +37,7 @@ export function RenameAccountModal({
           className="text-[16px] font-semibold mb-4"
           style={{ color: "var(--text-strong)" }}
         >
-          계좌 이름 수정
+          {title}
         </p>
         <input
           type="text"

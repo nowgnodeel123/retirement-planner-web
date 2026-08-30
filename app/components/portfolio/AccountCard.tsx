@@ -3,10 +3,10 @@
 // 수익금·수익률은 평가금액 바로 아래에 딱 붙여 오른쪽 정렬한다.
 // 오른쪽 스택에 -mb를 줘서 flexbox 중앙 정렬 기준을 "평가금액"으로 잡고(수익금은
 // 아래 여백으로 흘려보냄) 평가금액이 이름과 같은 높이에 오게 한다.
-// 총 매수금액은 표시하지 않는다(총자산은 상단에 이미 크게 있음). 수정/삭제는 SwipeAccountRow가 담당.
+// 총 매수금액은 표시하지 않는다(총자산은 상단에 이미 크게 있음). 수정/삭제는 SwipeRow가 담당.
 import Link from "next/link";
 import { AccountResponse, AccountSummary, detailTypeLabel } from "./types";
-import { formatKrw, signed } from "./format";
+import { formatKrw, profitColor, signed } from "./format";
 import { InstitutionIcon } from "./InstitutionIcon";
 
 export function AccountCard({
@@ -16,8 +16,6 @@ export function AccountCard({
   account: AccountResponse;
   summary?: AccountSummary;
 }) {
-  const isGain = (summary?.profitKrw ?? 0) >= 0;
-
   return (
     <Link href={`/portfolio/accounts/${account.id}`} className="block">
       <div className="card pressable flex items-center gap-3 px-4 py-4">
@@ -52,7 +50,7 @@ export function AccountCard({
             </p>
             <p
               className="amount text-[11.5px] font-medium mt-0.5 whitespace-nowrap"
-              style={{ color: isGain ? "var(--gain)" : "var(--loss)" }}
+              style={{ color: profitColor(summary.profitKrw) }}
             >
               {signed(summary.profitKrw, formatKrw(Math.abs(summary.profitKrw)))} (
               {signed(
