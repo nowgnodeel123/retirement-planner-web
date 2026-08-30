@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
-import { formatKrw, signed } from "@/app/components/portfolio/format";
+import { formatKrw, profitColor, signed } from "@/app/components/portfolio/format";
 import { dividendJudgementLabel, TaxSummaryResponse } from "@/app/components/portfolio/types";
 
 // D-076: 전문용어(과세표준/분리과세) ⓘ 버튼+풀이. 별도 모달/팝오버 라이브러리 없이
@@ -134,7 +134,7 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
           <span>해외주식 연간 실현손익</span>
           <span
             className="amount font-semibold"
-            style={{ color: cg.realizedProfitKrw >= 0 ? "var(--gain)" : "var(--loss)" }}
+            style={{ color: profitColor(cg.realizedProfitKrw) }}
           >
             {signed(cg.realizedProfitKrw, formatKrw(Math.abs(cg.realizedProfitKrw)))}
           </span>

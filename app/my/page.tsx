@@ -132,7 +132,7 @@ export default function MyPage() {
     try {
       await api.delete("/api/users/me", { currentPassword });
       clearTokens();
-      router.push("/");
+      router.replace("/login");
     } catch (e) {
       setWithdrawError(e instanceof ApiError ? e.message : "탈퇴 처리 중 문제가 발생했어요.");
     } finally {

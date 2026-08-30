@@ -1,7 +1,7 @@
 // PortfolioSummary.tsx — M9 대시보드 총자산 블록(D-066: 손익금액+손익률 통합 표시).
 // 계좌 상세 화면(app/portfolio/accounts/[accountId]/page.tsx)의 총 평가금액 UI와
 // 동일한 시각 패턴을 계좌 전체 범위(PortfolioSummaryResponse)로 재구현한다.
-import { formatKrw, signed } from "./format";
+import { formatKrw, profitColor, signed } from "./format";
 import { PortfolioSummaryResponse } from "./types";
 
 export function PortfolioSummary({
@@ -57,7 +57,7 @@ export function PortfolioSummary({
         <span
           className="amount text-[14px] font-semibold"
           style={{
-            color: summary.profitKrw >= 0 ? "var(--gain)" : "var(--loss)",
+            color: profitColor(summary.profitKrw),
           }}
         >
           {signed(summary.profitKrw, formatKrw(summary.profitKrw))} (

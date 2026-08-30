@@ -110,6 +110,17 @@ const TABS: {
   },
 ];
 
+// 탭바를 숨길 화면들. 목록이 늘어날 때 여기만 고치면 되도록 한곳에 모아둔다.
+const FULLSCREEN_FLOWS = [
+  /^\/privacy$/,
+  /^\/terms$/,
+  /^\/portfolio\/order$/,
+  /^\/portfolio\/accounts\/new$/,
+  /^\/portfolio\/accounts\/[^/]+\/order$/,
+  /^\/portfolio\/accounts\/[^/]+\/assets\/new$/,
+  /^\/my\/profile$/,
+];
+
 function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void }) {
   const router = useRouter();
   const theme = useTheme();
@@ -145,7 +156,9 @@ function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void
       }
     }
     clearTokens();
-    router.push("/");
+    // "/" 는 토큰을 보고 다시 /login으로 replace 하는 중계 화면이라 한 번 더 튄다 —
+    // 로그아웃 직후엔 목적지가 확정이므로 바로 보낸다.
+    router.replace("/login");
   }
 
   return (
@@ -237,6 +250,10 @@ export default function BottomTabBar() {
 
   // WHY: 로그인 전 화면(로그인/카카오 콜백)에서는 로그인 기능만 보여야 한다.
   if (!token) return null;
+  // 등록·편집처럼 "끝내고 나가는" 플로우와 법적 문서 화면에서는 탭바를 숨긴다.
+  // 이 화면들은 전부 자체 뒤로가기/취소를 갖고 있어 탈출구가 사라지지 않는다.
+  // 반대로 계좌 상세·자산 상세 같은 조회 화면은 탭 안의 하위 화면이라 탭바를 유지한다.
+  if (FULLSCREEN_FLOWS.some((re) => re.test(pathname))) return null;
 
   const activeIndex = TABS.findIndex((tab) => tab.isActive(pathname));
   const myActive = pathname.startsWith("/my");

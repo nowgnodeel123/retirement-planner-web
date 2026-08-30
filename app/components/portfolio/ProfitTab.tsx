@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
-import { formatKrw, signed } from "@/app/components/portfolio/format";
+import { formatKrw, profitColor, signed } from "@/app/components/portfolio/format";
 import { PeriodFilterModal } from "@/app/components/portfolio/PeriodFilterModal";
 import { CategoryFilterChips } from "@/app/components/portfolio/CategoryFilterChips";
 import {
@@ -154,7 +154,7 @@ function ProfitContent({
               <span>실현손익</span>
               <span
                 className="amount font-semibold"
-                style={{ color: data.realizedProfitKrw >= 0 ? "var(--gain)" : "var(--loss)" }}
+                style={{ color: profitColor(data.realizedProfitKrw) }}
               >
                 {signed(data.realizedProfitKrw, formatKrw(Math.abs(data.realizedProfitKrw)))}
               </span>
@@ -177,7 +177,7 @@ function ProfitContent({
               </span>
               <span
                 className="amount font-bold"
-                style={{ color: data.totalProfitKrw >= 0 ? "var(--gain)" : "var(--loss)" }}
+                style={{ color: profitColor(data.totalProfitKrw) }}
               >
                 {signed(data.totalProfitKrw, formatKrw(Math.abs(data.totalProfitKrw)))}
               </span>
@@ -225,7 +225,7 @@ function ProfitContent({
                   </div>
                   <p
                     className="amount text-[13px] font-semibold flex-shrink-0"
-                    style={{ color: item.amountKrw >= 0 ? "var(--gain)" : "var(--loss)" }}
+                    style={{ color: profitColor(item.amountKrw) }}
                   >
                     {signed(item.amountKrw, formatKrw(Math.abs(item.amountKrw)))}
                   </p>

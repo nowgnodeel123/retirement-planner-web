@@ -13,5 +13,13 @@ export default function Home() {
     router.replace(getToken() ? "/portfolio" : "/login");
   }, [router]);
 
-  return null;
+  // 판정이 끝나기 전 한 프레임 동안 흰 화면이 보이던 자리 — 스피너로 메운다.
+  return (
+    <div className="flex justify-center pt-32">
+      <div
+        className="w-6 h-6 rounded-full border-2 animate-spin"
+        style={{ borderColor: "var(--border)", borderTopColor: "var(--accent)" }}
+      />
+    </div>
+  );
 }
