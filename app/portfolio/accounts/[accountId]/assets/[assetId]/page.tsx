@@ -25,6 +25,7 @@ import {
   DividendCreateRequest,
   DividendResponse,
   TransactionResponse,
+  AssetCategory,
   TradableAssetCategory,
   categoryUnit,
   transactionTypeLabel,
@@ -44,7 +45,8 @@ function fxHintText(touched: boolean, baseDate: string | null) {
     : null;
 }
 
-function formatMoney(value: number, currency: string) {
+function formatMoney(value: number | null, currency: string) {
+  if (value === null) return "—";
   if (currency === "KRW") return `${Math.round(value).toLocaleString()}원`;
   return `$${value.toLocaleString(undefined, {
     minimumFractionDigits: 2,
@@ -124,6 +126,24 @@ export default function AssetDetailPage() {
     null,
   );
 
+  // 현금 잔액 수정 — 거래가 아니라 덮어쓰기라 별도 폼
+  const [cashOpen, setCashOpen] = useState(false);
+  const [cashBalance, setCashBalance] = useState<number | "">("");
+  const [cashSubmitting, setCashSubmitting] = useState(false);
+  const [cashFormError, setCashFormError] = useState<string | null>(null);
+
+  // 거래 정정/삭제 — 잘못 입력한 매매를 고칠 수 있어야 한다.
+  // 수량·평단·손익은 저장돼 있지 않고 거래에서 파생되므로(D-050), 거래만 고치면 전부 따라온다.
+  const [editTxId, setEditTxId] = useState<number | null>(null);
+  const [editQuantity, setEditQuantity] = useState<number | "">("");
+  const [editUnitPrice, setEditUnitPrice] = useState<number | "">("");
+  const [editFx, setEditFx] = useState<number | "">("");
+  const [editTradeDate, setEditTradeDate] = useState(todayString());
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const [editFormError, setEditFormError] = useState<string | null>(null);
+  const [deleteTxId, setDeleteTxId] = useState<number | null>(null);
+  const [deletingTx, setDeletingTx] = useState(false);
+
   // M8: 배당 삭제 확인
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -164,6 +184,7 @@ export default function AssetDetailPage() {
   }, [accountId, assetId]);
 
   const isForeign = holding?.category === "FOREIGN_STOCK";
+  const isCash = holding?.category === "CASH";
   // D-067: 배당은 국내/해외주식만
   const isDividendEligible =
     holding?.category === "DOMESTIC_STOCK" ||
@@ -205,6 +226,98 @@ export default function AssetDetailPage() {
     if (isForeign && (buyFx === "" || buyFx <= 0)) return "환율을 입력해주세요.";
     if (buyTradeDate > todayString()) return "거래일은 오늘보다 미래일 수 없어요.";
     return null;
+  }
+
+  function openEditTransaction(tx: TransactionResponse) {
+    setEditTxId(tx.transactionId);
+    setEditQuantity(tx.quantity);
+    setEditUnitPrice(tx.unitPrice);
+    setEditFx(tx.fx ?? "");
+    setEditTradeDate(tx.tradeDate);
+    setEditFormError(null);
+  }
+
+  function closeEditTransaction() {
+    setEditTxId(null);
+    setEditFormError(null);
+  }
+
+  async function handleUpdateTransaction() {
+    if (editTxId === null) return;
+    if (editQuantity === "" || editQuantity <= 0) {
+      setEditFormError("수량을 입력해주세요.");
+      return;
+    }
+    if (editUnitPrice === "" || editUnitPrice < 0) {
+      setEditFormError("단가를 입력해주세요.");
+      return;
+    }
+    if (isForeign && (editFx === "" || editFx <= 0)) {
+      setEditFormError("환율을 입력해주세요.");
+      return;
+    }
+    if (editTradeDate > todayString()) {
+      setEditFormError("거래일은 오늘보다 미래일 수 없어요.");
+      return;
+    }
+    setEditFormError(null);
+    setEditSubmitting(true);
+    try {
+      await api.patch(`/api/assets/${assetId}/transactions/${editTxId}`, {
+        quantity: editQuantity,
+        unitPrice: editUnitPrice,
+        tradeDate: editTradeDate,
+        ...(isForeign ? { fx: editFx as number } : {}),
+      });
+      closeEditTransaction();
+      setToast("거래 내역을 수정했어요.");
+      loadAll();
+    } catch (e) {
+      setEditFormError(
+        e instanceof ApiError ? e.message : "거래 수정에 실패했어요.",
+      );
+    } finally {
+      setEditSubmitting(false);
+    }
+  }
+
+  async function handleDeleteTransaction() {
+    if (deleteTxId === null) return;
+    setDeletingTx(true);
+    try {
+      await api.delete(`/api/assets/${assetId}/transactions/${deleteTxId}`);
+      setDeleteTxId(null);
+      if (editTxId === deleteTxId) closeEditTransaction();
+      setToast("거래 내역을 삭제했어요.");
+      loadAll();
+    } catch (e) {
+      setDeleteTxId(null);
+      setError(e instanceof ApiError ? e.message : "거래 삭제에 실패했어요.");
+    } finally {
+      setDeletingTx(false);
+    }
+  }
+
+  async function handleSaveCashBalance() {
+    if (cashBalance === "" || cashBalance < 0) {
+      setCashFormError("잔액을 입력해주세요.");
+      return;
+    }
+    setCashFormError(null);
+    setCashSubmitting(true);
+    try {
+      await api.patch(`/api/assets/${assetId}/cash`, { balance: cashBalance });
+      setCashOpen(false);
+      setCashBalance("");
+      setToast("잔액을 수정했어요.");
+      loadAll();
+    } catch (e) {
+      setCashFormError(
+        e instanceof ApiError ? e.message : "잔액 수정에 실패했어요.",
+      );
+    } finally {
+      setCashSubmitting(false);
+    }
   }
 
   async function handleBuy() {
@@ -399,37 +512,73 @@ export default function AssetDetailPage() {
               >
                 {holding.name}
               </span>{" "}
-              <span className="text-[13px]" style={{ color: "var(--text-faint)" }}>
-                {holding.symbol}
-              </span>
+              {!isCash && (
+                <span className="text-[13px]" style={{ color: "var(--text-faint)" }}>
+                  {holding.symbol}
+                </span>
+              )}
             </h1>
             <div className="mt-1">
               <CategoryBadge
-                category={holding.category as TradableAssetCategory}
+                category={holding.category as AssetCategory}
               />
             </div>
           </div>
 
           <div className="mt-4 mb-6 card px-4 py-4">
             <p className="text-[12px]" style={{ color: "var(--text-sub)" }}>
-              보유 수량
+              {isCash ? "잔액" : "보유 수량"}
             </p>
             <p
               className="amount text-[20px] font-bold mt-0.5"
               style={{ color: "var(--text-strong)" }}
             >
-              {formatQuantity(holding.quantity)}
-              {categoryUnit[holding.category as TradableAssetCategory] ?? ""}
+              {isCash
+                ? formatMoney(holding.quantity, holding.currency)
+                : `${formatQuantity(holding.quantity)}${
+                    categoryUnit[holding.category as AssetCategory] ?? ""
+                  }`}
             </p>
-            <p
-              className="amount text-[12px] mt-1"
-              style={{ color: "var(--text-sub)" }}
-            >
-              평단 {formatMoney(holding.averagePrice, holding.currency)}
-            </p>
+            {isCash ? (
+              holding.krwEvaluationAmount !== null &&
+              holding.currency !== "KRW" && (
+                <p
+                  className="amount text-[12px] mt-1"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  ≈ {Math.round(holding.krwEvaluationAmount).toLocaleString()}원
+                  {holding.exchangeRateBaseDate && (
+                    <span style={{ color: "var(--text-faint)" }}>
+                      {" "}
+                      ({holding.exchangeRateBaseDate} 고시 매매기준율)
+                    </span>
+                  )}
+                </p>
+              )
+            ) : (
+              <p
+                className="amount text-[12px] mt-1"
+                style={{ color: "var(--text-sub)" }}
+              >
+                평단 {formatMoney(holding.averagePrice, holding.currency)}
+              </p>
+            )}
           </div>
 
           <div className="mb-6 flex gap-2">
+            {isCash ? (
+              <SecondaryButton
+                onClick={() => {
+                  setCashOpen((v) => !v);
+                  setCashBalance(cashOpen ? "" : holding.quantity);
+                  setCashFormError(null);
+                }}
+                className="flex-1"
+              >
+                {cashOpen ? "수정 취소" : "잔액 수정"}
+              </SecondaryButton>
+            ) : (
+              <>
             <SecondaryButton
               onClick={() => setBuyOpen((v) => !v)}
               className="flex-1"
@@ -450,14 +599,50 @@ export default function AssetDetailPage() {
                 {dividendOpen ? "배당 취소" : "배당 기록"}
               </SecondaryButton>
             )}
+              </>
+            )}
           </div>
+
+          {cashOpen && (
+            <div className="mb-6 card px-4 py-4">
+              <Field label="잔액" unit={holding.currency === "KRW" ? "원" : "USD"}>
+                <NumberInput
+                  value={cashBalance}
+                  onChange={setCashBalance}
+                  allowDecimal={holding.currency !== "KRW"}
+                  placeholder="0"
+                  maxDigits={12}
+                />
+              </Field>
+              <p
+                className="text-[11px] mt-1.5 leading-relaxed"
+                style={{ color: "var(--text-faint)" }}
+              >
+                현재 잔액으로 덮어써요. 거래 이력은 남지 않아요.
+              </p>
+              {cashFormError && (
+                <div className="mt-4">
+                  <ErrorBanner message={cashFormError} />
+                </div>
+              )}
+              <div className="mt-4">
+                <PrimaryButton
+                  onClick={handleSaveCashBalance}
+                  loading={cashSubmitting}
+                  className="w-full"
+                >
+                  잔액 저장
+                </PrimaryButton>
+              </div>
+            </div>
+          )}
 
           {buyOpen && (
             <TradeForm
               quantityLabel="매수 수량"
               quantity={buyQuantity}
               onQuantityChange={setBuyQuantity}
-              quantityUnit={categoryUnit[holding.category as TradableAssetCategory] ?? ""}
+              quantityUnit={categoryUnit[holding.category as AssetCategory] ?? ""}
               priceLabel="매수 단가"
               unitPrice={buyUnitPrice}
               onUnitPriceChange={setBuyUnitPrice}
@@ -483,7 +668,7 @@ export default function AssetDetailPage() {
               quantityLabel="매도 수량"
               quantity={quantity}
               onQuantityChange={setQuantity}
-              quantityUnit={categoryUnit[holding.category as TradableAssetCategory] ?? ""}
+              quantityUnit={categoryUnit[holding.category as AssetCategory] ?? ""}
               priceLabel="매도 단가"
               unitPrice={unitPrice}
               onUnitPriceChange={setUnitPrice}
@@ -552,6 +737,7 @@ export default function AssetDetailPage() {
                   onChange={setAmount}
                   allowDecimal
                   placeholder="0"
+                  maxDigits={12}
                 />
               </Field>
               {isForeign && (
@@ -626,8 +812,8 @@ export default function AssetDetailPage() {
         <div className="space-y-2">
           {combinedHistory.map((item) =>
             item.kind === "transaction" ? (
+              <div key={`tx-${item.data.transactionId}`}>
               <div
-                key={`tx-${item.data.transactionId}`}
                 className="card px-4 py-3 flex items-center justify-between"
               >
                 <div>
@@ -661,7 +847,7 @@ export default function AssetDetailPage() {
                     {formatQuantity(item.data.quantity)}
                     {holding
                       ? (categoryUnit[
-                          holding.category as TradableAssetCategory
+                          holding.category as AssetCategory
                         ] ?? "")
                       : ""}{" "}
                     ·{" "}
@@ -671,12 +857,94 @@ export default function AssetDetailPage() {
                     )}
                   </p>
                 </div>
-                <p
-                  className="amount text-[13px] font-semibold"
-                  style={{ color: "var(--text-strong)" }}
-                >
-                  {formatMoney(item.data.amount, holding?.currency ?? "KRW")}
-                </p>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <p
+                    className="amount text-[13px] font-semibold"
+                    style={{ color: "var(--text-strong)" }}
+                  >
+                    {formatMoney(item.data.amount, holding?.currency ?? "KRW")}
+                  </p>
+                  <button
+                    onClick={() =>
+                      editTxId === item.data.transactionId
+                        ? closeEditTransaction()
+                        : openEditTransaction(item.data)
+                    }
+                    aria-label="거래 내역 수정"
+                    className="p-1 rounded-md"
+                    style={{
+                      color:
+                        editTxId === item.data.transactionId
+                          ? "var(--accent)"
+                          : "var(--text-faint)",
+                    }}
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setDeleteTxId(item.data.transactionId)}
+                    aria-label="거래 내역 삭제"
+                    className="p-1 rounded-md"
+                    style={{ color: "var(--text-faint)" }}
+                  >
+                    <svg
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {editTxId === item.data.transactionId && (
+                <div className="mt-2">
+                  <TradeForm
+                    quantityLabel={`${transactionTypeLabel[item.data.type]} 수량`}
+                    quantity={editQuantity}
+                    onQuantityChange={setEditQuantity}
+                    quantityUnit={
+                      holding
+                        ? (categoryUnit[holding.category as AssetCategory] ?? "")
+                        : ""
+                    }
+                    priceLabel={`${transactionTypeLabel[item.data.type]} 단가`}
+                    unitPrice={editUnitPrice}
+                    onUnitPriceChange={setEditUnitPrice}
+                    isForeign={isForeign}
+                    fxLabel="거래 시점 환율"
+                    fx={editFx}
+                    onFxChange={setEditFx}
+                    fxHint={null}
+                    tradeDate={editTradeDate}
+                    onTradeDateChange={setEditTradeDate}
+                    formError={editFormError}
+                    submitting={editSubmitting}
+                    submitLabel="수정 저장"
+                    onSubmit={handleUpdateTransaction}
+                  />
+                </div>
+              )}
               </div>
             ) : (
               <div
@@ -740,6 +1008,16 @@ export default function AssetDetailPage() {
             ),
           )}
         </div>
+      )}
+
+      {deleteTxId !== null && (
+        <ConfirmModal
+          title="거래 내역을 삭제할까요?"
+          description="삭제하면 보유 수량과 평단이 다시 계산돼요. 되돌릴 수 없어요."
+          loading={deletingTx}
+          onConfirm={handleDeleteTransaction}
+          onCancel={() => setDeleteTxId(null)}
+        />
       )}
 
       {deleteTargetId !== null && (

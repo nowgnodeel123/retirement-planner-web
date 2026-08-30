@@ -8,6 +8,8 @@
 // D-197(요청): 종목코드는 사용자에게 아예 보여주지 않는다 — 이름으로 검색해 고르면
 // 코드는 내부적으로만 채워진다. 코인도 더는 수동 입력이 아니라 Upbit KRW마켓
 // 검색(CryptoSearch, /api/crypto/search) 자동완성으로 통일했다.
+// 현금·외화(원화/달러)는 거래가 아니라 잔액을 그대로 입력받는 별도 모드다 —
+// 증권사 예수금·은행 잔액이 대상이고, 화면 상단 세그먼트로 "종목 / 현금"을 고른다.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -21,12 +23,16 @@ import {
 } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { TradeAmountFields } from "@/app/components/portfolio/TradeForm";
-import { allowedCategories } from "@/app/components/portfolio/accountRules";
+import {
+  CASH_CURRENCIES,
+  allowedCategories,
+} from "@/app/components/portfolio/accountRules";
 import { useDealBasRate } from "@/app/components/portfolio/useDealBasRate";
 import {
-  AccountDetailType,
   AccountResponse,
   AssetBuyRequest,
+  CashCurrency,
+  cashCurrencyLabel,
   categoryUnit,
   CryptoSearchResult,
   DomesticStockSearchResult,
@@ -58,8 +64,11 @@ interface UnifiedSearchItem {
  */
 function UnifiedStockSearch({
   onSelect,
+  etfOnly = false,
 }: {
   onSelect: (item: UnifiedSearchItem) => void;
+  /** 연금저축·IRP 계좌 — 국내 ETF만 검색한다(해외주식은 애초에 담을 수 없음, D-198). */
+  etfOnly?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [domesticResults, setDomesticResults] = useState<DomesticStockSearchResult[]>([]);
@@ -77,8 +86,13 @@ function UnifiedStockSearch({
     const timer = setTimeout(() => {
       const keyword = encodeURIComponent(query.trim());
       Promise.allSettled([
-        api.get<DomesticStockSearchResult[]>(`/api/domestic-stocks/search?keyword=${keyword}`),
-        api.get<ForeignStockSearchResult[]>(`/api/foreign-stocks/search?keyword=${keyword}`),
+        api.get<DomesticStockSearchResult[]>(
+          `/api/domestic-stocks/search?keyword=${keyword}${etfOnly ? "&etfOnly=true" : ""}`,
+        ),
+        // 연금계좌는 해외주식을 담을 수 없어 아예 조회하지 않는다.
+        etfOnly
+          ? Promise.resolve([] as ForeignStockSearchResult[])
+          : api.get<ForeignStockSearchResult[]>(`/api/foreign-stocks/search?keyword=${keyword}`),
       ])
         .then(([domestic, foreign]) => {
           setDomesticResults(domestic.status === "fulfilled" ? domestic.value : []);
@@ -87,7 +101,7 @@ function UnifiedStockSearch({
         .finally(() => setLoading(false));
     }, 250);
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, etfOnly]);
 
   const domesticItems: UnifiedSearchItem[] = domesticResults.map((r) => ({
     category: "DOMESTIC_STOCK",
@@ -269,6 +283,9 @@ export default function NewAssetPage() {
   const [account, setAccount] = useState<AccountResponse | null | undefined>(
     undefined,
   );
+  const [mode, setMode] = useState<"trade" | "cash" | null>(null);
+  const [cashCurrency, setCashCurrency] = useState<CashCurrency>("KRW");
+  const [balance, setBalance] = useState<number | "">("");
   const [category, setCategory] = useState<TradableAssetCategory | null>(null);
   const [symbol, setSymbol] = useState("");
   const [name, setName] = useState("");
@@ -337,42 +354,20 @@ export default function NewAssetPage() {
   }
 
   const options = allowedCategories(account.institutionType, account.detailType);
-  const isPensionWrapper: AccountDetailType[] = ["IRP", "PENSION_SAVINGS"];
-
-  if (options.length === 0) {
-    return (
-      <div className="max-w-[420px] mx-auto px-5 pt-16 text-center">
-        <p className="text-[15px] font-semibold mb-1.5" style={{ color: "var(--text-strong)" }}>
-          아직 지원하지 않아요
-        </p>
-        <p className="text-[13px] leading-relaxed mb-6" style={{ color: "var(--text-faint)" }}>
-          {isPensionWrapper.includes(account.detailType) ? (
-            <>
-              연금저축·IRP는 지정 상품만 거래 가능해
-              <br />
-              개별 매수 등록은 준비 중이에요.
-            </>
-          ) : (
-            <>
-              은행 계좌의 예적금 입력은 준비 중이에요.
-              <br />
-              주식·코인은 증권사·거래소 계좌에서 추가할 수 있어요.
-            </>
-          )}
-        </p>
-        <button
-          onClick={() => router.push(`/portfolio/accounts/${accountId}`)}
-          className="text-[13px] font-semibold"
-          style={{ color: "var(--accent)" }}
-        >
-          계좌 상세로 돌아가기
-        </button>
-      </div>
-    );
-  }
+  const cashCurrencies = CASH_CURRENCIES;
+  // 현금은 모든 계좌 유형이 가질 수 있으므로 "추가할 게 아무것도 없는 계좌"는 이제 없다.
+  // 종목 거래가 막힌 계좌(은행·연금저축·IRP)는 현금 폼으로 바로 열린다.
+  const canTrade = options.length > 0;
+  const activeMode = mode ?? (canTrade ? "trade" : "cash");
+  // 연금저축·IRP는 ETF만 담을 수 있다(D-198) — 검색을 ETF로 제한한다.
+  const isPensionAccount =
+    account.detailType === "IRP" || account.detailType === "PENSION_SAVINGS";
 
   // 증권사 계좌(국내+해외 둘 다 허용)인데 아직 검색 결과를 안 골랐으면 category가 null.
-  const isDualStockAccount = options.length === 2;
+  // 코인 계좌만 CryptoSearch를 쓴다. 그 외(증권사 국내+해외, 연금계좌 ETF전용)는
+  // 전부 UnifiedStockSearch — 연금계좌는 etfOnly로 국내 ETF만 검색한다.
+  const isCryptoOnly = options.length === 1 && options[0] === "CRYPTO";
+  const useUnifiedSearch = !isCryptoOnly;
   const isForeign = category === "FOREIGN_STOCK";
 
   // D-170: 종목 하나를 고르는 즉시 카테고리까지 함께 확정된다(수동 토글 없음).
@@ -386,7 +381,7 @@ export default function NewAssetPage() {
     setName(item.name);
   }
 
-  // "변경" 버튼 전용 — 이 함수를 쓰는 곳은 isDualStockAccount 분기뿐이라
+  // "변경" 버튼 전용 — 통합검색(useUnifiedSearch) 분기에서만 쓰이므로
   // 항상 category까지 null로 되돌려 다음 검색에서 새로 자동 확정되게 한다.
   function clearSelection() {
     setCategory(null);
@@ -398,6 +393,10 @@ export default function NewAssetPage() {
   }
 
   function validate(): string | null {
+    if (activeMode === "cash") {
+      if (balance === "" || balance < 0) return "잔액을 입력해주세요.";
+      return null;
+    }
     if (!category || !symbol.trim() || !name.trim()) return "종목을 검색해서 선택해주세요.";
     if (quantity === "" || quantity <= 0) return "수량을 입력해주세요.";
     if (unitPrice === "" || unitPrice < 0) return "매수 단가를 입력해주세요.";
@@ -415,6 +414,16 @@ export default function NewAssetPage() {
     setError(null);
     setSubmitting(true);
     try {
+      if (activeMode === "cash") {
+        await api.post("/api/assets/cash", {
+          accountId,
+          currency: cashCurrency,
+          balance: balance as number,
+        });
+        router.push(`/portfolio/accounts/${accountId}`);
+        return;
+      }
+
       const body: AssetBuyRequest = {
         accountId,
         symbol: symbol.trim().toUpperCase(),
@@ -428,7 +437,13 @@ export default function NewAssetPage() {
       await api.post("/api/assets/buy", body);
       router.push(`/portfolio/accounts/${accountId}`);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "매수 등록에 실패했어요.");
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : activeMode === "cash"
+            ? "현금 등록에 실패했어요."
+            : "매수 등록에 실패했어요.",
+      );
       setSubmitting(false);
     }
   }
@@ -447,10 +462,114 @@ export default function NewAssetPage() {
           boxShadow: "0 2px 24px rgba(15,23,42,0.06)",
         }}
       >
+        {/* 두 방식을 다 지원하는 계좌에서만 세그먼트를 보여준다. 하나뿐이면 바로 그 폼. */}
+        {canTrade && (
+          <div
+            className="mb-5 grid grid-cols-2 gap-1 rounded-2xl p-1"
+            style={{ background: "var(--surface-pressed)" }}
+          >
+            {(["trade", "cash"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMode(m);
+                  setError(null);
+                }}
+                className="rounded-xl py-2.5 text-[13px] font-semibold transition-colors"
+                style={{
+                  background: activeMode === m ? "var(--surface)" : "transparent",
+                  color:
+                    activeMode === m ? "var(--text-strong)" : "var(--text-faint)",
+                  boxShadow:
+                    activeMode === m ? "0 1px 3px rgba(15,23,42,0.10)" : "none",
+                }}
+              >
+                {m === "trade" ? "종목" : "현금"}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeMode === "cash" ? (
+          <>
+            <div className="mb-4">
+              <label
+                className="text-sm font-medium"
+                style={{ color: "var(--text-sub)" }}
+              >
+                통화
+              </label>
+              <div className="mt-1.5 grid grid-cols-2 gap-2">
+                {cashCurrencies.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCashCurrency(c)}
+                    className="rounded-xl border py-3 text-[14px] font-medium transition-colors"
+                    style={{
+                      borderColor:
+                        cashCurrency === c ? "var(--accent)" : "var(--border)",
+                      background:
+                        cashCurrency === c
+                          ? "var(--accent-soft)"
+                          : "var(--surface)",
+                      color:
+                        cashCurrency === c
+                          ? "var(--accent)"
+                          : "var(--text-sub)",
+                    }}
+                  >
+                    {cashCurrencyLabel[c]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label
+                className="text-sm font-medium"
+                style={{ color: "var(--text-sub)" }}
+              >
+                잔액
+              </label>
+              <div className="mt-1.5 relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className={inputClass}
+                  value={balance === "" ? "" : balance.toLocaleString()}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/,/g, "");
+                    if (raw === "") return setBalance("");
+                    const n = Number(raw);
+                    if (!Number.isNaN(n)) setBalance(n);
+                  }}
+                  placeholder="0"
+                />
+                <span
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[13px]"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  {cashCurrency === "KRW" ? "원" : "USD"}
+                </span>
+              </div>
+              <p
+                className="text-[11px] mt-1.5 leading-relaxed"
+                style={{ color: "var(--text-faint)" }}
+              >
+                {cashCurrency === "KRW"
+                  ? "계좌에 남아 있는 금액을 그대로 입력하세요. 잔액이 바뀌면 언제든 수정할 수 있어요."
+                  : "보유한 달러 금액을 입력하세요. 원화 환산은 고시 매매기준율로 계산되고, 매입환율을 받지 않아 손익은 표시하지 않아요."}
+              </p>
+            </div>
+          </>
+        ) : (
+        <>
         {/* 옵션이 하나뿐인 계좌(거래소=코인)만 고정 카테고리 배지를 보여준다.
             증권사 계좌는 국내/해외를 먼저 고르게 하지 않는다(D-170) — 아래
             종목 검색에서 고른 결과에 따라 카테고리가 자동으로 정해진다. */}
-        {options.length === 1 && (
+        {options.length === 1 && !isPensionAccount && (
           <div
             className="mb-5 flex items-center justify-between rounded-2xl border px-4 py-3"
             style={{ background: "var(--surface-pressed)", borderColor: "var(--border)" }}
@@ -462,7 +581,7 @@ export default function NewAssetPage() {
           </div>
         )}
 
-        {isDualStockAccount ? (
+        {useUnifiedSearch ? (
           <div className="mb-4">
             <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
               종목
@@ -497,12 +616,14 @@ export default function NewAssetPage() {
                   </button>
                 </div>
               ) : (
-                <UnifiedStockSearch onSelect={selectSearchResult} />
+                <UnifiedStockSearch onSelect={selectSearchResult} etfOnly={isPensionAccount} />
               )}
             </div>
             {!(symbol && name && category) && (
-              <p className="text-[11px] mt-1.5" style={{ color: "var(--text-faint)" }}>
-                종목명을 검색하면 국내·해외 구분이 자동으로 정해져요.
+              <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+                {isPensionAccount
+                  ? "연금저축·IRP는 ETF만 담을 수 있어요. ETF 이름으로 검색해 보세요 (예: KODEX 미국나스닥100). ETF 시세 연동은 아직 준비 중이라 당분간 평가금액이 표시되지 않아요."
+                  : "종목명을 검색하면 국내·해외 구분이 자동으로 정해져요."}
               </p>
             )}
           </div>
@@ -577,6 +698,9 @@ export default function NewAssetPage() {
           onTradeDateChange={setTradeDate}
         />
 
+        </>
+        )}
+
         {error && (
           <div className="mt-5">
             <ErrorBanner message={error} />
@@ -592,7 +716,7 @@ export default function NewAssetPage() {
             loading={submitting}
             className="flex-[2]"
           >
-            매수 등록
+            {activeMode === "cash" ? "현금 등록" : "매수 등록"}
           </PrimaryButton>
         </div>
       </div>

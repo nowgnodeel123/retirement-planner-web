@@ -1,10 +1,10 @@
 // CategoryBadge.tsx — 자산 카테고리 색상 dot + 라벨. M9 대시보드 도넛차트와 같은 팔레트.
-import { categoryColor, categoryLabel, TradableAssetCategory } from "./types";
+import { AssetCategory, categoryColor, categoryLabel } from "./types";
 
 export function CategoryBadge({
   category,
 }: {
-  category: TradableAssetCategory;
+  category: AssetCategory;
 }) {
   return (
     <span

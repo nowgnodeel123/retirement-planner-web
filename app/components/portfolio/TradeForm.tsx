@@ -58,12 +58,15 @@ export function TradeAmountFields({
           maxDigits={12}
         />
       </Field>
+      {/* 단가에도 수량과 같은 자릿수를 준다 — NumberInput 기본값 7자리면 9,999,999원에서
+          잘려서 비트코인(1억 안팎)처럼 단가가 큰 종목을 아예 입력할 수 없다. */}
       <Field label={priceLabel} unit={isForeign ? "USD" : "원"}>
         <NumberInput
           value={unitPrice}
           onChange={onUnitPriceChange}
           allowDecimal
           placeholder="0"
+          maxDigits={12}
         />
       </Field>
       {isForeign && (

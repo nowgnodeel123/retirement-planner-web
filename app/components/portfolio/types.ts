@@ -3,19 +3,32 @@
 export type InstitutionType = "BANK" | "SECURITIES" | "EXCHANGE";
 export type AccountDetailType = "NORMAL" | "ISA" | "IRP" | "PENSION_SAVINGS";
 
-// M3 매수 거래 폼은 거래 기반 자산(주식/코인)만 다룬다.
-// 펀드/현금은 D-060/8장 기준 별도 입력 방식(평가금액 직접입력/입금 히스토리)이라
-// 백엔드 buy() 엔드포인트 대상이 아니다 — 추후 별도 화면에서 지원.
+// M3 매수 거래 폼은 거래 기반 자산(주식/코인)만 다룬다 — 수량*단가로 평가금액이 나오는 것들.
 export type TradableAssetCategory =
   | "DOMESTIC_STOCK"
   | "FOREIGN_STOCK"
   | "CRYPTO";
+
+// 현금·외화는 거래가 아니라 잔액을 그대로 입력받는다(백엔드 POST /api/assets/cash).
+// 수량·평단·손익이 없으므로 TradableAssetCategory와 구분해 둔다 — 매매 폼·수익 탭은
+// 여전히 TradableAssetCategory만 받고, 표시 계열(뱃지·라벨·색)만 이 넓은 타입을 쓴다.
+export type AssetCategory = TradableAssetCategory | "CASH";
+
+// 현금 자산이 지원하는 통화. symbol 컬럼에 그대로 저장돼 계좌당 통화별 1건의 키가 된다.
+export type CashCurrency = "KRW" | "USD";
+
+export const cashCurrencyLabel: Record<CashCurrency, string> = {
+  KRW: "원화 현금",
+  USD: "미국 달러",
+};
 
 export interface AccountResponse {
   id: number;
   name: string;
   institutionType: InstitutionType;
   detailType: AccountDetailType;
+  // 사용자가 끌어서 정한 순서. 아직 지정한 적 없으면 null → 목록에서 뒤로 간다.
+  sortOrder: number | null;
   createdAt: string;
 }
 
@@ -32,17 +45,21 @@ export interface AssetHoldingResponse {
   name: string;
   category: string;
   currency: string;
+  // 현금(CASH)은 quantity에 잔액이 들어오고 averagePrice는 null이다 —
+  // 거래에서 파생되는 값이 아니라 사용자가 입력한 잔액 자체다.
   quantity: number;
-  averagePrice: number;
+  averagePrice: number | null;
   // M4(뒤늦은 프론트 반영): 시세 조회 실패 시 null — D-058, 화면은 그대로 정상 렌더
   currentPrice: number | null;
   evaluationAmount: number | null;
   profitAmount: number | null;
   profitRate: number | null;
-  // M5: 해외주식만 값 존재(D-063), 그 외 카테고리는 항상 null
+  // M5: 원화가 아닌 자산(해외주식·외화 현금)만 값 존재, 그 외는 항상 null
   exchangeRate: number | null;
   krwEvaluationAmount: number | null;
   exchangeRateBaseDate: string | null;
+  // 사용자가 끌어서 정한 순서. 아직 지정한 적 없으면 null → 목록에서 뒤로 간다.
+  sortOrder: number | null;
 }
 
 // GET /api/domestic-stocks/search 응답 — DomesticStock 엔티티 그대로 직렬화됨
@@ -90,25 +107,28 @@ export const detailTypeLabel: Record<AccountDetailType, string> = {
   PENSION_SAVINGS: "연금저축",
 };
 
-export const categoryLabel: Record<TradableAssetCategory, string> = {
+export const categoryLabel: Record<AssetCategory, string> = {
   DOMESTIC_STOCK: "국내주식",
   FOREIGN_STOCK: "해외주식",
   CRYPTO: "암호화폐",
+  CASH: "현금",
 };
 
 // globals.css의 --category-* 변수와 동일한 값. JS 쪽에서 인라인 스타일로 써야 하는
 // 곳(뱃지 dot 등)이 있어 문자열로도 들고 있는다 — 값 자체의 출처는 CSS 변수가 원본.
-export const categoryColor: Record<TradableAssetCategory, string> = {
+export const categoryColor: Record<AssetCategory, string> = {
   DOMESTIC_STOCK: "#A78BFA",
   FOREIGN_STOCK: "#2DD4BF",
   CRYPTO: "#E879A8",
+  CASH: "#94A3B8",
 };
 
-// D-062: 코인=개, 주식=주
-export const categoryUnit: Record<TradableAssetCategory, string> = {
+// D-062: 코인=개, 주식=주. 현금은 잔액 자체가 금액이라 단위를 붙이지 않는다.
+export const categoryUnit: Record<AssetCategory, string> = {
   DOMESTIC_STOCK: "주",
   FOREIGN_STOCK: "주",
   CRYPTO: "개",
+  CASH: "",
 };
 
 // M6: 거래내역
