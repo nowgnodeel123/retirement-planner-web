@@ -202,6 +202,10 @@ export default function AssetDetailPage() {
     isForeign && dividendOpen && !dividendFxTouched,
   );
 
+  // 비동기로 도착한 고시환율을 폼 입력값에 반영. 파생값(!touched ? auto : 값)으로
+  // 바꾸는 게 맞지만 폼 4개의 제출·검증 경로를 함께 손대야 해서, 브라우저 검증이
+  // 가능해진 뒤로 미룬다(STATE.md 미해결 이슈).
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (buyRate.rate !== null && !buyFxTouched) setBuyFx(buyRate.rate);
   }, [buyRate.rate, buyFxTouched]);
@@ -212,6 +216,7 @@ export default function AssetDetailPage() {
     if (dividendRate.rate !== null && !dividendFxTouched)
       setDividendFx(dividendRate.rate);
   }, [dividendRate.rate, dividendFxTouched]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const combinedHistory = useMemo(() => {
     if (transactions === null || dividends === null) return null;

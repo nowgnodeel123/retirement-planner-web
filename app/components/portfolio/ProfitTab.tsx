@@ -40,13 +40,15 @@ export function ProfitTab({
   allowed?: TradableAssetCategory[];
 }) {
   const [period, setPeriod] = useState<ProfitPeriod>("MONTH");
-  const [category, setCategory] = useState<TradableAssetCategory | null>(null);
+  const [pickedCategory, setCategory] = useState<TradableAssetCategory | null>(null);
   const [periodModalOpen, setPeriodModalOpen] = useState(false);
 
-  // 선택된 카테고리가 계좌가 다루지 않는 값으로 남지 않도록 정리
-  useEffect(() => {
-    if (category && allowed && !allowed.includes(category)) setCategory(null);
-  }, [category, allowed]);
+  // 선택된 카테고리가 계좌가 다루지 않는 값이면 없는 것으로 본다.
+  // 이펙트에서 setCategory(null)로 되돌리면 한 번 잘못된 필터로 그려졌다 다시 그려진다.
+  const category =
+    pickedCategory && (!allowed || allowed.includes(pickedCategory))
+      ? pickedCategory
+      : null;
 
   const showChips = (allowed ?? ["DOMESTIC_STOCK", "FOREIGN_STOCK", "CRYPTO"])
     .length > 1;

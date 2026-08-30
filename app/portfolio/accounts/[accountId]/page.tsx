@@ -125,7 +125,7 @@ export default function AccountDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   // M10(D-065): 계좌 상세 3탭(자산/수익/세금).
-  const [activeTab, setActiveTab] = useState<"ASSETS" | "PROFIT" | "TAX">(
+  const [pickedTab, setActiveTab] = useState<"ASSETS" | "PROFIT" | "TAX">(
     "ASSETS",
   );
 
@@ -287,10 +287,12 @@ export default function AccountDetailPage() {
     ? allowedCategories(account.institutionType, account.detailType)
     : [];
 
-  useEffect(() => {
-    if (activeTab === "PROFIT" && !showProfit) setActiveTab("ASSETS");
-    if (activeTab === "TAX" && !showTax) setActiveTab("ASSETS");
-  }, [activeTab, showProfit, showTax]);
+  // 계좌 유형이 안 다루는 탭이 선택돼 있으면 자산 탭으로 본다.
+  // 이펙트에서 setActiveTab으로 되돌리면 없는 탭이 한 번 그려졌다 바뀐다.
+  const activeTab =
+    (pickedTab === "PROFIT" && !showProfit) || (pickedTab === "TAX" && !showTax)
+      ? "ASSETS"
+      : pickedTab;
 
   if (account === null) {
     return (

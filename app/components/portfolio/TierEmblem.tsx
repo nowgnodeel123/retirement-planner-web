@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Tier } from "./tier";
+import { Tier, TIERS, tierRangeLabel } from "./tier";
 
 interface Cut {
   body: string;
@@ -13,16 +13,6 @@ interface Cut {
 }
 
 // 등급표 — 경계는 tier.ts와 동일(그 파일은 잠겨서 여기 값도 유지·동기 필요).
-const TIER_TABLE: { name: string; range: string }[] = [
-  { name: "언랭크", range: "1천만원 미만" },
-  { name: "브론즈", range: "1천만 ~ 5천만원" },
-  { name: "실버", range: "5천만 ~ 1억원" },
-  { name: "골드", range: "1억 ~ 5억원" },
-  { name: "플래티넘", range: "5억 ~ 10억원" },
-  { name: "다이아몬드", range: "10억 ~ 30억원" },
-  { name: "루비", range: "30억 ~ 50억원" },
-  { name: "마스터", range: "50억원 이상" },
-];
 
 function cut(name: string): Cut {
   switch (name) {
@@ -87,6 +77,8 @@ function TierHelpModal({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // document.body 포탈은 클라이언트에서만 가능 — SSR 안전을 위한 표준 마운트 플래그.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -145,7 +137,7 @@ function TierHelpModal({
           모든 계좌 평가금액 합계 기준
         </p>
         <div className="space-y-0.5">
-          {TIER_TABLE.map((t) => {
+          {TIERS.map((t) => {
             const active = t.name === currentName;
             return (
               <div
@@ -162,7 +154,7 @@ function TierHelpModal({
                   {t.name}
                 </span>
                 <span className="amount" style={{ color: "var(--text-sub)" }}>
-                  {t.range}
+                  {tierRangeLabel(t)}
                 </span>
               </div>
             );

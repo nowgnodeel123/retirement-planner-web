@@ -19,12 +19,11 @@ export function useDealBasRate(dateStr: string, enabled: boolean) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!enabled || !dateStr) {
-      setRate(null);
-      setBaseDate(null);
-      setLoading(false);
-      return;
-    }
+    // 비활성일 때 여기서 리셋하지 않는다 — 아래 반환값에서 파생시키면
+    // 이펙트가 상태를 되돌리느라 한 번 더 렌더되는 일이 없다.
+    if (!enabled || !dateStr) return;
+    // 외부 API 호출 시작을 알리는 플래그. 파생시킬 수 있는 값이 아니다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     let cancelled = false;
     const timer = setTimeout(() => {
@@ -51,5 +50,7 @@ export function useDealBasRate(dateStr: string, enabled: boolean) {
     };
   }, [dateStr, enabled]);
 
+  // 비활성이면 이전 조회 결과가 남아 있어도 없는 것으로 본다.
+  if (!enabled || !dateStr) return { rate: null, baseDate: null, loading: false };
   return { rate, baseDate, loading };
 }

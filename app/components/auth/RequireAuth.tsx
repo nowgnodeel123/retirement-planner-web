@@ -24,6 +24,8 @@ export default function RequireAuth({
       router.replace("/login");
       return;
     }
+    // localStorage는 마운트 후에만 읽을 수 있다(위 주석의 하이드레이션 경쟁 상태 참고).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReady(true);
   }, [router]);
 

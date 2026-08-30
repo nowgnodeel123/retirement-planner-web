@@ -4,7 +4,7 @@
 // 이 필드들을 가입 때 수집하지도 않아(D-121) 개인정보/비밀번호 섹션 자체를 숨긴다.
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { Avatar } from "@/app/components/profile/Avatar";
@@ -358,7 +358,8 @@ export default function ProfileEditPage() {
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [savingPhone, setSavingPhone] = useState(false);
-  const phoneFieldKey = useRef(0);
+  // 인증 필드를 초기화하려고 key를 바꿔 강제 리마운트한다. 렌더에서 읽는 값이라 state가 맞다.
+  const [phoneFieldKey, setPhoneFieldKey] = useState(0);
 
   // 비밀번호 변경
   const [currentPassword, setCurrentPassword] = useState("");
@@ -440,7 +441,7 @@ export default function ProfileEditPage() {
       setMe(updated);
       setChangingPhone(false);
       setVerifiedPhone(null);
-      phoneFieldKey.current += 1;
+      setPhoneFieldKey((k) => k + 1);
       setToast("휴대전화번호가 변경됐어요.");
     } catch (e) {
       setPhoneError(e instanceof ApiError ? e.message : "변경에 실패했어요.");
@@ -700,7 +701,7 @@ export default function ProfileEditPage() {
               </p>
             ) : (
               <div className="mt-2">
-                <PhoneVerificationField key={phoneFieldKey.current} onVerified={setVerifiedPhone} />
+                <PhoneVerificationField key={phoneFieldKey} onVerified={setVerifiedPhone} />
                 {phoneError && (
                   <div className="mt-3">
                     <ErrorBanner message={phoneError} />
@@ -712,7 +713,7 @@ export default function ProfileEditPage() {
                       setChangingPhone(false);
                       setVerifiedPhone(null);
                       setPhoneError(null);
-                      phoneFieldKey.current += 1;
+                      setPhoneFieldKey((k) => k + 1);
                     }}
                     className="flex-1"
                   >

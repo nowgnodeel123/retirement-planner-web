@@ -77,11 +77,10 @@ function UnifiedStockSearch({
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (query.trim().length === 0) {
-      setDomesticResults([]);
-      setForeignResults([]);
-      return;
-    }
+    // 검색어가 비면 여기서 결과를 지우지 않는다 — 아래에서 파생시킨다.
+    if (query.trim().length === 0) return;
+    // 검색 요청 시작을 알리는 플래그. 파생시킬 수 있는 값이 아니다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const timer = setTimeout(() => {
       const keyword = encodeURIComponent(query.trim());
@@ -116,9 +115,13 @@ function UnifiedStockSearch({
     sub: r.type,
   }));
   const looksKorean = /[가-힣]/.test(query);
-  const merged = looksKorean
-    ? [...domesticItems, ...foreignItems]
-    : [...foreignItems, ...domesticItems];
+  // 검색어가 비면 이전 결과가 상태에 남아 있어도 없는 것으로 본다.
+  const merged =
+    query.trim().length === 0
+      ? []
+      : looksKorean
+        ? [...domesticItems, ...foreignItems]
+        : [...foreignItems, ...domesticItems];
 
   return (
     <div className="relative">
@@ -204,10 +207,9 @@ function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (query.trim().length === 0) {
-      setResults([]);
-      return;
-    }
+    if (query.trim().length === 0) return;
+    // 검색 요청 시작을 알리는 플래그. 파생시킬 수 있는 값이 아니다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const timer = setTimeout(() => {
       api
@@ -218,6 +220,9 @@ function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void
     }, 250);
     return () => clearTimeout(timer);
   }, [query]);
+
+  // 검색어가 비면 이전 결과가 상태에 남아 있어도 없는 것으로 본다.
+  const shownResults = query.trim().length === 0 ? [] : results;
 
   return (
     <div className="relative">
@@ -244,13 +249,13 @@ function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void
               검색 중...
             </p>
           )}
-          {!loading && results.length === 0 && (
+          {!loading && shownResults.length === 0 && (
             <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
               일치하는 코인이 없어요.
             </p>
           )}
           {!loading &&
-            results.map((item) => (
+            shownResults.map((item) => (
               <button
                 key={item.symbol}
                 type="button"
@@ -319,11 +324,16 @@ export default function NewAssetPage() {
     });
   }, [accountId]);
 
+  // 비동기로 도착한 고시환율을 폼 입력값에 반영. 파생값(!touched ? auto : 값)으로
+  // 바꾸는 게 맞지만 폼 4개의 제출·검증 경로를 함께 손대야 해서, 브라우저 검증이
+  // 가능해진 뒤로 미룬다(STATE.md 미해결 이슈).
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (category !== "FOREIGN_STOCK" || fxTouched || autoFx === null) return;
     setFx(autoFx);
     setFxBaseDate(autoFxBaseDate);
   }, [category, fxTouched, autoFx, autoFxBaseDate]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (account === undefined) {
     return (

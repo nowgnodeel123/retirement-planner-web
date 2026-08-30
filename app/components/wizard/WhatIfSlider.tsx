@@ -34,14 +34,12 @@ export default function WhatIfSlider({
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (extra === 0) {
-      setPreviewAge(null);
-      setPreviewFeasible(false);
-      setLoading(false);
-      setFailed(false);
-      return;
-    }
+    // extra가 0이면 미리보기 자체가 없다. 여기서 상태를 되돌리는 대신
+    // 아래 렌더에서 파생시켜 이펙트발 추가 렌더를 없앤다.
+    if (extra === 0) return;
 
+    // 재계산 요청 시작을 알리는 플래그. 파생시킬 수 있는 값이 아니다.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setFailed(false);
     debounceRef.current = setTimeout(() => {
@@ -65,7 +63,7 @@ export default function WhatIfSlider({
   }, [extra, basePayload]);
 
   const delta =
-    previewAge !== null && baseFeasible && previewFeasible
+    extra > 0 && previewAge !== null && baseFeasible && previewFeasible
       ? baseRetirementAge - previewAge
       : 0;
 

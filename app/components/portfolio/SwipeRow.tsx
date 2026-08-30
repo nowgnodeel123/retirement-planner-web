@@ -56,7 +56,6 @@ export function SwipeRow({
   const [tx, setTx] = useState(0);
   const [animate, setAnimate] = useState(true);
   const txRef = useRef(0);
-  txRef.current = tx;
 
   const fgRef = useRef<HTMLDivElement>(null);
   const justInteractedRef = useRef(false);
@@ -66,8 +65,14 @@ export function SwipeRow({
     setTx(0);
   }, []);
   const closeRef = useRef(closeSelf);
-  closeRef.current = closeSelf;
   const stableClose = useRef(() => closeRef.current());
+
+  // 네이티브 리스너가 최신 값을 읽어야 해서 ref로 들고 있지만, 대입은 렌더가 아니라
+  // 커밋 이후에 한다 — 렌더 중 ref를 건드리면 React가 렌더를 버릴 때 값이 어긋난다.
+  useEffect(() => {
+    txRef.current = tx;
+    closeRef.current = closeSelf;
+  });
 
   const markInteracted = useCallback(() => {
     justInteractedRef.current = true;

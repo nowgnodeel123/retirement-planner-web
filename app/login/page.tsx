@@ -359,6 +359,8 @@ export default function LoginPage() {
   useEffect(() => {
     const saved = localStorage.getItem(LAST_EMAIL_KEY);
     if (saved) {
+      // localStorage를 렌더에서 읽으면 SSR/CSR 초기값이 어긋나 하이드레이션 경고가 난다.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEmail(saved);
       setHasRememberedEmail(true);
     }
