@@ -19,10 +19,13 @@
   /* 텍스트 위계 */
   --text-strong: #16161a;
   --text: #2a2a2e;
-  --text-sub: #68686f;
-  /* D-172에서 --surface 대비 3:1(WCAG 최소, UI/보조텍스트) 미달 문제를 겪은 적이
-     있어, 톤을 바꾸면서도 이번에 3.2:1로 재검증한 값만 채택했다(#8f8f97). */
-  --text-faint: #8f8f97;
+  --text-sub: #57575e; /* --bg 대비 6.9:1 */
+  /* D-172는 이 토큰의 목표를 3:1로 잡았는데, 3:1은 WCAG 1.4.11(UI 컴포넌트·그래픽 객체)
+     기준이다. 여기 담기는 건 "전일 종가 기준"·티커·환율 날짜처럼 정보를 전달하는 텍스트라
+     1.4.3(일반 텍스트 4.5:1)이 적용된다 — 기준을 잘못 인용한 값이었다.
+     실측 결과 기존 #8f8f97은 --bg 3.07:1 / --surface 3.21:1로 AA 미달이라 4.5를 넘도록 낮췄다.
+     현재값: --bg 4.87:1 / --surface 5.05:1. --text-sub도 함께 낮춰 두 단계 위계를 유지한다. */
+  --text-faint: #6e6e76;
 
   --border: #e8e8ec;
   --accent: #0f766e;
@@ -69,8 +72,9 @@
   --text-strong: #f5f5f7;
   --text: #d4d4d8;
   --text-sub: #a1a1a8;
-  /* 3.5:1로 재검증(#6e6e76, --surface 다크 대비) — D-172 재발 방지 기준 유지. */
-  --text-faint: #6e6e76;
+  /* 라이트와 같은 이유로 4.5:1(WCAG 1.4.3) 기준으로 올렸다 — 기존 #6e6e76은
+     --surface 다크 대비 3.51:1로 미달이었다. 현재값: --bg 5.41:1 / --surface 4.84:1. */
+  --text-faint: #85858d;
 
   --border: #2a2a2e;
   --accent: #2dd4bf;
@@ -115,6 +119,16 @@ body {
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
   transition: background-color 0.2s ease;
+
+  /* 한글 줄바꿈: 기본값(normal)은 CJK를 글자 단위로 끊어서 "…계산돼 / 요." 처럼 조사만
+     다음 줄로 떨어진다. keep-all이면 띄어쓰기 단위로만 끊어 문장이 자연스럽게 접힌다.
+     띄어쓰기가 없는 긴 토큰(영문 티커·URL 등)은 keep-all만 두면 컨테이너를 삐져나가므로
+     break-word를 같이 걸어 그때만 끊는다.
+     anywhere가 아니라 break-word인 이유: anywhere는 min-content 폭 계산에도 반영돼서
+     flex/grid 항목이 예상보다 더 찌그러진다(실제로 검색 목록의 "국내주식" 배지가
+     "국내주/식"으로 갈라졌다). break-word는 렌더링할 때만 끊고 크기 계산은 건드리지 않는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* 금액 숫자 — 고정폭 숫자로 자릿수 흔들림 방지 + 살짝 좁힌 자간 (토스 숫자 느낌의 핵심) */
