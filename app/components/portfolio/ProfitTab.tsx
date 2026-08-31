@@ -166,8 +166,14 @@ function ProfitContent({
               style={{ color: "var(--text-sub)" }}
             >
               <span>배당수익</span>
-              <span className="amount font-semibold" style={{ color: "var(--gain)" }}>
-                +{formatKrw(data.dividendKrw)}
+              {/* 배당은 음수가 될 수 없지만 0일 수는 있다. 색과 부호를 직접 박아두면
+                  받은 배당이 없을 때도 "+0원"이 이익 빨강으로 떠서, 바로 위 실현손익
+                  0원(회색)과 다르게 읽힌다 — 위 두 줄과 같은 헬퍼를 거치게 통일. */}
+              <span
+                className="amount font-semibold"
+                style={{ color: profitColor(data.dividendKrw) }}
+              >
+                {signed(data.dividendKrw, formatKrw(data.dividendKrw))}
               </span>
             </div>
             <div

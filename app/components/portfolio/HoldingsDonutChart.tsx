@@ -1,7 +1,7 @@
 // HoldingsDonutChart.tsx — M9 대시보드 도넛차트, 종목별 비중.
 // D-073(순수 빨강·파랑 제외 팔레트) / D-074(탭으로 하이라이트) 유지.
-// D-201: 범례는 차트 오른쪽에 위→아래 5개씩 채워 넘치면 오른쪽 열로. 도넛 가운데는
-// 금액 대신 등급 엠블럼(TierEmblem). 11개 이상이면 상위 9개 + "외 N개".
+// D-201: 범례는 차트 오른쪽에 두 열로. 도넛 가운데는 금액 대신 등급 엠블럼(TierEmblem).
+// 11개 이상이면 상위 9개 + "외 N개". 열 배분은 아래 legendGridStyle 주석 참고.
 "use client";
 
 import { useState } from "react";
@@ -10,14 +10,17 @@ import { HoldingSummary } from "./types";
 import { tierOf } from "./tier";
 import { TierEmblem } from "./TierEmblem";
 
-// 범례를 5개씩 세로로 채우고, 넘치면 두 번째 열로. (열 우선 채움)
-const LEGEND_ROWS = 5;
-const legendGridStyle: React.CSSProperties = {
+// 범례는 두 열, 위→아래로 채우고 넘치면 오른쪽 열로(열 우선). 이름이 길면 truncate된다.
+// 행 수를 5로 고정하지 않고 개수의 절반으로 잡는 이유: 7개일 때 고정 5행이면 5/2로 갈려
+// 오른쪽 열 아래가 휑하게 빈다. 절반이면 4/3으로 나뉘어 두 열 높이가 맞는다.
+// (10개일 때는 5/5로 같은 결과라 상한 케이스는 달라지지 않는다.)
+const legendRowsFor = (count: number) => Math.max(1, Math.ceil(count / 2));
+const legendGridStyle = (count: number): React.CSSProperties => ({
   display: "grid",
-  gridTemplateRows: `repeat(${LEGEND_ROWS}, auto)`,
+  gridTemplateRows: `repeat(${legendRowsFor(count)}, auto)`,
   gridAutoFlow: "column",
   gridAutoColumns: "minmax(0, 1fr)",
-};
+});
 
 // D-073: 손익 색상(순수 빨강/파랑)과 혼동되지 않는 채도 상향 팔레트. 범례를 최대 9종목까지
 // 보여주므로(그 이상은 "외 N건"), 5색 순환으로는 인접 슬라이스 색이 겹쳐 10색으로 확장했다.
@@ -238,9 +241,12 @@ export function HoldingsDonutChart({
           </div>
         </div>
 
-        {/* 범례 — 차트 오른쪽 배치. 위→아래로 5개 채우고 넘치면 오른쪽 열로(열 우선).
-            탭으로도 하이라이트 가능. 종목명이 길면 truncate, 티커는 공간상 생략. */}
-        <div className="flex-1 min-w-0 gap-x-2.5 gap-y-1" style={legendGridStyle}>
+        {/* 범례 — 차트 오른쪽 배치, 두 열 열 우선. 탭으로도 하이라이트 가능.
+            종목명이 길면 truncate, 티커는 공간상 생략. */}
+        <div
+          className="flex-1 min-w-0 gap-x-2.5 gap-y-1"
+          style={legendGridStyle(slices.length)}
+        >
           {slices.map((s, i) => (
             <button
               key={s.key}

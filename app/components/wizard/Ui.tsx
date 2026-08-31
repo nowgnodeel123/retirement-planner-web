@@ -174,7 +174,10 @@ export function Field({
       {badge}
       <div className="flex items-center gap-2 mt-1.5">
         {children}
-        <span className="text-sm text-[var(--text-faint)] whitespace-nowrap">
+        {/* 단위 폭을 고정한다 — 안 그러면 "세"(1글자)와 "만원"(2글자)의 폭 차이가 그대로
+            입력창 폭 차이로 밀려나, 세로로 쌓인 필드들의 오른쪽 끝이 12px씩 어긋난다.
+            가장 넓은 단위(만원) 기준. */}
+        <span className="text-sm text-[var(--text-faint)] whitespace-nowrap min-w-[1.75rem]">
           {unit}
         </span>
       </div>
@@ -201,7 +204,8 @@ export function SmallField({
       {badge}
       <div className="flex items-center gap-1.5 mt-1">
         {children}
-        <span className="text-xs text-[var(--text-faint)] whitespace-nowrap">
+        {/* Field와 같은 이유로 폭 고정(위 주석 참조). 이쪽은 text-xs라 기준값이 작다. */}
+        <span className="text-xs text-[var(--text-faint)] whitespace-nowrap min-w-[1.5rem]">
           {unit}
         </span>
       </div>
