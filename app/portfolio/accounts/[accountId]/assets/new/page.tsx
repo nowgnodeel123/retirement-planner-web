@@ -135,6 +135,7 @@ function UnifiedStockSearch({
         onFocus={() => setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
         placeholder="종목명 검색 (예: 삼성전자, Apple)"
+        aria-label="종목 검색"
         className={inputClass}
         autoComplete="off"
       />
@@ -556,6 +557,7 @@ export default function NewAssetPage() {
                     if (!Number.isNaN(n)) setBalance(n);
                   }}
                   placeholder="0"
+                  aria-label="잔액"
                 />
                 <span
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[13px]"

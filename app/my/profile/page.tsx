@@ -136,6 +136,9 @@ function PasswordInput({
           placeholder={placeholder}
           className={`${inputClass} pr-11`}
           autoComplete={autoComplete}
+          // 이 화면은 비밀번호 칸이 3개라 placeholder가 사라지면 어느 칸인지 구분이 안 된다.
+          // placeholder를 그대로 접근성 이름으로 승격시킨다.
+          aria-label={placeholder}
         />
         <button
           type="button"
@@ -587,6 +590,9 @@ export default function ProfileEditPage() {
                 maxLength={50}
                 className={inputClass}
                 autoComplete="name"
+                // placeholder는 값이 들어차면 사라져서 라벨 노릇을 못 한다(스크린리더도 못 읽는다).
+                // 바로 아래 생년월일과 같은 방식으로 aria-label을 단다.
+                aria-label="이름"
               />
               <input
                 type="date"

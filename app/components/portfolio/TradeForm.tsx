@@ -49,6 +49,9 @@ export function TradeAmountFields({
 }) {
   return (
     <>
+      {/* Field의 <label>은 htmlFor로 묶여 있지 않아 접근성 이름이 되지 못한다.
+          placeholder는 "0"이라 스크린리더가 칸 이름을 "0"으로 읽는다 — 라벨 문구를
+          그대로 ariaLabel로 넘겨 눈에 보이는 이름과 읽히는 이름을 맞춘다. */}
       <Field label={quantityLabel} unit={quantityUnit}>
         <NumberInput
           value={quantity}
@@ -56,6 +59,7 @@ export function TradeAmountFields({
           allowDecimal
           placeholder="0"
           maxDigits={12}
+          ariaLabel={quantityLabel}
         />
       </Field>
       {/* 단가에도 수량과 같은 자릿수를 준다 — NumberInput 기본값 7자리면 9,999,999원에서
@@ -67,6 +71,7 @@ export function TradeAmountFields({
           allowDecimal
           placeholder="0"
           maxDigits={12}
+          ariaLabel={priceLabel}
         />
       </Field>
       {isForeign && (
@@ -76,6 +81,7 @@ export function TradeAmountFields({
             onChange={onFxChange}
             allowDecimal
             placeholder="1,350.00"
+            ariaLabel={fxLabel}
           />
         </Field>
       )}
@@ -99,6 +105,7 @@ export function TradeAmountFields({
           value={tradeDate}
           max={todayString()}
           onChange={(e) => onTradeDateChange(e.target.value)}
+          aria-label="거래일"
           className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
           style={{
             borderColor: "var(--border)",

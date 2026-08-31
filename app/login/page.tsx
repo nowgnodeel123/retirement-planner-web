@@ -127,6 +127,9 @@ function PasswordInput({
           className={`${inputClass} pr-11`}
           autoComplete={autoComplete}
           autoFocus={autoFocus}
+          // 회원가입에는 비밀번호 칸이 둘(입력/확인)이라 placeholder가 사라지면 구분이 안 된다.
+          // placeholder를 그대로 접근성 이름으로 승격시킨다.
+          aria-label={placeholder}
         />
         <button
           type="button"

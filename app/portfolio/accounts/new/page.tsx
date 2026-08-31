@@ -88,6 +88,7 @@ export default function NewAccountPage() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="예: 미래에셋 주식계좌"
+            aria-label="계좌 이름"
             className={inputClass}
             maxLength={50}
           />
