@@ -13,6 +13,7 @@ import { HoldingsDonutChart } from "@/app/components/portfolio/HoldingsDonutChar
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { RenameModal } from "@/app/components/portfolio/RenameModal";
 import { PortfolioSummary } from "@/app/components/portfolio/PortfolioSummary";
+import { RetirementAgeCard } from "@/app/components/portfolio/RetirementAgeCard";
 import { Toast } from "@/app/components/portfolio/Toast";
 import {
   SortModal,
@@ -25,6 +26,7 @@ import {
   AccountResponse,
   AccountSummary,
   PortfolioSummaryResponse,
+  RetirementAgeCardResponse,
 } from "@/app/components/portfolio/types";
 
 function SortIcon() {
@@ -130,6 +132,10 @@ export default function PortfolioPage() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<AccountResponse[] | null>(null);
   const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
+  // D-219: 은퇴 가능 나이 카드. 자산이 바뀌면 답도 바뀌므로 요약과 같이 다시 받는다.
+  const [retirementCard, setRetirementCard] = useState<
+    RetirementAgeCardResponse | "hidden" | null
+  >(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -162,6 +168,20 @@ export default function PortfolioPage() {
     [],
   );
 
+  // WHY 요약과 분리해서 부르는가: 은퇴 나이 계산은 총자산 조회보다 무겁다(나이를 한 살씩
+  // 올려가며 탐색). 한 요청으로 묶으면 총자산 표시까지 그만큼 늦어지므로 따로 보내고
+  // 카드만 늦게 채운다. 실패하면 카드를 감추고 나머지 화면은 그대로 둔다 — hasProfile=false로
+  // 대신 두면 이미 시뮬레이터를 돌린 사용자가 일시적 통신 실패만으로 "한 번 계산해두세요"
+  // 안내를 보게 되므로, 모른다는 사실을 안내로 위장하지 않고 그냥 감춘다.
+  const loadRetirementCard = useCallback(
+    () =>
+      api
+        .get<RetirementAgeCardResponse>("/api/v1/simulation/retirement-age")
+        .then((data) => setRetirementCard(data))
+        .catch(() => setRetirementCard("hidden")),
+    [],
+  );
+
   useEffect(() => {
     api
       .get<AccountResponse[]>("/api/accounts")
@@ -171,12 +191,13 @@ export default function PortfolioPage() {
       );
 
     loadSummary();
+    loadRetirementCard();
 
     api
       .get<{ nickname: string }>("/api/users/me")
       .then((me) => setNickname(me.nickname))
       .catch(() => {});
-  }, [loadSummary]);
+  }, [loadSummary, loadRetirementCard]);
 
   const summaryMap = useMemo(() => {
     const m = new Map<number, AccountSummary>();
@@ -208,6 +229,7 @@ export default function PortfolioPage() {
       // 서버는 FK ON DELETE CASCADE(V2)로 하위 자산·거래·배당까지 지운다.
       // 요약은 마운트 시 1회만 받아오던 탓에 지워진 계좌의 자산이 총자산·도넛에 그대로 남아 있었다.
       await loadSummary();
+      loadRetirementCard();
       setToast("계좌가 삭제되었어요.");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "삭제 중 문제가 발생했어요.");
@@ -289,6 +311,7 @@ export default function PortfolioPage() {
       {accounts !== null && (
         <>
           <PortfolioSummary summary={summary} />
+          <RetirementAgeCard card={retirementCard} />
           <HoldingsDonutChart
             holdings={summary?.holdings ?? null}
             totalAssetKrw={summary?.totalKrw ?? null}

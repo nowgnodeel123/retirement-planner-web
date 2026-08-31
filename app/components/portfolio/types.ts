@@ -285,3 +285,13 @@ export interface TaxSummaryResponse {
   capitalGains: CapitalGainsEstimate;
   dividendIncome: DividendIncomeJudgement;
 }
+
+// D-219: 포트폴리오 메인 "은퇴 가능 나이" 카드. 백엔드 RetirementAgeCardDto와 매칭.
+// 시뮬레이터를 한 번도 안 돌렸으면 hasProfile=false이고 나머지는 전부 null이다.
+export interface RetirementAgeCardResponse {
+  hasProfile: boolean;
+  estimatedRetirementAge: number | null;
+  feasible: boolean | null;
+  targetMonthlyExpense: number | null;
+  excludedCount: number;
+}
