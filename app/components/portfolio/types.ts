@@ -280,10 +280,18 @@ export interface DividendIncomeJudgement {
   dividendCount: number;
 }
 
+// M15(D-232): 이 집계가 어떤 계좌를 보고 어떤 계좌를 뺐는지. 백엔드 TaxDtos.TaxScope와 매칭.
+export interface TaxScope {
+  taxableAccountCount: number;
+  excludedAccountCount: number;
+  excludedAccountNames: string[];
+}
+
 export interface TaxSummaryResponse {
   year: number;
   capitalGains: CapitalGainsEstimate;
   dividendIncome: DividendIncomeJudgement;
+  scope: TaxScope;
 }
 
 // D-219: 포트폴리오 메인 "은퇴 가능 나이" 카드. 백엔드 RetirementAgeCardDto와 매칭.

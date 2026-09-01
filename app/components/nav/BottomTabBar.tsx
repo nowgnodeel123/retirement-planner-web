@@ -36,6 +36,24 @@ function WalletIcon({ active }: { active: boolean }) {
   );
 }
 
+function ReceiptIcon({ active }: { active: boolean }) {
+  return (
+    <svg
+      width="21"
+      height="21"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={active ? 2.2 : 1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 3h12v18l-3-1.6-3 1.6-3-1.6L6 21V3Z" />
+      <path d="M9.5 8.5h5M9.5 12.5h5" />
+    </svg>
+  );
+}
+
 function CompassIcon({ active }: { active: boolean }) {
   return (
     <svg
@@ -101,6 +119,12 @@ const TABS: {
     label: "포트폴리오",
     Icon: WalletIcon,
     isActive: (p) => p.startsWith("/portfolio"),
+  },
+  {
+    href: "/settlement",
+    label: "수익 및 세금",
+    Icon: ReceiptIcon,
+    isActive: (p) => p.startsWith("/settlement"),
   },
   {
     href: "/simulator",
@@ -273,18 +297,18 @@ export default function BottomTabBar() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-[var(--border)] bg-[var(--surface)]/90 backdrop-blur-md">
       <div className="max-w-[420px] mx-auto flex items-stretch gap-2 px-4 py-2 pb-[calc(env(safe-area-inset-bottom)+8px)]">
-        {/* 포트폴리오/은퇴시뮬레이션 — 둘만 담긴 박스, 세그먼트 컨트롤 스타일로 선택된
-            쪽이 스르륵 슬라이드하는 인디케이터를 그대로 유지한다. */}
+        {/* 포트폴리오/결산/은퇴 — 세 콘텐츠 탭을 담은 박스. 선택된 쪽이 스르륵 슬라이드하는
+            인디케이터를 그대로 유지한다(M15에서 2칸 → 3칸). */}
         <div
           className="relative flex-1 rounded-2xl border p-1"
           style={{ borderColor: "var(--border)" }}
         >
-          <div className="relative grid grid-cols-2">
+          <div className="relative grid grid-cols-3">
             <div
-              className="absolute inset-y-0 w-1/2 rounded-xl pointer-events-none"
+              className="absolute inset-y-0 w-1/3 rounded-xl pointer-events-none"
               style={{
                 background: "var(--accent-soft)",
-                left: activeIndex === 1 ? "50%" : "0%",
+                left: activeIndex > 0 ? `${(activeIndex * 100) / 3}%` : "0%",
                 opacity: activeIndex >= 0 ? 1 : 0,
                 transition: "left 320ms cubic-bezier(0.32, 0.72, 0, 1), opacity 200ms ease",
               }}

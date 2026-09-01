@@ -12,12 +12,9 @@ import { useParams, useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
-import { ProfitTab } from "@/app/components/portfolio/ProfitTab";
-import { TaxTab } from "@/app/components/portfolio/TaxTab";
 import { RenameModal } from "@/app/components/portfolio/RenameModal";
 import { SwipeRow } from "@/app/components/portfolio/SwipeRow";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
-import { allowedCategories } from "@/app/components/portfolio/accountRules";
 import { formatKrw, formatMoney, profitColor, signed } from "@/app/components/portfolio/format";
 import {
   HoldingSortKey,
@@ -124,10 +121,8 @@ export default function AccountDetailPage() {
   const [holdings, setHoldings] = useState<AssetHoldingResponse[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // M10(D-065): 계좌 상세 3탭(자산/수익/세금).
-  const [pickedTab, setActiveTab] = useState<"ASSETS" | "PROFIT" | "TAX">(
-    "ASSETS",
-  );
+  // M15(D-232): 계좌 상세는 자산만 보여준다. 수익·세금은 계좌가 아니라 사람 단위로
+  // 집계해야 맞아(기본공제 250만원·금융소득 2천만원이 인별 한도) 하단 「결산」 탭으로 옮겼다.
 
   // M7: 정렬(D-054) — 기본값은 평가금액 내림차순(비중 큰 자산부터).
   // 사용자가 직접 고른 정렬. null이면 아직 안 골랐다는 뜻이라 아래에서 기본값을 정한다.
@@ -276,24 +271,6 @@ export default function AccountDetailPage() {
     }
   }
 
-  // 탭 노출 정책:
-  //  - 은행 계좌(D-060): 입금 히스토리만 다뤄 실현손익·세금 개념이 없음 → 자산 탭만.
-  //  - 연금저축·IRP·ISA: 세제혜택(과세이연/비과세·저율분리과세) 계좌라 양도소득세·2천만원
-  //    배당 판정 대상이 아님 → 세금 탭 숨김. 수익(실현손익·배당) 탭은 유지.
-  //  - 그 외 일반 계좌: 자산/수익/세금 3탭.
-  const showProfit = !!account && account.institutionType !== "BANK";
-  const showTax = showProfit && account!.detailType === "NORMAL";
-  const profitCategories = account
-    ? allowedCategories(account.institutionType, account.detailType)
-    : [];
-
-  // 계좌 유형이 안 다루는 탭이 선택돼 있으면 자산 탭으로 본다.
-  // 이펙트에서 setActiveTab으로 되돌리면 없는 탭이 한 번 그려졌다 바뀐다.
-  const activeTab =
-    (pickedTab === "PROFIT" && !showProfit) || (pickedTab === "TAX" && !showTax)
-      ? "ASSETS"
-      : pickedTab;
-
   if (account === null) {
     return (
       <div className="max-w-[420px] mx-auto px-5 pt-16 text-center">
@@ -385,54 +362,6 @@ export default function AccountDetailPage() {
         )}
       </div>
 
-      {/* 탭 노출 정책은 위 showProfit/showTax 주석 참조. 탭이 자산 하나뿐이면 탭바를 숨긴다. */}
-      {(() => {
-        const tabs: { key: "ASSETS" | "PROFIT" | "TAX"; label: string }[] = [
-          { key: "ASSETS", label: "자산" },
-          ...(showProfit
-            ? [{ key: "PROFIT" as const, label: "수익" }]
-            : []),
-          ...(showTax ? [{ key: "TAX" as const, label: "세금" }] : []),
-        ];
-        if (tabs.length <= 1) return null;
-        return (
-          <div
-            className="flex mb-5 border-b"
-            style={{ borderColor: "var(--border)" }}
-          >
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className="flex-1 text-center py-2.5 fs-body font-semibold relative"
-                style={{
-                  color:
-                    activeTab === tab.key
-                      ? "var(--text-strong)"
-                      : "var(--text-faint)",
-                }}
-              >
-                {tab.label}
-                {activeTab === tab.key && (
-                  <span
-                    className="absolute left-0 right-0 -bottom-px h-[2px]"
-                    style={{ background: "var(--accent)" }}
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-        );
-      })()}
-
-      {activeTab === "PROFIT" && showProfit && (
-        <ProfitTab accountId={accountId} allowed={profitCategories} />
-      )}
-
-      {activeTab === "TAX" && showTax && <TaxTab accountId={accountId} />}
-
-      {activeTab === "ASSETS" && (
       <>
       {/* 총 평가금액 — 진입 즉시 "내 돈이 지금 얼마인가" */}
       {summary && summary.totalKrw !== null && (
@@ -790,7 +719,6 @@ export default function AccountDetailPage() {
         </div>
       )}
       </>
-      )}
 
       {assetRenameTarget && (
         <RenameModal

@@ -32,26 +32,14 @@ function ProfitSkeletonCard() {
   );
 }
 
-export function ProfitTab({
-  accountId,
-  allowed,
-}: {
-  accountId: number;
-  allowed?: TradableAssetCategory[];
-}) {
+// M15(D-232): 계좌 스코프에서 인별 스코프로. accountId를 받지 않는다 —
+// "내 실현손익이 얼마인가"는 계좌가 아니라 사람 단위의 질문이라서다.
+// 카테고리 필터도 계좌 유형으로 제한할 이유가 없어졌다(전 계좌를 합쳐 보므로).
+export function ProfitTab() {
   const [period, setPeriod] = useState<ProfitPeriod>("MONTH");
-  const [pickedCategory, setCategory] = useState<TradableAssetCategory | null>(null);
+  const [category, setCategory] = useState<TradableAssetCategory | null>(null);
   const [periodModalOpen, setPeriodModalOpen] = useState(false);
 
-  // 선택된 카테고리가 계좌가 다루지 않는 값이면 없는 것으로 본다.
-  // 이펙트에서 setCategory(null)로 되돌리면 한 번 잘못된 필터로 그려졌다 다시 그려진다.
-  const category =
-    pickedCategory && (!allowed || allowed.includes(pickedCategory))
-      ? pickedCategory
-      : null;
-
-  const showChips = (allowed ?? ["DOMESTIC_STOCK", "FOREIGN_STOCK", "CRYPTO"])
-    .length > 1;
 
   return (
     <div className="rise-in">
@@ -93,50 +81,62 @@ export function ProfitTab({
         </div>
       </div>
 
-      {showChips && (
-        <div className="mb-4">
-          <CategoryFilterChips
-            value={category}
-            onChange={setCategory}
-            allowed={allowed}
-          />
-        </div>
-      )}
+      <div className="mb-4">
+        <CategoryFilterChips value={category} onChange={setCategory} />
+      </div>
 
       {/* 기간/카테고리가 바뀌면 key로 새로 마운트해 이전 응답이 잠깐 남아있는 것을 방지 —
           effect 안에서 setData(null)로 수동 리셋하지 않고 리마운트로 초기 state를 되찾는다. */}
       <ProfitContent
         key={`${period}-${category ?? "ALL"}`}
-        accountId={accountId}
         period={period}
         category={category}
+        onShowAll={() => setPeriod("ALL")}
       />
     </div>
   );
 }
 
 function ProfitContent({
-  accountId,
   period,
   category,
+  onShowAll,
 }: {
-  accountId: number;
   period: ProfitPeriod;
   category: TradableAssetCategory | null;
+  onShowAll: () => void;
 }) {
   const [data, setData] = useState<ProfitSummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 이 기간이 비었을 때, 다른 기간에는 내역이 있는지. null=아직 모름.
+  const [hasOlder, setHasOlder] = useState<boolean | null>(null);
 
   useEffect(() => {
     const qs = new URLSearchParams({ period });
     if (category) qs.set("category", category);
     api
-      .get<ProfitSummaryResponse>(`/api/accounts/${accountId}/profit?${qs.toString()}`)
+      .get<ProfitSummaryResponse>(`/api/profit?${qs.toString()}`)
       .then(setData)
       .catch((e) =>
         setError(e instanceof ApiError ? e.message : "수익 정보를 불러오지 못했어요."),
       );
-  }, [accountId, period, category]);
+  }, [period, category]);
+
+  // 기본 기간이 "월"이라 지난달에 판 종목은 화면에서 그냥 사라진다. 실제로 "매도했는데
+  // 수익이 안 잡힌다"는 제보가 여기서 나왔다 — 사용자는 기간을 하나씩 바꿔보고 나서야
+  // 찾았다. 비어 있을 때 "다른 기간에는 있다"는 사실을 알려주지 않으면, 화면의 0원이
+  // 데이터가 없다는 뜻인지 기간이 안 맞는다는 뜻인지 구분할 방법이 없다.
+  useEffect(() => {
+    // 기간·카테고리가 바뀌면 key로 리마운트돼 hasOlder가 null로 다시 시작하므로,
+    // 여기서 되돌릴 필요가 없다(이펙트 본문 setState는 연쇄 렌더를 부른다).
+    if (!data || data.items.length > 0 || period === "ALL") return;
+    const qs = new URLSearchParams({ period: "ALL" });
+    if (category) qs.set("category", category);
+    api
+      .get<ProfitSummaryResponse>(`/api/profit?${qs.toString()}`)
+      .then((all) => setHasOlder(all.items.length > 0))
+      .catch(() => setHasOlder(false));
+  }, [data, period, category]);
 
   return (
     <>
@@ -151,7 +151,7 @@ function ProfitContent({
 
       {data && (
         <>
-          <div className="card px-4 py-4 mb-6">
+          <div className="card px-4 py-4" style={{ marginBottom: "var(--rhythm-section)" }}>
             <div className="flex justify-between fs-body" style={{ color: "var(--text-sub)" }}>
               <span>실현손익</span>
               <span
@@ -195,40 +195,59 @@ function ProfitContent({
           {data.items.length === 0 ? (
             <div className="card px-4 py-9 text-center">
               <p className="fs-body" style={{ color: "var(--text-sub)" }}>
-                해당 기간에 실현손익·배당 내역이 없어요.
+                {hasOlder
+                  ? "이 기간에는 내역이 없어요."
+                  : "아직 실현손익·배당 내역이 없어요."}
               </p>
+              {hasOlder && (
+                <button
+                  type="button"
+                  onClick={onShowAll}
+                  className="pressable mt-3 fs-body font-semibold px-3 py-1.5 rounded-lg"
+                  style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
+                >
+                  전체 기간으로 보기
+                </button>
+              )}
             </div>
           ) : (
-            <div className="space-y-2">
-              {data.items.map((item) => (
+            /* 항목마다 따로 카드를 띄우면 화면이 조각나 "붕 뜬" 느낌이 난다(D-124/D-128과
+               같은 문제). 한 장의 카드 안에 구분선으로 나눠 목록이 하나의 덩어리로 읽히게 한다. */
+            <div className="card overflow-hidden">
+              {data.items.map((item, i) => (
                 <div
                   key={`${item.kind}-${item.sourceId}`}
-                  className="card px-4 py-3.5 flex items-center justify-between gap-3"
+                  className="px-4 py-3 flex items-center justify-between gap-3"
+                  style={
+                    i > 0
+                      ? { borderTop: "1px solid var(--border)" }
+                      : undefined
+                  }
                 >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span
-                        className="fs-caption font-semibold px-1.5 py-0.5 rounded-md"
+                        className="fs-caption font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
                         style={
                           item.kind === "DIVIDEND"
-                            ? { color: "var(--gain)" }
+                            ? { color: "var(--gain)", background: "var(--gain-soft)" }
                             : { color: "var(--text-sub)", background: "var(--border)" }
                         }
                       >
                         {item.kind === "DIVIDEND" ? "배당" : "실현손익"}
                       </span>
-                      <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                      <p
+                        className="fs-body font-medium truncate"
+                        style={{ color: "var(--text-strong)" }}
+                      >
+                        {item.assetName}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <CategoryBadge category={item.category as TradableAssetCategory} />
+                      <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
                         {item.date}
                       </span>
-                    </div>
-                    <p
-                      className="fs-body mt-1.5 truncate"
-                      style={{ color: "var(--text-strong)" }}
-                    >
-                      {item.assetName}
-                    </p>
-                    <div className="mt-1">
-                      <CategoryBadge category={item.category as TradableAssetCategory} />
                     </div>
                   </div>
                   <p

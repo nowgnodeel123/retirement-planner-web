@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { ErrorBanner } from "@/app/components/wizard/Ui";
 import { formatKrw, profitColor, signed } from "@/app/components/portfolio/format";
-import { dividendJudgementLabel, TaxSummaryResponse } from "@/app/components/portfolio/types";
+import { dividendJudgementLabel, TaxScope, TaxSummaryResponse } from "@/app/components/portfolio/types";
 
 // D-076: 전문용어(과세표준/분리과세) ⓘ 버튼+풀이. 별도 모달/팝오버 라이브러리 없이
 // 클릭 시 인라인으로 풀이를 펼치는 최소 구현.
@@ -57,7 +57,9 @@ function TaxSkeletonCard() {
   );
 }
 
-export function TaxTab({ accountId }: { accountId: number }) {
+// M15(D-232): 계좌 스코프에서 인별 스코프로. 기본공제 250만원과 금융소득 2천만원 기준이
+// 인별 한도라, 계좌별로 보여주면 공제를 계좌 수만큼 중복해 잡은 값을 보게 된다.
+export function TaxTab() {
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
 
@@ -94,21 +96,42 @@ export function TaxTab({ accountId }: { accountId: number }) {
 
       <DisclaimerBanner />
 
-      <TaxContent key={year} accountId={accountId} year={year} />
+      <TaxContent key={year} year={year} />
     </div>
   );
 }
 
-function TaxContent({ accountId, year }: { accountId: number; year: number }) {
+/**
+ * 어떤 계좌를 보고 어떤 계좌를 뺐는지 밝힌다. 세제혜택 계좌(ISA·IRP·연금저축)는 과세이연·
+ * 저율분리과세라 양도소득세·금융소득 합산 대상이 아니고 은행 계좌는 매도·배당이 없다.
+ * 이 사실을 안 보여주면 "연금계좌 매도차익이 왜 안 잡히지?"라는 의문이 앱의 결함으로 읽힌다.
+ */
+function ScopeNotice({ scope }: { scope: TaxScope }) {
+  if (scope.excludedAccountCount === 0) return null;
+  return (
+    <div
+      className="rounded-2xl px-4 py-3"
+      style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
+    >
+      <p className="fs-caption" style={{ color: "var(--text-sub)" }}>
+        일반 계좌 {scope.taxableAccountCount}곳을 합쳐서 계산했어요. 세제혜택·은행 계좌{" "}
+        {scope.excludedAccountCount}곳({scope.excludedAccountNames.join(", ")})은 양도소득세·금융소득
+        합산 대상이 아니라 빼고 봤어요.
+      </p>
+    </div>
+  );
+}
+
+function TaxContent({ year }: { year: number }) {
   const [data, setData] = useState<TaxSummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api
-      .get<TaxSummaryResponse>(`/api/accounts/${accountId}/tax?year=${year}`)
+      .get<TaxSummaryResponse>(`/api/tax?year=${year}`)
       .then(setData)
       .catch((e) => setError(e instanceof ApiError ? e.message : "세금 정보를 불러오지 못했어요."));
-  }, [accountId, year]);
+  }, [year]);
 
   if (error) return <ErrorBanner message={error} />;
 
@@ -121,10 +144,12 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
     );
   }
 
-  const { capitalGains: cg, dividendIncome: di } = data;
+  const { capitalGains: cg, dividendIncome: di, scope } = data;
 
   return (
     <div className="space-y-3">
+      <ScopeNotice scope={scope} />
+
       <div className="card px-4 py-4">
         <p className="fs-body font-semibold mb-3" style={{ color: "var(--text-strong)" }}>
           양도소득세 추정 (해외주식만)
