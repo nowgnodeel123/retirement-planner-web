@@ -148,7 +148,7 @@ export function ProgressBar({ step, total }: { step: number; total: number }) {
           />
         ))}
       </div>
-      <p className="text-[11px] text-[var(--text-faint)] mt-2 text-right font-medium">
+      <p className="fs-caption text-[var(--text-faint)] mt-2 text-right font-medium">
         {step + 1} / {total} 단계
       </p>
     </div>
@@ -250,7 +250,7 @@ export function NoticeBanner({ children }: { children: React.ReactNode }) {
           clipRule="evenodd"
         />
       </svg>
-      <p className="text-[13px] text-[var(--warning)] leading-relaxed">
+      <p className="fs-body text-[var(--warning)] leading-relaxed">
         {children}
       </p>
     </div>
@@ -259,7 +259,7 @@ export function NoticeBanner({ children }: { children: React.ReactNode }) {
 
 export function Hint({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[13px] text-[var(--text-faint)] leading-relaxed">
+    <p className="fs-body text-[var(--text-faint)] leading-relaxed">
       {children}
     </p>
   );
@@ -285,7 +285,7 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`relative rounded-2xl bg-[var(--accent)] text-white py-3.5 text-[15px] font-semibold
+      className={`relative rounded-2xl bg-[var(--accent)] text-white py-3.5 fs-title font-semibold
         shadow-[0_4px_14px_rgba(49,130,246,0.3)]
         transition-all duration-150
         hover:brightness-110 active:scale-[0.98] active:brightness-95
@@ -314,7 +314,7 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3.5 text-[15px] font-medium text-[var(--text)]
+      className={`rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3.5 fs-title font-medium text-[var(--text)]
         transition-all duration-150 hover:bg-[var(--surface-pressed)] hover:border-[var(--text-faint)] active:scale-[0.98] ${className}`}
     >
       {children}

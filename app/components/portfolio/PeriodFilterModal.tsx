@@ -51,7 +51,7 @@ export function PeriodFilterModal({
             key={p}
             type="button"
             onClick={() => onApply(p)}
-            className="w-full text-left px-3.5 py-2.5 text-[13px] font-medium transition-colors"
+            className="w-full text-left px-3.5 py-2.5 fs-body font-medium transition-colors"
             style={
               active
                 ? { color: "var(--accent)", background: "var(--accent-soft)" }

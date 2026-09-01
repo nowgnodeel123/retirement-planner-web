@@ -22,7 +22,7 @@ function InfoTerm({ term, explanation }: { term: string; explanation: string }) 
           type="button"
           aria-label={`${term} 설명 보기`}
           onClick={() => setOpen((v) => !v)}
-          className="text-[11px] rounded-full w-4 h-4 inline-flex items-center justify-center"
+          className="fs-caption rounded-full w-4 h-4 inline-flex items-center justify-center"
           style={{ color: "var(--text-faint)", border: "1px solid var(--border)" }}
         >
           i
@@ -126,11 +126,11 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
   return (
     <div className="space-y-3">
       <div className="card px-4 py-4">
-        <p className="text-[13px] font-semibold mb-3" style={{ color: "var(--text-strong)" }}>
+        <p className="fs-body font-semibold mb-3" style={{ color: "var(--text-strong)" }}>
           양도소득세 추정 (해외주식만)
         </p>
 
-        <div className="flex justify-between text-[13px]" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body" style={{ color: "var(--text-sub)" }}>
           <span>해외주식 연간 실현손익</span>
           <span
             className="amount font-semibold"
@@ -139,11 +139,11 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
             {signed(cg.realizedProfitKrw, formatKrw(Math.abs(cg.realizedProfitKrw)))}
           </span>
         </div>
-        <div className="flex justify-between text-[13px] mt-1.5" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body mt-1.5" style={{ color: "var(--text-sub)" }}>
           <span>기본공제</span>
           <span className="amount">-{formatKrw(cg.basicDeductionKrw)}</span>
         </div>
-        <div className="flex justify-between text-[13px] mt-1.5" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body mt-1.5" style={{ color: "var(--text-sub)" }}>
           <InfoTerm term="과세표준" explanation="실현손익에서 기본공제(연 250만원)를 뺀 금액이에요. 손실이면 0으로 처리해요." />
           <span className="amount">{formatKrw(cg.taxableBaseKrw)}</span>
         </div>
@@ -165,11 +165,11 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
       </div>
 
       <div className="card px-4 py-4">
-        <p className="text-[13px] font-semibold mb-3" style={{ color: "var(--text-strong)" }}>
+        <p className="fs-body font-semibold mb-3" style={{ color: "var(--text-strong)" }}>
           배당소득세 판정
         </p>
 
-        <div className="flex justify-between text-[13px]" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body" style={{ color: "var(--text-sub)" }}>
           <InfoTerm
             term="연간 배당 합계(세전 환산)"
             explanation="국내주식 배당은 세후 금액으로 기록되기 때문에, 15.4% 원천징수율로 세전 금액을 역환산해서 합산해요. 실제 세전 금액과 다를 수 있는 추정치예요."
@@ -178,7 +178,7 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
             {formatKrw(di.totalDividendKrw)}
           </span>
         </div>
-        <div className="flex justify-between text-[13px] mt-1.5" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body mt-1.5" style={{ color: "var(--text-sub)" }}>
           <span>금융소득종합과세 기준</span>
           <span className="amount">{formatKrw(di.thresholdKrw)}</span>
         </div>
@@ -192,7 +192,7 @@ function TaxContent({ accountId, year }: { accountId: number; year: number }) {
             explanation="이자·배당 등 금융소득이 연 2천만원을 넘으면 분리과세로 끝나지 않고 다른 소득과 합산해 종합소득세로 신고할 가능성이 생겨요."
           />
           <span
-            className="text-[13px] font-semibold px-2.5 py-1 rounded-lg"
+            className="fs-body font-semibold px-2.5 py-1 rounded-lg"
             style={
               di.exceedsThreshold
                 ? { color: "var(--error)", background: "var(--error-soft)" }

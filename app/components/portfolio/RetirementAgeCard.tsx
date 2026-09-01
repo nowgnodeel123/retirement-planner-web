@@ -37,25 +37,26 @@ export function RetirementAgeCard({
     return (
       <Link
         href="/simulator"
-        className="flex items-center justify-between mb-3 rounded-2xl px-4 py-3.5 border transition-all
+        className="flex items-center justify-between rounded-2xl px-4 py-3.5 border transition-all
           hover:brightness-[0.98] active:scale-[0.99]"
         style={{
+          marginBottom: "var(--rhythm-section)",
           background: "var(--accent-soft)",
           borderColor: "var(--border)",
         }}
       >
         <div>
           <p
-            className="text-[13px] font-semibold"
+            className="font-semibold fs-body"
             style={{ color: "var(--accent)" }}
           >
             이 자산이면 몇 살에 은퇴할 수 있을까요?
           </p>
-          <p className="text-[12px] mt-0.5" style={{ color: "var(--text-sub)" }}>
+          <p className="mt-1 fs-caption" style={{ color: "var(--text-sub)" }}>
             한 번 계산해두면 여기에 계속 표시돼요
           </p>
         </div>
-        <span className="text-[13px]" style={{ color: "var(--accent)" }}>
+        <span className="fs-body" style={{ color: "var(--accent)" }}>
           →
         </span>
       </Link>
@@ -71,35 +72,36 @@ export function RetirementAgeCard({
   return (
     <Link
       href="/simulator"
-      className="block mb-3 rounded-2xl px-4 py-3.5 border transition-all
+      className="block rounded-2xl px-4 py-3.5 border transition-all
         hover:brightness-[0.98] active:scale-[0.99]"
       style={{
+        marginBottom: "var(--rhythm-section)",
         background: infeasible ? "var(--warning-soft)" : "var(--accent-soft)",
         borderColor: infeasible ? "var(--warning)" : "var(--border)",
       }}
     >
       <div className="flex items-baseline justify-between">
         <p
-          className="text-[12px] font-medium"
+          className="font-medium fs-caption"
           style={{ color: "var(--text-sub)" }}
         >
           지금 자산이면
         </p>
-        <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+        <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
           월 {card.targetMonthlyExpense?.toLocaleString()}만원 기준
         </span>
       </div>
 
       {infeasible ? (
         <p
-          className="text-[17px] font-bold mt-1"
+          className="font-bold mt-1 fs-title"
           style={{ color: "var(--warning)" }}
         >
           {card.estimatedRetirementAge}세까지도 목표를 채우기 어려워요
         </p>
       ) : (
         <p
-          className="text-[22px] font-bold mt-0.5"
+          className="font-bold mt-1 fs-metric"
           style={{ color: "var(--text-strong)" }}
         >
           {card.estimatedRetirementAge}세에 은퇴 가능
@@ -107,7 +109,7 @@ export function RetirementAgeCard({
       )}
 
       {card.excludedCount > 0 && (
-        <p className="text-[11px] mt-1" style={{ color: "var(--warning)" }}>
+        <p className="mt-1 fs-caption" style={{ color: "var(--warning)" }}>
           시세를 못 가져온 자산 {card.excludedCount}건은 빠져 있어요
         </p>
       )}

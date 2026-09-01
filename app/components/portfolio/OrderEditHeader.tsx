@@ -35,7 +35,7 @@ export function OrderEditHeader({
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="text-[13px] font-medium px-1.5 py-1 rounded-lg"
+            className="fs-body font-medium px-1.5 py-1 rounded-lg"
             style={{ color: "var(--text-sub)", opacity: saving ? 0.5 : 1 }}
           >
             취소
@@ -80,7 +80,7 @@ export function OrderEditHeader({
       </div>
 
       <p
-        className="text-[13px] mt-1 leading-relaxed"
+        className="fs-body mt-1 leading-relaxed"
         style={{ color: "var(--text-faint)" }}
       >
         {description}

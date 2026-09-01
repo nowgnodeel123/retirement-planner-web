@@ -69,7 +69,7 @@ export function SortModal({
             key={`${opt.key}-${opt.dir}`}
             type="button"
             onClick={() => onApply(opt.key, opt.dir)}
-            className="w-full text-left px-3.5 py-2.5 text-[13px] font-medium transition-colors"
+            className="w-full text-left px-3.5 py-2.5 fs-body font-medium transition-colors"
             style={
               active
                 ? { color: "var(--accent)", background: "var(--accent-soft)" }

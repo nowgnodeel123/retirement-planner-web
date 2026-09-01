@@ -65,14 +65,14 @@ function MenuRow({
   const content = (
     <>
       <span
-        className="text-[15px] font-medium"
+        className="fs-title font-medium"
         style={{ color: danger ? "var(--error)" : "var(--text-strong)" }}
       >
         {label}
       </span>
       <span className="flex items-center gap-1.5">
         {badge && (
-          <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+          <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
             {badge}
           </span>
         )}

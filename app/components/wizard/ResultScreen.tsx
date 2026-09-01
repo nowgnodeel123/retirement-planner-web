@@ -74,7 +74,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
       {summary.feasible ? (
         <div className="text-center mb-5 pt-4 rise-in">
           <p
-            className="text-[13px] font-bold tracking-wide"
+            className="fs-body font-bold tracking-wide"
             style={{ color: "var(--accent)" }}
           >
             예상 은퇴 가능 나이
@@ -92,7 +92,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             </span>
           </p>
           <p
-            className="text-[13px] font-semibold mt-3.5"
+            className="fs-body font-semibold mt-3.5"
             style={{ color: "var(--text-sub)" }}
           >
             지금부터{" "}
@@ -107,7 +107,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
         </div>
       ) : (
         <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-center mb-5 rise-in">
-          <p className="text-[13px] text-amber-700 mb-1.5 font-medium">
+          <p className="fs-body text-amber-700 mb-1.5 font-medium">
             시뮬레이션 결과
           </p>
           <p className="text-xl font-bold text-amber-700 leading-snug">
@@ -115,7 +115,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             <br />
             목표를 채우기 어려워요
           </p>
-          <p className="text-[13px] text-neutral-500 mt-3 leading-relaxed">
+          <p className="fs-body text-neutral-500 mt-3 leading-relaxed">
             납입액을 늘리거나 목표 생활비를 낮춰서 다시 계산해보세요. 아래
             그래프에서 어느 시점부터 부족해지는지 볼 수 있어요.
           </p>
@@ -161,7 +161,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
               작은 보조 지표로만 붙여서 미니멀 원칙(D-127~D-128)을 유지한다. */}
           {monteCarloResult && (
             <p
-              className="text-[11px] mt-3 pt-3 border-t leading-relaxed"
+              className="fs-caption mt-3 pt-3 border-t leading-relaxed"
               style={{ borderColor: "var(--border)", color: "var(--text-faint)" }}
             >
               수익률 변동까지 감안한 몬테카를로 시뮬레이션(1,000회) 기준, 90세까지

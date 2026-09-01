@@ -70,7 +70,7 @@ export function InstitutionTypeSelector({
           >
             <InstitutionIcon type={type} active={active} />
             <span
-              className="text-[13px] font-medium"
+              className="fs-body font-medium"
               style={{ color: active ? "var(--accent)" : "var(--text-sub)" }}
             >
               {institutionLabel[type]}

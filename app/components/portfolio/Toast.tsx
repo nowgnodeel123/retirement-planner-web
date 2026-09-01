@@ -21,7 +21,7 @@ export function Toast({
 
   return (
     <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 max-w-[calc(420px-40px)] w-[calc(100%-40px)]">
-      <div className="flex items-center gap-2 bg-neutral-800 text-white text-[13px] font-medium rounded-2xl px-4 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
+      <div className="flex items-center gap-2 bg-neutral-800 text-white fs-body font-medium rounded-2xl px-4 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.2)]">
         <svg
           width="16"
           height="16"

@@ -50,7 +50,7 @@ export default function AnalyzingScreen() {
                 }}
               >
                 <span
-                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[11px]"
+                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center fs-caption"
                   style={{
                     background: done ? "var(--accent)" : "var(--surface-pressed)",
                     color: done ? "#fff" : "var(--text-faint)",
@@ -59,7 +59,7 @@ export default function AnalyzingScreen() {
                 >
                   {done ? "✓" : ""}
                 </span>
-                <p className="text-[13px]">{label}</p>
+                <p className="fs-body">{label}</p>
               </div>
             );
           })}

@@ -133,7 +133,7 @@ function TierHelpModal({
         >
           등급 안내
         </p>
-        <p className="text-[11px] mt-1 mb-3" style={{ color: "var(--text-faint)" }}>
+        <p className="fs-caption mt-1 mb-3" style={{ color: "var(--text-faint)" }}>
           모든 계좌 평가금액 합계 기준
         </p>
         <div className="space-y-0.5">
@@ -180,7 +180,7 @@ export function TierEmblem({ tier, size = 32 }: { tier: Tier; size?: number }) {
       >
         <TierGlyph tier={tier} size={size} />
         <span className="flex items-center gap-1 leading-none">
-          <span className="text-[11px] font-bold" style={{ color: tier.color }}>
+          <span className="fs-caption font-bold" style={{ color: tier.color }}>
             {tier.name}
           </span>
           <span

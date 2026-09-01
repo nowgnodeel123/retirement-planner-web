@@ -11,6 +11,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { haptic } from "@/lib/haptics";
 
 const EDGE = 72; // 화면 위아래 이 거리 안으로 들어오면 자동 스크롤
 const EDGE_SPEED = 12;
@@ -60,6 +61,9 @@ export function ReorderableList<T>({
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rectsRef = useRef<Rect[]>([]);
   const overRef = useRef<number | null>(null);
+  // 햅틱용 — overRef는 이펙트로 갱신돼 같은 틱 안에서는 이전 값이라
+  // "방금 한 칸 넘어갔는지" 판정에 쓸 수 없다. 여기서 동기적으로 들고 간다.
+  const lastOverRef = useRef<number | null>(null);
   useEffect(() => {
     overRef.current = overIndex;
   }, [overIndex]);
@@ -130,6 +134,10 @@ export function ReorderableList<T>({
           }
         }
       }
+      if (over !== lastOverRef.current) {
+        lastOverRef.current = over;
+        haptic("step");
+      }
       setOverIndex(over);
     }
 
@@ -157,7 +165,10 @@ export function ReorderableList<T>({
         const [moved] = next.splice(from, 1);
         next.splice(to, 0, moved);
         onChangeRef.current(next);
+        // 순서가 실제로 바뀐 경우에만 — 제자리에 놓았는데 확정감을 주면 거짓 신호다.
+        haptic("drop");
       }
+      lastOverRef.current = null;
       setActiveIndex(null);
       setOverIndex(null);
       setOffsetY(0);
@@ -198,6 +209,9 @@ export function ReorderableList<T>({
         window.addEventListener("pointermove", onPointerMove, { passive: false });
         window.addEventListener("pointerup", onPointerUp);
         window.addEventListener("pointercancel", onPointerCancel);
+
+        lastOverRef.current = index;
+        haptic("grab");
 
         setActiveIndex(index);
         setOverIndex(index);

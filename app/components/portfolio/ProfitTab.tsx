@@ -56,7 +56,7 @@ export function ProfitTab({
   return (
     <div className="rise-in">
       <div className="flex items-center justify-between mb-3 px-1">
-        <p className="text-[13px] font-semibold" style={{ color: "var(--text-sub)" }}>
+        <p className="fs-body font-semibold" style={{ color: "var(--text-sub)" }}>
           기간별 수익
         </p>
         <div className="relative">
@@ -152,7 +152,7 @@ function ProfitContent({
       {data && (
         <>
           <div className="card px-4 py-4 mb-6">
-            <div className="flex justify-between text-[13px]" style={{ color: "var(--text-sub)" }}>
+            <div className="flex justify-between fs-body" style={{ color: "var(--text-sub)" }}>
               <span>실현손익</span>
               <span
                 className="amount font-semibold"
@@ -162,7 +162,7 @@ function ProfitContent({
               </span>
             </div>
             <div
-              className="flex justify-between text-[13px] mt-1.5"
+              className="flex justify-between fs-body mt-1.5"
               style={{ color: "var(--text-sub)" }}
             >
               <span>배당수익</span>
@@ -194,7 +194,7 @@ function ProfitContent({
 
           {data.items.length === 0 ? (
             <div className="card px-4 py-9 text-center">
-              <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+              <p className="fs-body" style={{ color: "var(--text-sub)" }}>
                 해당 기간에 실현손익·배당 내역이 없어요.
               </p>
             </div>
@@ -208,7 +208,7 @@ function ProfitContent({
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
+                        className="fs-caption font-semibold px-1.5 py-0.5 rounded-md"
                         style={
                           item.kind === "DIVIDEND"
                             ? { color: "var(--gain)" }
@@ -222,7 +222,7 @@ function ProfitContent({
                       </span>
                     </div>
                     <p
-                      className="text-[13px] mt-1.5 truncate"
+                      className="fs-body mt-1.5 truncate"
                       style={{ color: "var(--text-strong)" }}
                     >
                       {item.assetName}
@@ -232,7 +232,7 @@ function ProfitContent({
                     </div>
                   </div>
                   <p
-                    className="amount text-[13px] font-semibold flex-shrink-0"
+                    className="amount fs-body font-semibold flex-shrink-0"
                     style={{ color: profitColor(item.amountKrw) }}
                   >
                     {signed(item.amountKrw, formatKrw(Math.abs(item.amountKrw)))}

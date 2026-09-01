@@ -484,7 +484,7 @@ export default function LoginPage() {
           <>
             <a
               href={`${API_BASE_URL}/oauth2/authorization/kakao`}
-              className="flex items-center justify-center gap-2 w-full rounded-2xl py-3.5 text-[15px] font-semibold
+              className="flex items-center justify-center gap-2 w-full rounded-2xl py-3.5 fs-title font-semibold
                 bg-[#FEE500] text-[#191600] transition-all duration-150 hover:brightness-95 active:scale-[0.98]"
             >
               <KakaoIcon />
@@ -590,7 +590,7 @@ export default function LoginPage() {
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
                 className="mt-0.5 w-4 h-4 rounded accent-[var(--accent)] flex-shrink-0"
               />
-              <span className="text-[13px] text-[var(--text-sub)] leading-relaxed">
+              <span className="fs-body text-[var(--text-sub)] leading-relaxed">
                 (필수){" "}
                 <Link
                   href="/terms"

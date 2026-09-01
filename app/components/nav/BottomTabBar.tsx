@@ -121,14 +121,26 @@ const FULLSCREEN_FLOWS = [
   /^\/my\/profile$/,
 ];
 
-function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void }) {
+function NavMenu({
+  myActive,
+  onClose,
+  containerRef,
+}: {
+  myActive: boolean;
+  onClose: () => void;
+  // 바깥클릭 판정은 메뉴 패널이 아니라 ≡ 버튼까지 감싼 래퍼를 기준으로 한다.
+  // WHY: 패널만 기준으로 삼으면 버튼 자체가 "바깥"이라, 메뉴가 열린 상태에서 버튼을
+  // 다시 누를 때 mousedown이 먼저 닫고 → 이어지는 click의 토글이 도로 열어버려
+  // 메뉴가 안 닫힌다(실기기 QA에서 발견). 래퍼 기준이면 버튼 탭은 "안쪽"이라
+  // 바깥클릭이 걸리지 않고 버튼의 토글만 동작한다.
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const router = useRouter();
   const theme = useTheme();
-  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) onClose();
     }
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -139,7 +151,7 @@ function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void
       document.removeEventListener("mousedown", handleClick);
       document.removeEventListener("keydown", handleKey);
     };
-  }, [onClose]);
+  }, [onClose, containerRef]);
 
   // RTR 도입(D-161/M14) — 로컬 토큰만 지우면 서버에 남은 refreshToken이 계속
   // 유효해서(탈취 시 재사용 가능) 서버 쪽도 함께 무효화한다. D-195: 이 로그아웃은
@@ -163,7 +175,6 @@ function NavMenu({ myActive, onClose }: { myActive: boolean; onClose: () => void
 
   return (
     <div
-      ref={ref}
       className="absolute bottom-full right-0 mb-2 z-30 w-[208px] rounded-2xl overflow-hidden menu-slide-up"
       style={{
         background: "var(--surface)",
@@ -247,6 +258,7 @@ export default function BottomTabBar() {
   const pathname = usePathname();
   const token = useToken();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuWrapRef = useRef<HTMLDivElement>(null);
 
   // WHY: 로그인 전 화면(로그인/카카오 콜백)에서는 로그인 기능만 보여야 한다.
   if (!token) return null;
@@ -289,7 +301,7 @@ export default function BottomTabBar() {
                     <tab.Icon active={active} />
                   </span>
                   <span
-                    className="text-[11px] font-medium"
+                    className="fs-caption font-medium"
                     style={{ color: active ? "var(--accent)" : "var(--text-sub)" }}
                   >
                     {tab.label}
@@ -301,7 +313,7 @@ export default function BottomTabBar() {
         </div>
 
         {/* 내 정보/화면 테마/로그아웃 — ≡ 메뉴 버튼, 눌리면 위로 슬라이드하는 팝업 */}
-        <div className="relative flex">
+        <div className="relative flex" ref={menuWrapRef}>
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
@@ -315,13 +327,19 @@ export default function BottomTabBar() {
           >
             <HamburgerIcon />
             <span
-              className="text-[11px] font-medium"
+              className="fs-caption font-medium"
               style={{ color: myActive ? "var(--accent)" : "var(--text-sub)" }}
             >
               메뉴
             </span>
           </button>
-          {menuOpen && <NavMenu myActive={myActive} onClose={() => setMenuOpen(false)} />}
+          {menuOpen && (
+            <NavMenu
+              myActive={myActive}
+              onClose={() => setMenuOpen(false)}
+              containerRef={menuWrapRef}
+            />
+          )}
         </div>
       </div>
     </nav>

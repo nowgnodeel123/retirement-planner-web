@@ -11,7 +11,7 @@ export function PortfolioSummary({
 }) {
   if (summary === null) {
     return (
-      <div className="mb-2 animate-pulse">
+      <div className="animate-pulse" style={{ marginBottom: "var(--rhythm-group)" }}>
         <div
           className="w-20 h-3.5 rounded"
           style={{ background: "var(--border)" }}
@@ -26,12 +26,12 @@ export function PortfolioSummary({
 
   if (summary.totalKrw === null) {
     return (
-      <div className="mb-2">
-        <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+      <div style={{ marginBottom: "var(--rhythm-group)" }}>
+        <p className="fs-body" style={{ color: "var(--text-sub)" }}>
           총자산
         </p>
         <p
-          className="text-[15px] mt-2"
+          className="fs-title mt-1"
           style={{ color: "var(--text-sub)" }}
         >
           {summary.excludedCount > 0
@@ -43,19 +43,19 @@ export function PortfolioSummary({
   }
 
   return (
-    <div className="mb-2 rise-in">
-      <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+    <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
+      <p className="fs-body" style={{ color: "var(--text-sub)" }}>
         총자산
       </p>
       <p
-        className="amount text-[32px] font-bold mt-0.5"
+        className="amount fs-display font-bold mt-1"
         style={{ color: "var(--text-strong)" }}
       >
         {formatKrw(summary.totalKrw)}
       </p>
       <div className="flex items-center gap-1.5 mt-1">
         <span
-          className="amount text-[14px] font-semibold"
+          className="amount fs-title font-semibold"
           style={{
             color: profitColor(summary.profitKrw),
           }}
@@ -68,7 +68,7 @@ export function PortfolioSummary({
           )
         </span>
       </div>
-      <p className="text-[11px] mt-1.5" style={{ color: "var(--text-faint)" }}>
+      <p className="fs-caption" style={{ marginTop: "var(--rhythm-tight)", color: "var(--text-faint)" }}>
         모든 계좌 · 원화 환산 기준
         {summary.excludedCount > 0 &&
           ` · 시세 미조회 자산 ${summary.excludedCount}건 제외`}

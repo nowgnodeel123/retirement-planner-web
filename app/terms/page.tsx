@@ -13,13 +13,13 @@ function Section({
   return (
     <section className="mb-7">
       <h2
-        className="text-[15px] font-bold mb-2"
+        className="fs-title font-bold mb-2"
         style={{ color: "var(--text-strong)" }}
       >
         {title}
       </h2>
       <div
-        className="text-[13px] leading-relaxed space-y-1.5"
+        className="fs-body leading-relaxed space-y-1.5"
         style={{ color: "var(--text-sub)" }}
       >
         {children}
@@ -36,7 +36,7 @@ export default function TermsOfServicePage() {
     >
       <Link
         href="/"
-        className="text-[13px] mb-4 inline-block"
+        className="fs-body mb-4 inline-block"
         style={{ color: "var(--text-faint)" }}
       >
         ← 돌아가기
@@ -48,7 +48,7 @@ export default function TermsOfServicePage() {
       >
         이용약관
       </h1>
-      <p className="text-[13px] mb-5" style={{ color: "var(--text-faint)" }}>
+      <p className="fs-body mb-5" style={{ color: "var(--text-faint)" }}>
         시행일: 2026년 8월 14일
       </p>
 

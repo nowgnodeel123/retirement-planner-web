@@ -302,7 +302,7 @@ export default function AccountDetailPage() {
         </p>
         <button
           onClick={() => router.push("/portfolio")}
-          className="text-[13px] font-semibold"
+          className="fs-body font-semibold"
           style={{ color: "var(--accent)" }}
         >
           포트폴리오로 돌아가기
@@ -315,7 +315,7 @@ export default function AccountDetailPage() {
     <div className="max-w-[420px] w-full mx-auto px-5 pt-6">
       <button
         onClick={() => router.push("/portfolio")}
-        className="flex items-center gap-1 text-[13px] mb-5"
+        className="flex items-center gap-1 fs-body mb-5"
         style={{ color: "var(--text-sub)" }}
       >
         <svg
@@ -405,7 +405,7 @@ export default function AccountDetailPage() {
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className="flex-1 text-center py-2.5 text-[13px] font-semibold relative"
+                className="flex-1 text-center py-2.5 fs-body font-semibold relative"
                 style={{
                   color:
                     activeTab === tab.key
@@ -437,11 +437,11 @@ export default function AccountDetailPage() {
       {/* 총 평가금액 — 진입 즉시 "내 돈이 지금 얼마인가" */}
       {summary && summary.totalKrw !== null && (
         <div className="mt-5 mb-7 rise-in">
-          <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+          <p className="fs-body" style={{ color: "var(--text-sub)" }}>
             총 평가금액
           </p>
           <p
-            className="amount text-[32px] font-bold mt-0.5"
+            className="amount fs-display font-bold mt-0.5"
             style={{ color: "var(--text-strong)" }}
           >
             {formatKrw(summary.totalKrw)}
@@ -462,7 +462,7 @@ export default function AccountDetailPage() {
             </span>
           </div>
           <p
-            className="text-[11px] mt-1.5"
+            className="fs-caption mt-1.5"
             style={{ color: "var(--text-faint)" }}
           >
             원화 환산 기준
@@ -475,7 +475,7 @@ export default function AccountDetailPage() {
 
       <div className="flex items-center justify-between mb-2.5 px-1">
         <p
-          className="text-[13px] font-semibold"
+          className="fs-body font-semibold"
           style={{ color: "var(--text-sub)" }}
         >
           보유 자산
@@ -542,12 +542,12 @@ export default function AccountDetailPage() {
 
       {holdings !== null && holdings.length === 0 && (
         <div className="card px-4 py-9 text-center">
-          <p className="text-[13px] mb-3" style={{ color: "var(--text-sub)" }}>
+          <p className="fs-body mb-3" style={{ color: "var(--text-sub)" }}>
             아직 보유한 자산이 없어요.
           </p>
           <Link
             href={`/portfolio/accounts/${accountId}/assets/new`}
-            className="inline-block text-[13px] font-semibold"
+            className="inline-block fs-body font-semibold"
             style={{ color: "var(--accent)" }}
           >
             첫 자산 추가하기
@@ -561,7 +561,7 @@ export default function AccountDetailPage() {
         activeHoldings.length === 0 && (
           <div className="card px-4 py-9 text-center">
             <p
-              className="text-[13px] mb-1"
+              className="fs-body mb-1"
               style={{ color: "var(--text-sub)" }}
             >
               현재 보유 중인 자산이 없어요.
@@ -588,7 +588,7 @@ export default function AccountDetailPage() {
                   <div className="min-w-0">
                     <p className="truncate">
                       <span
-                        className="text-[15px] font-semibold"
+                        className="fs-title font-semibold"
                         style={{ color: "var(--text-strong)" }}
                       >
                         {h.name}
@@ -603,7 +603,7 @@ export default function AccountDetailPage() {
                       <CategoryBadge category={category} />
                       {category === "DOMESTIC_STOCK" && (
                         <span
-                          className="text-[11px]"
+                          className="fs-caption"
                           style={{ color: "var(--text-faint)" }}
                         >
                           전일 종가 기준
@@ -635,7 +635,7 @@ export default function AccountDetailPage() {
                       h.evaluationAmount !== null && (
                         <>
                           <p
-                            className="amount text-[15px] font-bold"
+                            className="amount fs-title font-bold"
                             style={{ color: "var(--text-strong)" }}
                           >
                             {formatMoney(h.evaluationAmount, h.currency)}
@@ -662,7 +662,7 @@ export default function AccountDetailPage() {
                           {h.currency !== "KRW" &&
                             h.krwEvaluationAmount !== null && (
                               <p
-                                className="amount text-[11px] mt-0.5"
+                                className="amount fs-caption mt-0.5"
                                 style={{ color: "var(--text-sub)" }}
                               >
                                 ≈ {formatKrw(h.krwEvaluationAmount)}
@@ -711,7 +711,7 @@ export default function AccountDetailPage() {
             className="w-full flex items-center justify-between px-1 mb-2.5"
           >
             <p
-              className="text-[13px] font-semibold"
+              className="fs-body font-semibold"
               style={{ color: "var(--text-sub)" }}
             >
               정리한 자산 ({clearedHoldings.length})
@@ -761,14 +761,14 @@ export default function AccountDetailPage() {
                         >
                           {h.name}
                         </span>{" "}
-                        <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                        <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
                           {h.symbol}
                         </span>
                       </p>
                       <div className="mt-1 flex items-center gap-2 flex-wrap">
                         <CategoryBadge category={category} />
                         <span
-                          className="text-[11px]"
+                          className="fs-caption"
                           style={{ color: "var(--text-faint)" }}
                         >
                           전량 매도

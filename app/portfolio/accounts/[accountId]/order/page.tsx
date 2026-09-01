@@ -87,7 +87,7 @@ export default function AssetOrderPage() {
 
       {holdings !== null && holdings.length === 0 && (
         <div className="card px-4 py-8 text-center">
-          <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+          <p className="fs-body" style={{ color: "var(--text-sub)" }}>
             순서를 정할 자산이 없어요.
           </p>
         </div>
@@ -105,7 +105,7 @@ export default function AssetOrderPage() {
             >
               <div className="min-w-0 flex-1">
                 <p
-                  className="text-[15px] font-semibold truncate"
+                  className="fs-title font-semibold truncate"
                   style={{ color: "var(--text-strong)" }}
                 >
                   {h.name}

@@ -38,7 +38,7 @@ export function WithdrawModal({
           정말 탈퇴할까요?
         </p>
         <p
-          className="text-[13px] leading-relaxed mb-5"
+          className="fs-body leading-relaxed mb-5"
           style={{ color: "var(--text-sub)" }}
         >
           탈퇴하면 등록한 모든 계좌·자산·거래 내역이 함께 삭제돼요. 이 작업은
@@ -71,7 +71,7 @@ export function WithdrawModal({
             type="button"
             onClick={() => onConfirm(isLocal ? password : null)}
             disabled={loading || (isLocal && password.length === 0)}
-            className="flex-1 rounded-2xl text-white py-3.5 text-[15px] font-semibold
+            className="flex-1 rounded-2xl text-white py-3.5 fs-title font-semibold
               transition-all duration-150 hover:brightness-110 active:scale-[0.98]
               disabled:opacity-40 disabled:active:scale-100"
             style={{ background: "var(--error)" }}

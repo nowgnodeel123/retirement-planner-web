@@ -24,14 +24,14 @@ export function AccountCard({
         {/* 이름 + 상세유형 배지 — 평가금액과 세로 가운데 정렬 */}
         <div className="min-w-0 flex-1 flex items-center gap-1.5">
           <p
-            className="text-[15px] font-semibold truncate"
+            className="font-semibold truncate fs-title"
             style={{ color: "var(--text-strong)" }}
           >
             {account.name}
           </p>
           {account.detailType !== "NORMAL" && (
             <span
-              className="flex-shrink-0 text-[11px] font-medium rounded-md px-1.5 py-0.5"
+              className="flex-shrink-0 font-medium rounded-md px-1.5 py-0.5 fs-caption"
               style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
             >
               {detailTypeLabel[account.detailType]}
@@ -41,15 +41,15 @@ export function AccountCard({
 
         {/* 평가금액(가운데 기준) + 그 아래 딱 붙는 수익금(수익률) */}
         {summary && (
-          <div className="flex flex-col items-end flex-shrink-0 leading-tight -mb-[15px]">
+          <div className="flex flex-col items-end flex-shrink-0 leading-tight -mb-[16px]">
             <p
-              className="amount text-[15px] font-bold"
+              className="amount font-bold fs-title"
               style={{ color: "var(--text-strong)" }}
             >
               {formatKrw(summary.totalKrw)}
             </p>
             <p
-              className="amount text-[11.5px] font-medium mt-0.5 whitespace-nowrap"
+              className="amount font-medium mt-0.5 whitespace-nowrap fs-caption"
               style={{ color: profitColor(summary.profitKrw) }}
             >
               {signed(summary.profitKrw, formatKrw(Math.abs(summary.profitKrw)))} (

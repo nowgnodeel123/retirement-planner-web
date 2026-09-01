@@ -82,7 +82,7 @@ export default function AccountOrderPage() {
 
       {accounts !== null && accounts.length === 0 && (
         <div className="card px-4 py-8 text-center">
-          <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+          <p className="fs-body" style={{ color: "var(--text-sub)" }}>
             아직 계좌가 없어요.
           </p>
         </div>
@@ -101,14 +101,14 @@ export default function AccountOrderPage() {
               <InstitutionIcon type={account.institutionType} />
               <div className="min-w-0 flex-1 flex items-center gap-1.5">
                 <p
-                  className="text-[15px] font-semibold truncate"
+                  className="fs-title font-semibold truncate"
                   style={{ color: "var(--text-strong)" }}
                 >
                   {account.name}
                 </p>
                 {account.detailType !== "NORMAL" && (
                   <span
-                    className="flex-shrink-0 text-[11px] font-medium rounded-md px-1.5 py-0.5"
+                    className="flex-shrink-0 fs-caption font-medium rounded-md px-1.5 py-0.5"
                     style={{
                       color: "var(--accent)",
                       background: "var(--accent-soft)",

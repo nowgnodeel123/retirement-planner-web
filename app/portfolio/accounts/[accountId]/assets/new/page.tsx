@@ -145,12 +145,12 @@ function UnifiedStockSearch({
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
         >
           {loading && (
-            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+            <p className="px-4 py-3 fs-body" style={{ color: "var(--text-faint)" }}>
               검색 중...
             </p>
           )}
           {!loading && merged.length === 0 && (
-            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+            <p className="px-4 py-3 fs-body" style={{ color: "var(--text-faint)" }}>
               일치하는 종목이 없어요.
             </p>
           )}
@@ -175,12 +175,12 @@ function UnifiedStockSearch({
                     >
                       {item.name}
                     </span>{" "}
-                    <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                    <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
                       {item.symbol}
                     </span>
                   </span>
                 </span>
-                <span className="text-[11px] flex-shrink-0" style={{ color: "var(--text-faint)" }}>
+                <span className="fs-caption flex-shrink-0" style={{ color: "var(--text-faint)" }}>
                   {item.sub}
                 </span>
               </button>
@@ -246,12 +246,12 @@ function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
         >
           {loading && (
-            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+            <p className="px-4 py-3 fs-body" style={{ color: "var(--text-faint)" }}>
               검색 중...
             </p>
           )}
           {!loading && shownResults.length === 0 && (
-            <p className="px-4 py-3 text-[13px]" style={{ color: "var(--text-faint)" }}>
+            <p className="px-4 py-3 fs-body" style={{ color: "var(--text-faint)" }}>
               일치하는 코인이 없어요.
             </p>
           )}
@@ -270,7 +270,7 @@ function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void
                 <span className="text-[14px] font-medium" style={{ color: "var(--text-strong)" }}>
                   {item.name}
                 </span>{" "}
-                <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
                   {item.symbol}
                 </span>
               </button>
@@ -355,7 +355,7 @@ export default function NewAssetPage() {
         </p>
         <button
           onClick={() => router.push("/portfolio")}
-          className="text-[13px] font-semibold"
+          className="fs-body font-semibold"
           style={{ color: "var(--accent)" }}
         >
           포트폴리오로 돌아가기
@@ -487,7 +487,7 @@ export default function NewAssetPage() {
                   setMode(m);
                   setError(null);
                 }}
-                className="rounded-xl py-2.5 text-[13px] font-semibold transition-colors"
+                className="rounded-xl py-2.5 fs-body font-semibold transition-colors"
                 style={{
                   background: activeMode === m ? "var(--surface)" : "transparent",
                   color:
@@ -560,14 +560,14 @@ export default function NewAssetPage() {
                   aria-label="잔액"
                 />
                 <span
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[13px]"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 fs-body"
                   style={{ color: "var(--text-faint)" }}
                 >
                   {cashCurrency === "KRW" ? "원" : "USD"}
                 </span>
               </div>
               <p
-                className="text-[11px] mt-1.5 leading-relaxed"
+                className="fs-caption mt-1.5 leading-relaxed"
                 style={{ color: "var(--text-faint)" }}
               >
                 {cashCurrency === "KRW"
@@ -586,7 +586,7 @@ export default function NewAssetPage() {
             className="mb-5 flex items-center justify-between rounded-2xl border px-4 py-3"
             style={{ background: "var(--surface-pressed)", borderColor: "var(--border)" }}
           >
-            <span className="text-[13px] font-medium" style={{ color: "var(--text-sub)" }}>
+            <span className="fs-body font-medium" style={{ color: "var(--text-sub)" }}>
               카테고리
             </span>
             <CategoryBadge category={options[0]} />
@@ -608,7 +608,7 @@ export default function NewAssetPage() {
                     <CategoryBadge category={category} />
                     <span className="truncate">
                       <span
-                        className="text-[15px] font-medium"
+                        className="fs-title font-medium"
                         style={{ color: "var(--text-strong)" }}
                       >
                         {name}
@@ -632,7 +632,7 @@ export default function NewAssetPage() {
               )}
             </div>
             {!(symbol && name && category) && (
-              <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+              <p className="fs-caption mt-1.5 leading-relaxed" style={{ color: "var(--text-faint)" }}>
                 {isPensionAccount
                   ? "연금저축·IRP는 ETF만 담을 수 있어요. ETF 이름으로 검색해 보세요 (예: KODEX 미국나스닥100). ETF 시세 연동은 아직 준비 중이라 당분간 평가금액이 표시되지 않아요."
                   : "종목명을 검색하면 국내·해외 구분이 자동으로 정해져요."}
@@ -652,7 +652,7 @@ export default function NewAssetPage() {
                 >
                   <span className="truncate">
                     <span
-                      className="text-[15px] font-medium"
+                      className="fs-title font-medium"
                       style={{ color: "var(--text-strong)" }}
                     >
                       {name}

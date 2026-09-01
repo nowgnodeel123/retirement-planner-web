@@ -75,14 +75,14 @@ function EmptyState() {
         </svg>
       </div>
       <p
-        className="text-[16px] font-bold mb-1.5"
+        className="font-bold mb-1.5 fs-title"
         style={{ color: "var(--text-strong)" }}
       >
         등록된 계좌가 없어요
       </p>
       <p
-        className="text-[13px] leading-relaxed mb-7"
-        style={{ color: "var(--text-sub)" }}
+        className="leading-relaxed fs-body"
+        style={{ marginBottom: "var(--rhythm-section)", color: "var(--text-sub)" }}
       >
         은행, 증권사, 거래소 계좌를 등록하고
         <br />
@@ -90,7 +90,7 @@ function EmptyState() {
       </p>
       <Link
         href="/portfolio/accounts/new"
-        className="pressable rounded-2xl text-white px-6 py-3.5 text-[15px] font-semibold"
+        className="pressable rounded-2xl text-white px-6 py-3.5 font-semibold fs-title"
         style={{ background: "var(--accent)" }}
       >
         첫 계좌 등록하기
@@ -266,7 +266,7 @@ export default function PortfolioPage() {
 
   return (
     <div className="max-w-[420px] w-full mx-auto px-5 pt-7 pb-24">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between" style={{ marginBottom: "var(--rhythm-section)" }}>
         <div className="flex items-center gap-2 min-w-0">
           <NestMark size={32} />
           {nickname === null ? (
@@ -277,7 +277,7 @@ export default function PortfolioPage() {
             />
           ) : (
             <h1
-              className="text-[20px] font-bold truncate"
+              className="font-bold truncate fs-metric"
               style={{ color: "var(--text-strong)" }}
             >
               {nickname}
@@ -320,7 +320,7 @@ export default function PortfolioPage() {
       )}
 
       {accounts === null && !error && (
-        <div className="space-y-2.5">
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--rhythm-tight)" }}>
           {[0, 1, 2].map((i) => (
             <div
               key={i}
@@ -346,12 +346,12 @@ export default function PortfolioPage() {
           {/* 정렬 컨트롤 — 파이차트 아래, 계좌 리스트 위. "≡ 금액순" 형태로 현재 정렬을 노출.
               계좌가 2개 이상일 때만(1개는 정렬 의미 없음). */}
           {accounts.length >= 2 && (
-            <div className="flex justify-end mb-2.5 px-1">
+            <div className="flex justify-end px-1" style={{ marginBottom: "var(--rhythm-tight)" }}>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setSortOpen((v) => !v)}
-                  className="pressable flex items-center gap-1.5 text-[13px] font-semibold px-2 py-1 rounded-lg"
+                  className="pressable flex items-center gap-1.5 font-semibold px-2 py-1 rounded-lg fs-body"
                   style={{ color: "var(--text-sub)" }}
                 >
                   <SortIcon />
@@ -377,7 +377,7 @@ export default function PortfolioPage() {
             </div>
           )}
 
-          <div className="space-y-2.5">
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--rhythm-tight)" }}>
             {sortedAccounts.map((account, i) => (
               <div
                 key={account.id}

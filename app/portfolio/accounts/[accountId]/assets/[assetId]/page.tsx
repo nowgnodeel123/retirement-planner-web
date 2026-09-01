@@ -476,7 +476,7 @@ export default function AssetDetailPage() {
         </p>
         <button
           onClick={() => router.push(`/portfolio/accounts/${accountId}`)}
-          className="text-[13px] font-semibold"
+          className="fs-body font-semibold"
           style={{ color: "var(--accent)" }}
         >
           계좌 상세로 돌아가기
@@ -489,7 +489,7 @@ export default function AssetDetailPage() {
     <div className="max-w-[420px] w-full mx-auto px-5 pt-6 pb-10">
       <button
         onClick={() => router.push(`/portfolio/accounts/${accountId}`)}
-        className="flex items-center gap-1 text-[13px] mb-5"
+        className="flex items-center gap-1 fs-body mb-5"
         style={{ color: "var(--text-sub)" }}
       >
         <svg
@@ -518,7 +518,7 @@ export default function AssetDetailPage() {
                 {holding.name}
               </span>{" "}
               {!isCash && (
-                <span className="text-[13px]" style={{ color: "var(--text-faint)" }}>
+                <span className="fs-body" style={{ color: "var(--text-faint)" }}>
                   {holding.symbol}
                 </span>
               )}
@@ -620,7 +620,7 @@ export default function AssetDetailPage() {
                 />
               </Field>
               <p
-                className="text-[11px] mt-1.5 leading-relaxed"
+                className="fs-caption mt-1.5 leading-relaxed"
                 style={{ color: "var(--text-faint)" }}
               >
                 현재 잔액으로 덮어써요. 거래 이력은 남지 않아요.
@@ -790,7 +790,7 @@ export default function AssetDetailPage() {
       )}
 
       <p
-        className="text-[13px] font-semibold mb-2.5 px-1"
+        className="fs-body font-semibold mb-2.5 px-1"
         style={{ color: "var(--text-sub)" }}
       >
         거래 내역
@@ -807,7 +807,7 @@ export default function AssetDetailPage() {
 
       {combinedHistory !== null && combinedHistory.length === 0 && (
         <div className="card px-4 py-8 text-center">
-          <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+          <p className="fs-body" style={{ color: "var(--text-sub)" }}>
             아직 거래내역이 없어요.
           </p>
         </div>
@@ -824,7 +824,7 @@ export default function AssetDetailPage() {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span
-                      className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
+                      className="fs-caption font-semibold px-1.5 py-0.5 rounded-md"
                       style={{
                         color:
                           item.data.type === "BUY"
@@ -846,7 +846,7 @@ export default function AssetDetailPage() {
                     </span>
                   </div>
                   <p
-                    className="amount text-[13px] mt-1"
+                    className="amount fs-body mt-1"
                     style={{ color: "var(--text-strong)" }}
                   >
                     {formatQuantity(item.data.quantity)}
@@ -864,7 +864,7 @@ export default function AssetDetailPage() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <p
-                    className="amount text-[13px] font-semibold"
+                    className="amount fs-body font-semibold"
                     style={{ color: "var(--text-strong)" }}
                   >
                     {formatMoney(item.data.amount, holding?.currency ?? "KRW")}
@@ -959,7 +959,7 @@ export default function AssetDetailPage() {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span
-                      className="text-[11px] font-semibold px-1.5 py-0.5 rounded-md"
+                      className="fs-caption font-semibold px-1.5 py-0.5 rounded-md"
                       style={{ color: "var(--gain)" }}
                     >
                       배당
@@ -973,7 +973,7 @@ export default function AssetDetailPage() {
                   </div>
                   {item.data.exDividendDate && (
                     <p
-                      className="text-[11px] mt-0.5"
+                      className="fs-caption mt-0.5"
                       style={{ color: "var(--text-faint)" }}
                     >
                       배당락일 {item.data.exDividendDate}
@@ -982,7 +982,7 @@ export default function AssetDetailPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <p
-                    className="amount text-[13px] font-semibold"
+                    className="amount fs-body font-semibold"
                     style={{ color: "var(--gain)" }}
                   >
                     +{formatMoney(item.data.amount, holding?.currency ?? "KRW")}

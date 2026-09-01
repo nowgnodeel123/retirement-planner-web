@@ -234,7 +234,7 @@ export default function IncomeTimelineChart({
         </AreaChart>
       </ResponsiveContainer>
 
-      <p className="text-[11px] mt-2" style={{ color: "var(--text-faint)" }}>
+      <p className="fs-caption mt-2" style={{ color: "var(--text-faint)" }}>
         색이 쌓인 높이가 그 나이의 총소득(오늘 가치 기준)이에요. 물가상승분을
         미리 제해서, 점선(목표 생활비)은 지금 입력하신 금액 그대로 평평해요.
       </p>

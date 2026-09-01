@@ -35,7 +35,7 @@ export function ConfirmModal({
           {title}
         </p>
         <p
-          className="text-[13px] leading-relaxed mb-5"
+          className="fs-body leading-relaxed mb-5"
           style={{ color: "var(--text-sub)" }}
         >
           {description}
@@ -51,7 +51,7 @@ export function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 rounded-2xl text-white py-3.5 text-[15px] font-semibold
+            className="flex-1 rounded-2xl text-white py-3.5 fs-title font-semibold
               transition-all duration-150 hover:brightness-110 active:scale-[0.98]
               disabled:opacity-40 disabled:active:scale-100"
             style={{ background: "var(--error)" }}

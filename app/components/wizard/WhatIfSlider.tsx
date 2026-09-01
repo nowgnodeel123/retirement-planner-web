@@ -87,7 +87,7 @@ export default function WhatIfSlider({
               key={p}
               type="button"
               onClick={() => setExtra(selected ? 0 : p)}
-              className="flex-1 rounded-xl py-2 text-[13px] font-semibold border transition-colors"
+              className="flex-1 rounded-xl py-2 fs-body font-semibold border transition-colors"
               style={
                 selected
                   ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--accent)" }
@@ -101,7 +101,7 @@ export default function WhatIfSlider({
       </div>
 
       <div className="mt-4 flex items-center justify-between">
-        <p className="text-[13px]" style={{ color: "var(--text-sub)" }}>
+        <p className="fs-body" style={{ color: "var(--text-sub)" }}>
           매달{" "}
           <strong style={{ color: "var(--text-strong)" }}>{extra}만원</strong>{" "}
           더 투자하면
@@ -147,7 +147,7 @@ export default function WhatIfSlider({
                 {previewAge}세
               </p>
               <p
-                className="text-[11px]"
+                className="fs-caption"
                 style={{
                   color:
                     !baseFeasible || delta > 0 ? "var(--gain)" : "var(--text-faint)",

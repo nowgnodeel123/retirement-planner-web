@@ -485,7 +485,7 @@ export default function ProfileEditPage() {
     <div className="max-w-[420px] w-full mx-auto px-5 pt-6 pb-10">
       <button
         onClick={() => router.push("/my")}
-        className="flex items-center gap-1 text-[13px] mb-5"
+        className="flex items-center gap-1 fs-body mb-5"
         style={{ color: "var(--text-sub)" }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -512,7 +512,7 @@ export default function ProfileEditPage() {
                 onChange={(e) => setNickname(e.target.value)}
                 maxLength={20}
                 autoFocus
-                className="w-full rounded-lg border px-2.5 py-1.5 text-[15px]"
+                className="w-full rounded-lg border px-2.5 py-1.5 fs-title"
                 style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--text-strong)" }}
               />
             ) : (
@@ -621,7 +621,7 @@ export default function ProfileEditPage() {
             <div className="h-px my-4" style={{ background: "var(--border)" }} />
 
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[13px] font-medium" style={{ color: "var(--text-sub)" }}>
+              <span className="fs-body font-medium" style={{ color: "var(--text-sub)" }}>
                 이메일 (로그인 아이디)
               </span>
               {!changingEmail && (
@@ -640,7 +640,7 @@ export default function ProfileEditPage() {
               )}
             </div>
             {!changingEmail ? (
-              <p className="text-[15px] font-semibold" style={{ color: "var(--text-strong)" }}>
+              <p className="fs-title font-semibold" style={{ color: "var(--text-strong)" }}>
                 {me?.email ?? "-"}
               </p>
             ) : (
@@ -687,7 +687,7 @@ export default function ProfileEditPage() {
             <div className="h-px my-4" style={{ background: "var(--border)" }} />
 
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[13px] font-medium" style={{ color: "var(--text-sub)" }}>
+              <span className="fs-body font-medium" style={{ color: "var(--text-sub)" }}>
                 휴대전화번호
               </span>
               {!changingPhone && (
@@ -702,7 +702,7 @@ export default function ProfileEditPage() {
               )}
             </div>
             {!changingPhone ? (
-              <p className="text-[15px] font-semibold" style={{ color: "var(--text-strong)" }}>
+              <p className="fs-title font-semibold" style={{ color: "var(--text-strong)" }}>
                 {me?.phone ?? "-"}
               </p>
             ) : (
@@ -769,7 +769,7 @@ export default function ProfileEditPage() {
               </div>
             )}
             {passwordSuccess && !passwordError && (
-              <p className="text-[13px] mt-3" style={{ color: "var(--accent)" }}>
+              <p className="fs-body mt-3" style={{ color: "var(--accent)" }}>
                 비밀번호가 변경됐어요.
               </p>
             )}

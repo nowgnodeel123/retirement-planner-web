@@ -211,7 +211,7 @@ function PensionTypeButton({
         {label}
       </span>
       <span
-        className="block text-[11px] mt-0.5"
+        className="block fs-caption mt-0.5"
         style={{ color: "var(--text-faint)" }}
       >
         {description}

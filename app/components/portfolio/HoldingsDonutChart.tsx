@@ -11,10 +11,14 @@ import { tierOf } from "./tier";
 import { TierEmblem } from "./TierEmblem";
 
 // 범례는 두 열, 위→아래로 채우고 넘치면 오른쪽 열로(열 우선). 이름이 길면 truncate된다.
-// 행 수를 5로 고정하지 않고 개수의 절반으로 잡는 이유: 7개일 때 고정 5행이면 5/2로 갈려
-// 오른쪽 열 아래가 휑하게 빈다. 절반이면 4/3으로 나뉘어 두 열 높이가 맞는다.
-// (10개일 때는 5/5로 같은 결과라 상한 케이스는 달라지지 않는다.)
-const legendRowsFor = (count: number) => Math.max(1, Math.ceil(count / 2));
+// 왼쪽 열을 5개까지 다 채운 뒤에야 오른쪽 열이 하나씩 차는 구조다(실기기 QA 요청으로 변경).
+// 이전에는 행 수를 개수의 절반(ceil(count/2))으로 잡아 두 열 높이를 맞췄는데, 그러면
+// 3개만 있어도 2/1로 갈려 "왼쪽이 안 찼는데 옆으로 넘어간다"고 읽혔다. 항목이 적을 때
+// 한 열로 모이는 쪽이 훨씬 자연스럽다는 판단. 대신 7개처럼 애매한 개수에서는 5/2로 갈려
+// 오른쪽 열 아래가 비는데, 이건 감수하기로 한 트레이드오프다.
+// 슬라이스는 최대 10개(상위 9 + "외 N개")라 5행이면 두 열을 넘지 않는다.
+const LEGEND_MAX_ROWS = 5;
+const legendRowsFor = (count: number) => Math.min(LEGEND_MAX_ROWS, Math.max(1, count));
 const legendGridStyle = (count: number): React.CSSProperties => ({
   display: "grid",
   gridTemplateRows: `repeat(${legendRowsFor(count)}, auto)`,
@@ -92,7 +96,7 @@ export function HoldingsDonutChart({
 
   if (holdings === null) {
     return (
-      <div className="mb-7 flex items-center gap-4">
+      <div className="flex items-center gap-4" style={{ marginBottom: "var(--rhythm-section)" }}>
         <div
           className="rounded-full animate-pulse flex-shrink-0"
           style={{ width: 140, height: 140, background: "var(--border)" }}
@@ -114,10 +118,10 @@ export function HoldingsDonutChart({
   // 다르고 레이아웃은 데이터가 있을 때와 동일. 신규 사용자에게 "언랭크"가 온보딩 신호가 된다.
   if (holdings.length === 0) {
     return (
-      <div className="mb-7 rise-in">
+      <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
         <p
-          className="text-[13px] font-semibold mb-2.5 px-1"
-          style={{ color: "var(--text-sub)" }}
+          className="font-semibold px-1 fs-body"
+          style={{ marginBottom: "var(--rhythm-tight)", color: "var(--text-sub)" }}
         >
           비중
         </p>
@@ -135,7 +139,7 @@ export function HoldingsDonutChart({
             </div>
           </div>
           <p
-            className="flex-1 text-[13px] leading-relaxed"
+            className="flex-1 leading-relaxed fs-body"
             style={{ color: "var(--text-faint)" }}
           >
             아직 등록된 보유 자산이 없어요
@@ -172,10 +176,10 @@ export function HoldingsDonutChart({
   }
 
   return (
-    <div className="mb-7 rise-in">
+    <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
       <p
-        className="text-[13px] font-semibold mb-2.5 px-1"
-        style={{ color: "var(--text-sub)" }}
+        className="font-semibold px-1 fs-body"
+        style={{ marginBottom: "var(--rhythm-tight)", color: "var(--text-sub)" }}
       >
         비중
       </p>
@@ -223,13 +227,13 @@ export function HoldingsDonutChart({
             {active ? (
               <>
                 <p
-                  className="text-[11px] font-medium truncate w-full"
+                  className="font-medium truncate w-full fs-caption"
                   style={{ color: "var(--text-sub)" }}
                 >
                   {active.label}
                 </p>
                 <p
-                  className="amount text-[12px] font-bold mt-0.5"
+                  className="amount font-bold mt-0.5 fs-body"
                   style={{ color: "var(--text-strong)" }}
                 >
                   {total > 0 ? `${((active.value / total) * 100).toFixed(1)}%` : "0%"}
@@ -260,13 +264,13 @@ export function HoldingsDonutChart({
                 style={{ backgroundColor: s.color }}
               />
               <span
-                className="text-[11px] font-medium truncate min-w-0 flex-1 text-left"
+                className="font-medium truncate min-w-0 flex-1 text-left fs-caption"
                 style={{ color: "var(--text-strong)" }}
               >
                 {s.label}
               </span>
               <span
-                className="amount text-[10px] flex-shrink-0"
+                className="amount flex-shrink-0 fs-caption"
                 style={{ color: "var(--text-sub)" }}
               >
                 {total > 0 ? `${((s.value / total) * 100).toFixed(1)}%` : "0%"}
