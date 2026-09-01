@@ -248,6 +248,11 @@ export interface ProfitSummaryResponse {
   sellCount: number;
   dividendCount: number;
   items: ProfitItem[];
+  // D-237: 서버가 계산한 기간 경계(ALL이면 null)와, 기간과 무관한 전체 내역 건수.
+  // 기간 의미를 프론트에서 다시 계산하지 않기 위해 서버 값을 그대로 쓴다.
+  rangeStart: string | null;
+  rangeEnd: string | null;
+  allTimeItemCount: number;
 }
 
 // M11: 세금 탭 (D-064 양도소득세 추정 / D-068 배당소득세 판정)

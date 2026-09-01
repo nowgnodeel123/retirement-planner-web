@@ -97,6 +97,63 @@ export function ProfitTab() {
   );
 }
 
+/**
+ * 선택한 기간 밖에 내역이 더 있으면 알려준다.
+ *
+ * WHY: 기간이 "이번 달"이면 매월 1일에는 범위가 하루뿐이라, 며칠 전에 판 종목이
+ * 목록에서 조용히 빠진다. 목록이 통째로 비면 눈치채지만, 다른 종목이 남아 있으면
+ * 특정 종목만 사라진 것처럼 보여 계산 오류로 읽힌다 — 실제로 "해외주식은 왜 년·전체에만
+ * 뜨냐"는 제보가 이 형태였다(해당 매도만 지난달 날짜였다). 그래서 비었을 때뿐 아니라
+ * 부분적으로 빠졌을 때도 알리고, 기간 경계를 날짜로 그대로 보여준다.
+ */
+function OutOfRangeNotice({
+  data,
+  period,
+  onShowAll,
+}: {
+  data: ProfitSummaryResponse;
+  period: ProfitPeriod;
+  onShowAll: () => void;
+}) {
+  const hidden = data.allTimeItemCount - data.items.length;
+  if (period === "ALL" || hidden <= 0) return null;
+
+  const range =
+    data.rangeStart && data.rangeEnd
+      ? `${formatDot(data.rangeStart)} ~ ${formatDot(data.rangeEnd)}`
+      : null;
+
+  return (
+    <div
+      className="rounded-2xl px-4 py-3"
+      style={{
+        background: "var(--accent-soft)",
+        border: "1px solid var(--border)",
+        marginBottom: "var(--rhythm-group)",
+      }}
+    >
+      <p className="fs-caption" style={{ color: "var(--text-sub)" }}>
+        {range && <>이 기간은 <b>{range}</b>이에요. </>}
+        기간 밖에 {hidden}건이 더 있어요.
+      </p>
+      <button
+        type="button"
+        onClick={onShowAll}
+        className="pressable mt-2 fs-caption font-semibold px-2.5 py-1 rounded-lg"
+        style={{ color: "var(--accent)", background: "var(--surface)" }}
+      >
+        전체 기간으로 보기
+      </button>
+    </div>
+  );
+}
+
+// 2026-08-26 → 8.26 (기간 경계는 연도가 같은 경우가 대부분이라 월·일만 보여준다)
+function formatDot(iso: string) {
+  const [, m, d] = iso.split("-");
+  return `${Number(m)}.${Number(d)}`;
+}
+
 function ProfitContent({
   period,
   category,
@@ -108,8 +165,6 @@ function ProfitContent({
 }) {
   const [data, setData] = useState<ProfitSummaryResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // 이 기간이 비었을 때, 다른 기간에는 내역이 있는지. null=아직 모름.
-  const [hasOlder, setHasOlder] = useState<boolean | null>(null);
 
   useEffect(() => {
     const qs = new URLSearchParams({ period });
@@ -122,21 +177,6 @@ function ProfitContent({
       );
   }, [period, category]);
 
-  // 기본 기간이 "월"이라 지난달에 판 종목은 화면에서 그냥 사라진다. 실제로 "매도했는데
-  // 수익이 안 잡힌다"는 제보가 여기서 나왔다 — 사용자는 기간을 하나씩 바꿔보고 나서야
-  // 찾았다. 비어 있을 때 "다른 기간에는 있다"는 사실을 알려주지 않으면, 화면의 0원이
-  // 데이터가 없다는 뜻인지 기간이 안 맞는다는 뜻인지 구분할 방법이 없다.
-  useEffect(() => {
-    // 기간·카테고리가 바뀌면 key로 리마운트돼 hasOlder가 null로 다시 시작하므로,
-    // 여기서 되돌릴 필요가 없다(이펙트 본문 setState는 연쇄 렌더를 부른다).
-    if (!data || data.items.length > 0 || period === "ALL") return;
-    const qs = new URLSearchParams({ period: "ALL" });
-    if (category) qs.set("category", category);
-    api
-      .get<ProfitSummaryResponse>(`/api/profit?${qs.toString()}`)
-      .then((all) => setHasOlder(all.items.length > 0))
-      .catch(() => setHasOlder(false));
-  }, [data, period, category]);
 
   return (
     <>
@@ -148,6 +188,8 @@ function ProfitContent({
           <ProfitSkeletonCard />
         </div>
       )}
+
+      {data && <OutOfRangeNotice data={data} period={period} onShowAll={onShowAll} />}
 
       {data && (
         <>
@@ -195,20 +237,10 @@ function ProfitContent({
           {data.items.length === 0 ? (
             <div className="card px-4 py-9 text-center">
               <p className="fs-body" style={{ color: "var(--text-sub)" }}>
-                {hasOlder
+                {data.allTimeItemCount > 0
                   ? "이 기간에는 내역이 없어요."
                   : "아직 실현손익·배당 내역이 없어요."}
               </p>
-              {hasOlder && (
-                <button
-                  type="button"
-                  onClick={onShowAll}
-                  className="pressable mt-3 fs-body font-semibold px-3 py-1.5 rounded-lg"
-                  style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
-                >
-                  전체 기간으로 보기
-                </button>
-              )}
             </div>
           ) : (
             /* 항목마다 따로 카드를 띄우면 화면이 조각나 "붕 뜬" 느낌이 난다(D-124/D-128과
