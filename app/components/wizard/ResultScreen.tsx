@@ -25,6 +25,15 @@ interface Props {
 // WHY: 결과 화면에 처음 진입할 때 나이가 0에서 목표 숫자까지 차오르는 연출.
 // 은퇴 나이가 바뀔 때마다(예: What-if 슬라이더) 다시 재생되진 않도록 헤드라인
 // 숫자 전용으로만 쓴다 — 슬라이더 쪽 숫자는 즉시 갱신되는 게 더 자연스럽다.
+// 적립 총액은 억 단위가 되기 쉬워 만원 그대로 찍으면 자릿수를 세게 된다.
+// 억 미만은 만원으로, 억 이상은 "N억 M,MMM만원"으로 끊어 읽게 한다.
+function formatEok(manwon: number) {
+  if (manwon < 10000) return `${manwon.toLocaleString()}만원`;
+  const eok = Math.floor(manwon / 10000);
+  const rest = manwon % 10000;
+  return rest === 0 ? `${eok}억원` : `${eok}억 ${rest.toLocaleString()}만원`;
+}
+
 function useCountUp(target: number, durationMs = 700) {
   const [value, setValue] = useState(0);
 
@@ -47,7 +56,8 @@ function useCountUp(target: number, durationMs = 700) {
 }
 
 export default function ResultScreen({ result, onRestart, basePayload }: Props) {
-  const { summary, meta, incomeTimeline, dependentStatusWarning, monteCarloResult } = result;
+  const { summary, meta, incomeTimeline, dependentStatusWarning, monteCarloResult, accumulatedAssets } =
+    result;
   const [copied, setCopied] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
@@ -135,6 +145,58 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
           }}
         >
           {dependentStatusWarning.message}
+        </div>
+      )}
+
+      {/* ── 은퇴 시점에 모이는 총액 ──
+          이 앱의 질문은 "그 자산이 은퇴 시점에 충분한가"(D-017)인데, 정작 화면에
+          "얼마가 모이는지"가 없었다. 월 수령액만으로는 규모가 잡히지 않는다. */}
+      {accumulatedAssets && accumulatedAssets.total > 0 && (
+        <div
+          className="rounded-2xl border p-4 mb-5 rise-in"
+          style={{
+            borderColor: "var(--border)",
+            background: "var(--surface)",
+            animationDelay: "60ms",
+          }}
+        >
+          <p className="fs-caption" style={{ color: "var(--text-sub)" }}>
+            {retirementAge}세까지 모이는 돈
+          </p>
+          <p
+            className="amount mt-1 font-bold"
+            style={{ fontSize: 28, color: "var(--text-strong)" }}
+          >
+            {formatEok(accumulatedAssets.total)}
+          </p>
+
+          <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: "var(--border)" }}>
+            {[
+              ["퇴직연금", accumulatedAssets.retirementPensionLumpSum],
+              ["IRP", accumulatedAssets.irpBalance],
+              ["연금저축", accumulatedAssets.pensionSavingsBalance],
+              ["주식·ETF", accumulatedAssets.liquidBalance],
+            ]
+              .filter(([, v]) => (v as number) > 0)
+              .map(([label, v]) => (
+                <div key={label as string} className="flex justify-between fs-body">
+                  <span style={{ color: "var(--text-sub)" }}>{label}</span>
+                  <span className="amount" style={{ color: "var(--text-strong)" }}>
+                    {formatEok(v as number)}
+                  </span>
+                </div>
+              ))}
+          </div>
+
+          <p className="fs-caption mt-3 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+            물가상승을 반영하지 않은 그때의 금액이에요.
+            {accumulatedAssets.pensionUnlockAge > retirementAge && (
+              <>
+                {" "}연금 계열은 인출이 열리는 {accumulatedAssets.pensionUnlockAge}세 기준이라
+                주식·ETF와 기준 시점이 달라요.
+              </>
+            )}
+          </p>
         </div>
       )}
 

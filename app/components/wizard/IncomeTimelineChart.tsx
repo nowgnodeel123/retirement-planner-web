@@ -51,6 +51,7 @@ interface ChartPoint {
   liquid: number;
   total: number;
   targetExpense: number;
+  nominalTotal: number;
 }
 
 export default function IncomeTimelineChart({
@@ -85,6 +86,11 @@ export default function IncomeTimelineChart({
       liquid,
       total: national + retirementPension + privatePension + liquid,
       targetExpense: Math.round(toReal(p.targetExpense, p.age)),
+      // 실제로 통장에 찍히는 금액. 차트는 비교를 위해 오늘 가치로 그리지만,
+      // "그래서 그때 얼마 받는데?"에는 명목값으로 답해야 한다.
+      nominalTotal:
+        p.nationalAfterTax + p.retirementPensionAfterTax
+        + p.privatePensionAfterTax + p.liquidWithdrawalAfterTax,
     };
   });
 
@@ -234,9 +240,22 @@ export default function IncomeTimelineChart({
         </AreaChart>
       </ResponsiveContainer>
 
-      <p className="fs-caption mt-2" style={{ color: "var(--text-faint)" }}>
-        색이 쌓인 높이가 그 나이의 총소득(오늘 가치 기준)이에요. 물가상승분을
-        미리 제해서, 점선(목표 생활비)은 지금 입력하신 금액 그대로 평평해요.
+      {/* 오늘 가치로만 보여주면 목표선이 평평해서 "정말 딱 그 금액인가?"라는 의문이 남는다.
+          실제로 받게 될 명목 금액을 한 줄로 함께 적어 그 의문을 없앤다. */}
+      <p
+        className="fs-body mt-3 font-medium"
+        style={{ color: "var(--text-sub)" }}
+      >
+        {retirementAge}세에 실제로 받는 금액은 월{" "}
+        <span style={{ color: "var(--text-strong)", fontWeight: 700 }}>
+          {data[0].nominalTotal.toLocaleString()}만원
+        </span>
+        이에요.
+      </p>
+      <p className="fs-caption mt-1.5" style={{ color: "var(--text-faint)" }}>
+        차트의 높이는 그 금액을 <b>오늘 물가로 환산한</b> 값이에요. 물가상승분을 미리
+        제해서 점선(목표 생활비)이 지금 입력하신 금액 그대로 평평해요 — 그래야 해마다
+        목표를 채우는지 눈으로 비교돼요.
       </p>
     </div>
   );

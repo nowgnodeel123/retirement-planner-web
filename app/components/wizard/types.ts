@@ -182,6 +182,9 @@ export interface SimulationResponseDto {
     totalMonthlyIncome: number;
     totalMonthlyIncomeGross: number;
     targetMonthlyExpense: number;
+    // 입력한 목표(오늘 기준)를 은퇴 시점 물가로 환산한 값. totalMonthlyIncome이 명목이라
+    // 비교는 이쪽과 해야 한다 — 예전엔 명목 소득에서 오늘 목표를 빼 없는 여유가 보였다.
+    targetMonthlyExpenseAtRetirement: number;
     monthlyShortfall: number;
     estimatedRetirementAge: number;
     feasible: boolean;
@@ -190,7 +193,7 @@ export interface SimulationResponseDto {
   };
   breakdown: {
     nationalPension: number;
-    retirementPension: number; // 퇴직연금+IRP+연금저축 합산 (55세 전이면 0)
+    retirementPension: number; // 퇴직연금(DB/DC)만. 55세 전 은퇴면 0
     retirementPensionGross: number;
     irp: number;
     irpGross: number;
@@ -198,6 +201,16 @@ export interface SimulationResponseDto {
     pensionSavingsGross: number;
     pensionSavingsTaxBenefit: number;
     stockAsset: number;
+  };
+  // 은퇴 시점에 모여 있는 자산(만원). 월 수령액만으로는 규모가 안 잡힌다.
+  // pensionUnlockAge는 연금 계열 잔액의 기준 나이(55세 전 은퇴면 주식과 시점이 다르다).
+  accumulatedAssets: {
+    retirementPensionLumpSum: number;
+    irpBalance: number;
+    pensionSavingsBalance: number;
+    liquidBalance: number;
+    total: number;
+    pensionUnlockAge: number;
   };
   taxDetail: {
     pensionIncomeTaxRate: number;
