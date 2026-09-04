@@ -56,9 +56,10 @@ function useCountUp(target: number, durationMs = 700) {
 }
 
 export default function ResultScreen({ result, onRestart, basePayload }: Props) {
-  const { summary, meta, incomeTimeline, dependentStatusWarning, monteCarloResult, accumulatedAssets } =
+  const { summary, meta, incomeTimeline, dependentStatusWarning, monteCarloResult, accumulatedAssets, breakdown } =
     result;
   const [copied, setCopied] = useState(false);
+  const [assetsOpen, setAssetsOpen] = useState(false);
 
   const retirementAge = summary.estimatedRetirementAge;
   const currentAge = retirementAge - meta.yearsUntilRetirement;
@@ -150,53 +151,132 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
 
       {/* ── 은퇴 시점에 모이는 총액 ──
           이 앱의 질문은 "그 자산이 은퇴 시점에 충분한가"(D-017)인데, 정작 화면에
-          "얼마가 모이는지"가 없었다. 월 수령액만으로는 규모가 잡히지 않는다. */}
+          "얼마가 모이는지"가 없었다. 월 수령액만으로는 규모가 잡히지 않는다.
+          기본은 총액만 보여주고, 펼치면 상품별로 얼마가 쌓여 매달 얼마가 나오는지
+          짝지어 보여준다 — "어디서 얼마 받는지"가 이 화면의 실제 질문이다. */}
       {accumulatedAssets && accumulatedAssets.total > 0 && (
         <div
-          className="rounded-2xl border p-4 mb-5 rise-in"
+          className="rounded-2xl border mb-5 rise-in overflow-hidden"
           style={{
             borderColor: "var(--border)",
             background: "var(--surface)",
             animationDelay: "60ms",
           }}
         >
-          <p className="fs-caption" style={{ color: "var(--text-sub)" }}>
-            {retirementAge}세까지 모이는 돈
-          </p>
-          <p
-            className="amount mt-1 font-bold"
-            style={{ fontSize: 28, color: "var(--text-strong)" }}
+          <button
+            type="button"
+            onClick={() => setAssetsOpen((v) => !v)}
+            aria-expanded={assetsOpen}
+            className="w-full text-left p-4 active:opacity-70 transition-opacity"
           >
-            {formatEok(accumulatedAssets.total)}
-          </p>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="fs-caption" style={{ color: "var(--text-sub)" }}>
+                  {retirementAge}세까지 모이는 돈
+                </p>
+                <p
+                  className="amount mt-1 font-bold"
+                  style={{ fontSize: 28, color: "var(--text-strong)" }}
+                >
+                  {formatEok(accumulatedAssets.total)}
+                </p>
+              </div>
+              <span
+                className="fs-caption flex items-center gap-1 flex-shrink-0"
+                style={{ color: "var(--accent)" }}
+              >
+                {assetsOpen ? "접기" : "어디서 얼마 받는지"}
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: assetsOpen ? "rotate(180deg)" : "none",
+                    transition: "transform 0.18s ease",
+                  }}
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
+            </div>
+          </button>
 
-          <div className="mt-3 pt-3 border-t space-y-1.5" style={{ borderColor: "var(--border)" }}>
-            {[
-              ["퇴직연금", accumulatedAssets.retirementPensionLumpSum],
-              ["IRP", accumulatedAssets.irpBalance],
-              ["연금저축", accumulatedAssets.pensionSavingsBalance],
-              ["주식·ETF", accumulatedAssets.liquidBalance],
-            ]
-              .filter(([, v]) => (v as number) > 0)
-              .map(([label, v]) => (
-                <div key={label as string} className="flex justify-between fs-body">
-                  <span style={{ color: "var(--text-sub)" }}>{label}</span>
-                  <span className="amount" style={{ color: "var(--text-strong)" }}>
-                    {formatEok(v as number)}
+          {assetsOpen && (
+            <div className="px-4 pb-4">
+              <div
+                className="pt-3 border-t"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div
+                  className="flex justify-between fs-caption pb-1.5"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  <span>어디서</span>
+                  <span className="flex gap-4">
+                    <span className="w-24 text-right">모이는 돈</span>
+                    <span className="w-20 text-right">매달 받는 돈</span>
                   </span>
                 </div>
-              ))}
-          </div>
 
-          <p className="fs-caption mt-3 leading-relaxed" style={{ color: "var(--text-faint)" }}>
-            물가상승을 반영하지 않은 그때의 금액이에요.
-            {accumulatedAssets.pensionUnlockAge > retirementAge && (
-              <>
-                {" "}연금 계열은 인출이 열리는 {accumulatedAssets.pensionUnlockAge}세 기준이라
-                주식·ETF와 기준 시점이 달라요.
-              </>
-            )}
-          </p>
+                {[
+                  // 국민연금은 내가 쌓는 자산이 아니라 적립액이 없다. 그래도 은퇴 후
+                  // 소득의 한 축이라 여기서 빼면 "어디서 얼마"의 답이 반쪽이 된다.
+                  {
+                    label: "국민연금",
+                    balance: null as number | null,
+                    monthly: breakdown.nationalPension,
+                    note:
+                      breakdown.nationalPension === 0
+                        ? `${meta.nationalPensionReceiptAge}세부터`
+                        : null,
+                  },
+                  { label: "퇴직연금", balance: accumulatedAssets.retirementPensionLumpSum, monthly: breakdown.retirementPension, note: null },
+                  { label: "IRP", balance: accumulatedAssets.irpBalance, monthly: breakdown.irp, note: null },
+                  { label: "연금저축", balance: accumulatedAssets.pensionSavingsBalance, monthly: breakdown.pensionSavings, note: null },
+                  { label: "주식·ETF", balance: accumulatedAssets.liquidBalance, monthly: breakdown.stockAsset, note: null },
+                ]
+                  .filter((r) => (r.balance ?? 0) > 0 || r.monthly > 0 || r.note)
+                  .map((r) => (
+                    <div
+                      key={r.label}
+                      className="flex justify-between items-baseline fs-body py-1.5"
+                    >
+                      <span style={{ color: "var(--text-sub)" }}>{r.label}</span>
+                      <span className="flex gap-4 items-baseline">
+                        <span
+                          className="amount w-24 text-right"
+                          style={{ color: "var(--text-strong)" }}
+                        >
+                          {r.balance === null ? "—" : formatEok(r.balance)}
+                        </span>
+                        <span
+                          className="amount w-20 text-right"
+                          style={{ color: r.note ? "var(--text-faint)" : "var(--text-strong)" }}
+                        >
+                          {r.note ?? `${r.monthly.toLocaleString()}만원`}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+              </div>
+
+              <p className="fs-caption mt-3 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+                모이는 돈과 매달 받는 돈 모두 물가상승을 반영하지 않은 그때의 금액이에요.
+                국민연금은 내가 쌓는 자산이 아니라 모이는 돈이 없어요.
+                {accumulatedAssets.pensionUnlockAge > retirementAge && (
+                  <>
+                    {" "}연금 계열은 인출이 열리는 {accumulatedAssets.pensionUnlockAge}세 기준이라
+                    주식·ETF와 기준 시점이 달라요.
+                  </>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

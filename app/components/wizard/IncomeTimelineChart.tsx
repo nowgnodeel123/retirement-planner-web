@@ -2,10 +2,13 @@
 // 다크모드: 그래프 데이터 색상은 의도적으로 고정 유지(데이터 시각화 팔레트는
 // 라이트/다크 공통이 관례). 배경·테두리·축·범례 텍스트만 토큰으로 전환.
 // WHY(소득원별 재구성): "목표 생활비 vs 소득" 단일 비교로 축소했다가(D-128),
-// (1) 소득원별 구성과 시기별 합계를 보고 싶다는 요청 (2) 명목 금액을 그대로
-// 그리면 물가상승 때문에 은퇴 후에도 소득이 계속 늘어나는 것처럼 보여
-// 헷갈린다는 지적을 받아, 두 가지를 함께 반영했다. 오늘 가치(실질) 기준으로
-// 환산해서 그리면 목표 생활비 선이 평평해지고, 착시가 사라진다(D-129).
+// 소득원별 구성과 시기별 합계를 보고 싶다는 요청을 반영했다.
+// WHY(명목 금액으로 환원, D-254 — D-129를 뒤집음): 한동안 오늘 가치(실질)로
+// 환산해 그렸다. 목표선이 평평해져 착시가 없다는 이유였는데, 실제로는 입력한
+// 금액이 그대로 보여서 "정말 그 금액만 받나"로 읽혔다. 명목으로 그려도 스택과
+// 목표선이 함께 올라가므로 목표를 채우는지 비교는 그대로 성립하고, 대신
+// "그때 실제로 얼마 받는지"가 축에서 바로 읽힌다. 물가로 커지는 것처럼 보이는
+// 부분은 목표선이 같이 올라가는 것으로 상쇄된다.
 // WHY(퇴직연금/사적연금 분리): 퇴직연금(DB/DC)은 근속연수·급여만으로
 // 자동 계산되고 IRP·연금저축은 사용자가 직접 납입액을 넣어야 하는 별개
 // 상품인데, 하나로 합쳐서 보여주면 "IRP를 안 넣었는데 왜 연금이 나오냐"는
@@ -62,22 +65,18 @@ export default function IncomeTimelineChart({
 }: Props) {
   if (timeline.length === 0) return null;
 
-  // WHY: 백엔드는 명목(nominal) 금액을 그대로 내려준다(시뮬레이터 전체 원칙).
-  // 오늘 가치로 보여주려면 프론트에서 그 해까지의 물가상승률만큼 역할인한다.
+  // 백엔드가 내려주는 값이 이미 명목(그 나이에 실제로 받는 금액)이라 그대로 쓴다.
+  // 오늘 가치가 궁금한 경우를 위해 차트 아래에 은퇴 첫해 기준 환산액을 한 줄 적는다.
   const toReal = (nominal: number, age: number) => {
     const yearsFromNow = age - currentAge;
     return nominal / Math.pow(1 + inflationRate, yearsFromNow);
   };
 
   const data: ChartPoint[] = timeline.map((p) => {
-    const national = Math.round(toReal(p.nationalAfterTax, p.age));
-    const retirementPension = Math.round(
-      toReal(p.retirementPensionAfterTax, p.age),
-    );
-    const privatePension = Math.round(
-      toReal(p.privatePensionAfterTax, p.age),
-    );
-    const liquid = Math.round(toReal(p.liquidWithdrawalAfterTax, p.age));
+    const national = p.nationalAfterTax;
+    const retirementPension = p.retirementPensionAfterTax;
+    const privatePension = p.privatePensionAfterTax;
+    const liquid = p.liquidWithdrawalAfterTax;
     return {
       age: p.age,
       national,
@@ -85,12 +84,8 @@ export default function IncomeTimelineChart({
       privatePension,
       liquid,
       total: national + retirementPension + privatePension + liquid,
-      targetExpense: Math.round(toReal(p.targetExpense, p.age)),
-      // 실제로 통장에 찍히는 금액. 차트는 비교를 위해 오늘 가치로 그리지만,
-      // "그래서 그때 얼마 받는데?"에는 명목값으로 답해야 한다.
-      nominalTotal:
-        p.nationalAfterTax + p.retirementPensionAfterTax
-        + p.privatePensionAfterTax + p.liquidWithdrawalAfterTax,
+      targetExpense: p.targetExpense,
+      nominalTotal: national + retirementPension + privatePension + liquid,
     };
   });
 
@@ -123,7 +118,7 @@ export default function IncomeTimelineChart({
           className="text-xs font-semibold tracking-wide"
           style={{ color: "var(--text-faint)" }}
         >
-          은퇴 후 월 소득 구성 (오늘 가치 기준)
+          은퇴 후 월 소득 구성 (실제 받는 금액)
         </p>
       </div>
       <Legend />
@@ -240,8 +235,6 @@ export default function IncomeTimelineChart({
         </AreaChart>
       </ResponsiveContainer>
 
-      {/* 오늘 가치로만 보여주면 목표선이 평평해서 "정말 딱 그 금액인가?"라는 의문이 남는다.
-          실제로 받게 될 명목 금액을 한 줄로 함께 적어 그 의문을 없앤다. */}
       <p
         className="fs-body mt-3 font-medium"
         style={{ color: "var(--text-sub)" }}
@@ -252,10 +245,11 @@ export default function IncomeTimelineChart({
         </span>
         이에요.
       </p>
-      <p className="fs-caption mt-1.5" style={{ color: "var(--text-faint)" }}>
-        차트의 높이는 그 금액을 <b>오늘 물가로 환산한</b> 값이에요. 물가상승분을 미리
-        제해서 점선(목표 생활비)이 지금 입력하신 금액 그대로 평평해요 — 그래야 해마다
-        목표를 채우는지 눈으로 비교돼요.
+      <p className="fs-caption mt-1.5 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+        차트의 높이는 그 나이에 <b>실제로 받는 금액</b>이에요. 물가가 오르는 만큼
+        점선(목표 생활비)도 함께 올라가니, 두 선의 높이를 견주면 해마다 목표를
+        채우는지 그대로 보여요. 지금 물가로 치면 월{" "}
+        {Math.round(toReal(data[0].nominalTotal, retirementAge)).toLocaleString()}만원이에요.
       </p>
     </div>
   );
