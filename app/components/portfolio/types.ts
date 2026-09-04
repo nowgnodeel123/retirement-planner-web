@@ -235,6 +235,9 @@ export interface ProfitItem {
   sourceId: number;
   assetId: number;
   assetName: string;
+  // 인별 집계(M15)라 같은 종목이 여러 계좌에서 잡힐 수 있다. 계좌를 안 밝히면
+  // "APPLE INC +75만원"이 두 줄 떠서 중복으로 읽힌다.
+  accountName: string;
   category: string; // TradableAssetCategory 문자열
   date: string; // YYYY-MM-DD
   amountKrw: number;
@@ -281,14 +284,24 @@ export interface DividendIncomeJudgement {
   judgement: DividendTaxJudgement;
   interestIncomeNotTracked: boolean; // 항상 true — 이자소득 미추적 캐비트
   dividendGrossedUp: boolean; // 항상 true — 국내주식 배당 세전 역환산 적용 캐비트(R-016)
+  // >0이면 "해외분은 세전 환산이 안 됐다"는 안내를 띄운다. 원천징수율이 국가마다 달라
+  // 추정하지 않기로 했고(R-009), 그만큼 합계가 실제 세전보다 작다.
+  foreignDividendCount: number;
   dividendCount: number;
 }
 
 // M15(D-232): 이 집계가 어떤 계좌를 보고 어떤 계좌를 뺐는지. 백엔드 TaxDtos.TaxScope와 매칭.
+export type TaxExclusionReason = "TAX_ADVANTAGED" | "CRYPTO_ONLY";
+
+export interface ExcludedAccount {
+  name: string;
+  reason: TaxExclusionReason;
+}
+
 export interface TaxScope {
   taxableAccountCount: number;
   excludedAccountCount: number;
-  excludedAccountNames: string[];
+  excludedAccounts: ExcludedAccount[];
 }
 
 export interface TaxSummaryResponse {

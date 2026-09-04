@@ -102,21 +102,41 @@ export function TaxTab() {
 }
 
 /**
- * 어떤 계좌를 보고 어떤 계좌를 뺐는지 밝힌다. 세제혜택 계좌(ISA·IRP·연금저축)는 과세이연·
- * 저율분리과세라 양도소득세·금융소득 합산 대상이 아니다.
+ * 어떤 계좌를 보고 어떤 계좌를 뺐는지 밝힌다.
  * 이 사실을 안 보여주면 "연금계좌 매도차익이 왜 안 잡히지?"라는 의문이 앱의 결함으로 읽힌다.
+ *
+ * 제외 사유를 나눠 쓰는 이유: 예전엔 전부 "세제혜택 계좌"라고 뭉뚱그렸는데 거래소 계좌는
+ * 세제혜택 계좌가 아니라 설명이 틀렸다. 게다가 그때는 거래소가 "포함" 쪽에 세어져서,
+ * 화면은 계산했다고 말하면서 실제로는 그 계좌의 매도차익을 한 푼도 넣지 않고 있었다.
  */
 function ScopeNotice({ scope }: { scope: TaxScope }) {
   if (scope.excludedAccountCount === 0) return null;
+
+  const taxAdvantaged = scope.excludedAccounts.filter((a) => a.reason === "TAX_ADVANTAGED");
+  const cryptoOnly = scope.excludedAccounts.filter((a) => a.reason === "CRYPTO_ONLY");
+
   return (
     <div
       className="rounded-2xl px-4 py-3"
       style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
     >
       <p className="fs-caption" style={{ color: "var(--text-sub)" }}>
-        일반 계좌 {scope.taxableAccountCount}곳을 합쳐서 계산했어요. 세제혜택 계좌{" "}
-        {scope.excludedAccountCount}곳({scope.excludedAccountNames.join(", ")})은 양도소득세·금융소득
-        합산 대상이 아니라 빼고 봤어요.
+        일반 증권 계좌 {scope.taxableAccountCount}곳을 합쳐서 계산했어요.
+        {taxAdvantaged.length > 0 && (
+          <>
+            {" "}
+            세제혜택 계좌 {taxAdvantaged.length}곳(
+            {taxAdvantaged.map((a) => a.name).join(", ")})은 양도소득세·금융소득 합산 대상이
+            아니라 뺐어요.
+          </>
+        )}
+        {cryptoOnly.length > 0 && (
+          <>
+            {" "}
+            거래소 계좌 {cryptoOnly.length}곳({cryptoOnly.map((a) => a.name).join(", ")})은
+            이 앱이 가상자산 세금을 추정하지 않아 뺐어요.
+          </>
+        )}
       </p>
     </div>
   );
@@ -197,7 +217,7 @@ function TaxContent({ year }: { year: number }) {
         <div className="flex justify-between fs-body" style={{ color: "var(--text-sub)" }}>
           <InfoTerm
             term="연간 배당 합계(세전 환산)"
-            explanation="국내주식 배당은 세후 금액으로 기록되기 때문에, 15.4% 원천징수율로 세전 금액을 역환산해서 합산해요. 실제 세전 금액과 다를 수 있는 추정치예요."
+            explanation="배당은 실수령액(세후)으로 기록해요. 국내주식은 15.4% 원천징수율로 세전 금액을 역환산해 합산하지만, 해외주식은 원천징수율이 나라마다 달라 역환산하지 않아요. 실제 세전 금액과 다를 수 있는 추정치예요."
           />
           <span className="amount font-semibold" style={{ color: "var(--text-strong)" }}>
             {formatKrw(di.totalDividendKrw)}
@@ -227,6 +247,17 @@ function TaxContent({ year }: { year: number }) {
             {dividendJudgementLabel[di.judgement]}
           </span>
         </div>
+
+        {di.foreignDividendCount > 0 && (
+          <p
+            className="text-[12px] mt-3 leading-relaxed"
+            style={{ color: "var(--warning)" }}
+          >
+            해외주식 배당 {di.foreignDividendCount}건은 <b>세전 환산 없이</b> 그대로 더했어요.
+            원천징수율이 나라마다 달라(미국 15%, 중국 10%, 일본 15.3%) 임의로 추정하지 않아요.
+            그만큼 위 합계가 실제 세전 금액보다 작아서, 기준에 가깝다면 실제로는 넘을 수 있어요.
+          </p>
+        )}
 
         <p className="text-[12px] mt-3" style={{ color: "var(--text-faint)" }}>
           실제 종합소득세액은 계산하지 않아요. 이 앱은 예적금 이자소득을 추적하지 않아 실제 금융소득이

@@ -275,9 +275,18 @@ function ProfitContent({
                         {item.assetName}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1.5 mt-1 min-w-0">
                       <CategoryBadge category={item.category as TradableAssetCategory} />
-                      <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
+                      <span
+                        className="fs-caption truncate"
+                        style={{ color: "var(--text-sub)" }}
+                      >
+                        {item.accountName}
+                      </span>
+                      <span
+                        className="fs-caption flex-shrink-0"
+                        style={{ color: "var(--text-faint)" }}
+                      >
                         {item.date}
                       </span>
                     </div>

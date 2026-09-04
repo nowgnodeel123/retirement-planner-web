@@ -736,7 +736,10 @@ export default function AssetDetailPage() {
                   }}
                 />
               </div>
-              <Field label="배당금액" unit={isForeign ? "USD" : "원"}>
+              {/* 세후임을 라벨에 박아둔다. 세금 탭은 이 값이 실수령액이라는 전제로
+                  국내분을 15.4% 역환산하는데, 전에는 그 전제가 입력하는 자리에 없어서
+                  세전 금액을 넣으면 조용히 18% 부풀려지는 상태였다. */}
+              <Field label="배당금액 (세후 실수령액)" unit={isForeign ? "USD" : "원"}>
                 <NumberInput
                   value={amount}
                   onChange={setAmount}
@@ -745,6 +748,12 @@ export default function AssetDetailPage() {
                   maxDigits={12}
                 />
               </Field>
+              <p
+                className="text-[12px] -mt-3 mb-4"
+                style={{ color: "var(--text-faint)" }}
+              >
+                세금을 떼고 실제로 받은 금액을 넣어주세요. 증권사 앱에 찍힌 입금액이면 돼요.
+              </p>
               {isForeign && (
                 <>
                   <Field label="지급 시점 환율" unit="원">
