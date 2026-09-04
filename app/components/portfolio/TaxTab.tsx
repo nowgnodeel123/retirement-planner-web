@@ -103,7 +103,7 @@ export function TaxTab() {
 
 /**
  * 어떤 계좌를 보고 어떤 계좌를 뺐는지 밝힌다. 세제혜택 계좌(ISA·IRP·연금저축)는 과세이연·
- * 저율분리과세라 양도소득세·금융소득 합산 대상이 아니고 은행 계좌는 매도·배당이 없다.
+ * 저율분리과세라 양도소득세·금융소득 합산 대상이 아니다.
  * 이 사실을 안 보여주면 "연금계좌 매도차익이 왜 안 잡히지?"라는 의문이 앱의 결함으로 읽힌다.
  */
 function ScopeNotice({ scope }: { scope: TaxScope }) {
@@ -114,7 +114,7 @@ function ScopeNotice({ scope }: { scope: TaxScope }) {
       style={{ background: "var(--accent-soft)", border: "1px solid var(--border)" }}
     >
       <p className="fs-caption" style={{ color: "var(--text-sub)" }}>
-        일반 계좌 {scope.taxableAccountCount}곳을 합쳐서 계산했어요. 세제혜택·은행 계좌{" "}
+        일반 계좌 {scope.taxableAccountCount}곳을 합쳐서 계산했어요. 세제혜택 계좌{" "}
         {scope.excludedAccountCount}곳({scope.excludedAccountNames.join(", ")})은 양도소득세·금융소득
         합산 대상이 아니라 빼고 봤어요.
       </p>

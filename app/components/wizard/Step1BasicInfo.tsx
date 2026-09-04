@@ -51,7 +51,6 @@ export default function Step1BasicInfo({
           <NumberInput
             value={form.currentAge}
             onChange={(v) => onChange("currentAge", v)}
-            placeholder="예) 34"
             ariaLabel="현재 나이"
           />
         </Field>
@@ -60,7 +59,6 @@ export default function Step1BasicInfo({
           <NumberInput
             value={form.monthlyIncome}
             onChange={(v) => onChange("monthlyIncome", v)}
-            placeholder="예) 350"
             ariaLabel="현재 월 소득"
           />
         </Field>
@@ -72,7 +70,6 @@ export default function Step1BasicInfo({
           <NumberInput
             value={form.targetMonthlyExpense}
             onChange={(v) => onChange("targetMonthlyExpense", v)}
-            placeholder="예) 300"
             ariaLabel="목표 은퇴 생활비"
           />
         </Field>

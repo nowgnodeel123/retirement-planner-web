@@ -486,7 +486,7 @@ export default function AssetDetailPage() {
   }
 
   return (
-    <div className="max-w-[420px] w-full mx-auto px-5 pt-6 pb-10">
+    <div className="max-w-[420px] w-full mx-auto px-5 pt-6">
       <button
         onClick={() => router.push(`/portfolio/accounts/${accountId}`)}
         className="flex items-center gap-1 fs-body mb-5"

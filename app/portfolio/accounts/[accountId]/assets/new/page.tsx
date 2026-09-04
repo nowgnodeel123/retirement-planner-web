@@ -9,7 +9,7 @@
 // 코드는 내부적으로만 채워진다. 코인도 더는 수동 입력이 아니라 Upbit KRW마켓
 // 검색(CryptoSearch, /api/crypto/search) 자동완성으로 통일했다.
 // 현금·외화(원화/달러)는 거래가 아니라 잔액을 그대로 입력받는 별도 모드다 —
-// 증권사 예수금·은행 잔액이 대상이고, 화면 상단 세그먼트로 "종목 / 현금"을 고른다.
+// 증권사·거래소 예수금이 대상이고, 화면 상단 세그먼트로 "종목 / 현금"을 고른다.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -116,12 +116,19 @@ function UnifiedStockSearch({
   }));
   const looksKorean = /[가-힣]/.test(query);
   // 검색어가 비면 이전 결과가 상태에 남아 있어도 없는 것으로 본다.
-  const merged =
+  const ordered =
     query.trim().length === 0
       ? []
       : looksKorean
         ? [...domesticItems, ...foreignItems]
         : [...foreignItems, ...domesticItems];
+
+  // 같은 (카테고리, 심볼)이 두 번 오면 React key가 겹친다. Finnhub는 한 종목을
+  // 거래소별로 여러 건 돌려주는 일이 있어서(예: IREN) 실제로 발생했다.
+  // 먼저 온 것을 남긴다 — 위 정렬이 이미 우선순위를 정해뒀다.
+  const merged = Array.from(
+    new Map(ordered.map((item) => [`${item.category}-${item.symbol}`, item])).values(),
+  );
 
   return (
     <div className="relative">
@@ -367,7 +374,7 @@ export default function NewAssetPage() {
   const options = allowedCategories(account.institutionType, account.detailType);
   const cashCurrencies = CASH_CURRENCIES;
   // 현금은 모든 계좌 유형이 가질 수 있으므로 "추가할 게 아무것도 없는 계좌"는 이제 없다.
-  // 종목 거래가 막힌 계좌(은행·연금저축·IRP)는 현금 폼으로 바로 열린다.
+  // 종목 거래가 막힌 계좌(연금저축·IRP)는 현금 폼으로 바로 열린다.
   const canTrade = options.length > 0;
   const activeMode = mode ?? (canTrade ? "trade" : "cash");
   // 연금저축·IRP는 ETF만 담을 수 있다(D-198) — 검색을 ETF로 제한한다.

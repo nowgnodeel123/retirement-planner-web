@@ -14,6 +14,7 @@ import { useState } from "react";
 import RequireAuth from "@/app/components/auth/RequireAuth";
 import { ProfitTab } from "@/app/components/portfolio/ProfitTab";
 import { TaxTab } from "@/app/components/portfolio/TaxTab";
+import { SCREEN } from "@/app/components/nav/labels";
 
 type Section = "PROFIT" | "TAX";
 
@@ -36,7 +37,7 @@ export default function SettlementPage() {
               marginBottom: "var(--rhythm-section)",
             }}
           >
-            결산
+            {SCREEN.settlement}
           </h1>
 
           {/* 수익/세금은 성격이 달라 한 화면에 세로로 쌓으면 스크롤이 길어지고 무엇을 보는

@@ -1,6 +1,6 @@
 // types.ts — 백엔드 DTO(AccountDtos, AssetDtos)와 1:1로 맞춘 타입 + 표시용 라벨/색상 맵
 
-export type InstitutionType = "BANK" | "SECURITIES" | "EXCHANGE";
+export type InstitutionType = "SECURITIES" | "EXCHANGE";
 export type AccountDetailType = "NORMAL" | "ISA" | "IRP" | "PENSION_SAVINGS";
 
 // M3 매수 거래 폼은 거래 기반 자산(주식/코인)만 다룬다 — 수량*단가로 평가금액이 나오는 것들.
@@ -95,7 +95,6 @@ export interface AssetBuyRequest {
 }
 
 export const institutionLabel: Record<InstitutionType, string> = {
-  BANK: "은행",
   SECURITIES: "증권사",
   EXCHANGE: "거래소",
 };

@@ -52,7 +52,6 @@ export default function Step2PensionInfo({
           <NumberInput
             value={form.pensionYearsPaid}
             onChange={(v) => onChange("pensionYearsPaid", v)}
-            placeholder="예) 3"
             maxDigits={2}
             ariaLabel="국민연금 납입 기간"
           />
@@ -94,7 +93,6 @@ export default function Step2PensionInfo({
                 <NumberInput
                   value={form.yearsOfService}
                   onChange={(v) => onChange("yearsOfService", v)}
-                  placeholder="예) 3"
                   maxDigits={2}
                   ariaLabel="지금까지의 근속연수"
                 />
@@ -112,7 +110,6 @@ export default function Step2PensionInfo({
                   <NumberInput
                     value={form.dcCurrentBalance}
                     onChange={(v) => onChange("dcCurrentBalance", v)}
-                    placeholder="예) 1,000"
                     small
                     ariaLabel="DC 현재 잔액"
                   />
@@ -121,7 +118,6 @@ export default function Step2PensionInfo({
                   <NumberInput
                     value={form.dcReturnRate}
                     onChange={(v) => onChange("dcReturnRate", v)}
-                    placeholder="예) 4"
                     allowDecimal
                     maxDigits={2}
                     small
@@ -143,7 +139,6 @@ export default function Step2PensionInfo({
           rateKey="irpReturnRate"
           balanceKey="irpCurrentBalance"
           hint="월 25만원까지 채우면 세액공제를 최대로 받아요."
-          contributionPlaceholder="예) 25"
           form={form}
           onChange={onChange}
           prefilled={prefilled}
@@ -156,7 +151,6 @@ export default function Step2PensionInfo({
           rateKey="pensionSavingsReturnRate"
           balanceKey="pensionSavingsCurrentBalance"
           hint="월 50만원까지 채우면 세액공제를 최대로 받아요."
-          contributionPlaceholder="예) 50"
           form={form}
           onChange={onChange}
           prefilled={prefilled}
@@ -226,7 +220,6 @@ function PensionProductFields({
   rateKey,
   balanceKey,
   hint,
-  contributionPlaceholder,
   form,
   onChange,
   prefilled,
@@ -238,7 +231,6 @@ function PensionProductFields({
   rateKey: PrefilledField;
   balanceKey: PrefilledField;
   hint: string;
-  contributionPlaceholder: string;
   form: RetirementFormState;
   onChange: Props["onChange"];
   prefilled: PrefilledField[];
@@ -260,7 +252,6 @@ function PensionProductFields({
           <NumberInput
             value={form[contributionKey] as number | ""}
             onChange={(v) => onChange(contributionKey, v as never)}
-            placeholder={contributionPlaceholder}
             small
             ariaLabel={`${title} 월 납입액`}
           />
@@ -269,7 +260,6 @@ function PensionProductFields({
           <NumberInput
             value={form[rateKey] as number | ""}
             onChange={(v) => onChange(rateKey, v as never)}
-            placeholder="예) 5"
             allowDecimal
             maxDigits={2}
             small
@@ -288,7 +278,6 @@ function PensionProductFields({
         <NumberInput
           value={form[balanceKey] as number | ""}
           onChange={(v) => onChange(balanceKey, v as never)}
-          placeholder="예) 1,000"
           small
           ariaLabel={`${title} 기존 잔액`}
         />

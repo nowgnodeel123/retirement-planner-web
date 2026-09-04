@@ -137,7 +137,7 @@ export default function NewAccountPage() {
             loading={submitting}
             className="flex-[2]"
           >
-            등록하기
+            등록
           </PrimaryButton>
         </div>
       </div>

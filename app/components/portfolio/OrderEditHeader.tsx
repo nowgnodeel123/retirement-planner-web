@@ -1,6 +1,6 @@
 // OrderEditHeader.tsx — 순서 편집 화면(계좌/자산 공용) 헤더.
-// 확인은 우측 상단 체크 표시 하나로 끝낸다(하단 고정 바 폐기). 배경 없이 선만 있는
-// accent(초록) 체크 — 편집 화면의 유일한 주 동작이라 채워진 버튼까지는 필요 없다.
+// 확인은 우측 상단 "저장" 텍스트 버튼 하나로 끝낸다(하단 고정 바 폐기). 체크 아이콘만
+// 두었더니 무엇이 일어나는지 읽히지 않아 글자로 바꿨다 — 취소와 나란히 놓여 대비도 분명해진다.
 // 하단 고정 바를 쓰지 않는 이유: 목록이 길어지면 저장 버튼이 스크롤 위치에 따라 가려지고
 // 드래그 중 손가락에 닿는다. 취소는 왼쪽 텍스트 버튼으로 남겨 되돌릴 길을 열어둔다.
 "use client";
@@ -46,35 +46,23 @@ export function OrderEditHeader({
             onClick={onConfirm}
             disabled={saving || disabled}
             aria-label="이 순서로 저장"
-            className="w-10 h-10 flex items-center justify-center transition-transform active:scale-[0.9]"
+            className="fs-body font-bold px-2 py-1 rounded-lg flex items-center gap-1.5 transition-transform active:scale-[0.96]"
             style={{
               background: "transparent",
               color: disabled ? "var(--text-faint)" : "var(--accent)",
               opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? (
+            {saving && (
               <span
-                className="w-4 h-4 rounded-full border-2 animate-spin"
+                className="w-3.5 h-3.5 rounded-full border-2 animate-spin"
                 style={{
                   borderColor: "var(--border)",
                   borderTopColor: "var(--accent)",
                 }}
               />
-            ) : (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2.6}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M20 6 9 17l-5-5" />
-              </svg>
             )}
+            저장
           </button>
         </div>
       </div>

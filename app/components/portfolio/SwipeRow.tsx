@@ -46,12 +46,17 @@ export function SwipeRow({
   onDelete,
   editLabel = "수정",
   deleteLabel = "삭제",
+  flush = false,
 }: {
   children: React.ReactNode;
   onEdit: () => void;
   onDelete: () => void;
   editLabel?: string;
   deleteLabel?: string;
+  /** 이미 카드 안에 들어가 있는 행이면 true — 자체 그림자·라운드를 끈다.
+      (계좌 목록은 행 하나가 곧 카드라 false, 보유 자산 목록은 한 장의 카드를 구분선으로
+      나눠 쓰므로 true. 켜둔 채로 두면 카드 안에 둥근 카드가 겹쳐 보인다.) */
+  flush?: boolean;
 }) {
   const [tx, setTx] = useState(0);
   const [animate, setAnimate] = useState(true);
@@ -190,9 +195,18 @@ export function SwipeRow({
 
   return (
     // 바깥 래퍼: 카드 그림자 담당(안쪽 overflow-hidden에 잘리지 않게).
-    <div style={{ borderRadius: 20, boxShadow: "var(--card-shadow)" }}>
+    <div
+      style={
+        flush
+          ? undefined
+          : { borderRadius: 20, boxShadow: "var(--card-shadow)" }
+      }
+    >
     {/* 안쪽: 스와이프로 카드가 왼쪽으로 밀려 나가는 부분을 클립 */}
-    <div className="relative overflow-hidden" style={{ borderRadius: 20 }}>
+    <div
+      className="relative overflow-hidden"
+      style={{ borderRadius: flush ? 0 : 20 }}
+    >
       <div
         className="absolute inset-y-0 right-0 flex items-center justify-center gap-3"
         style={{ width: ACTION_WIDTH }}

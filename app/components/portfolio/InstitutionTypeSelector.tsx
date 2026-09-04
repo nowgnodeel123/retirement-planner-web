@@ -1,7 +1,7 @@
-// InstitutionTypeSelector.tsx — 계좌 등록 시 은행/증권사/거래소 세그먼트 선택
+// InstitutionTypeSelector.tsx — 계좌 등록 시 증권사/거래소 세그먼트 선택
 import { InstitutionType, institutionLabel } from "./types";
 
-const ORDER: InstitutionType[] = ["BANK", "SECURITIES", "EXCHANGE"];
+const ORDER: InstitutionType[] = ["SECURITIES", "EXCHANGE"];
 
 function InstitutionIcon({
   type,
@@ -22,15 +22,6 @@ function InstitutionIcon({
     strokeLinejoin: "round" as const,
   };
 
-  if (type === "BANK") {
-    return (
-      <svg {...common}>
-        <path d="M3 10.5 12 4l9 6.5" />
-        <path d="M5 10.5V19M9.5 10.5V19M14.5 10.5V19M19 10.5V19" />
-        <path d="M3.5 19h17" />
-      </svg>
-    );
-  }
   if (type === "SECURITIES") {
     return (
       <svg {...common}>

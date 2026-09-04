@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { clearTokens, getRefreshToken, useToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { setTheme, useTheme } from "@/lib/theme";
+import { SCREEN } from "./labels";
 
 function WalletIcon({ active }: { active: boolean }) {
   return (
@@ -116,19 +117,19 @@ const TABS: {
 }[] = [
   {
     href: "/portfolio",
-    label: "포트폴리오",
+    label: SCREEN.portfolio,
     Icon: WalletIcon,
     isActive: (p) => p.startsWith("/portfolio"),
   },
   {
     href: "/settlement",
-    label: "수익 및 세금",
+    label: SCREEN.settlement,
     Icon: ReceiptIcon,
     isActive: (p) => p.startsWith("/settlement"),
   },
   {
     href: "/simulator",
-    label: "은퇴시뮬레이션",
+    label: SCREEN.simulator,
     Icon: CompassIcon,
     isActive: (p) => p.startsWith("/simulator"),
   },
@@ -222,7 +223,7 @@ function NavMenu({
           className="text-[14px] font-medium flex-1"
           style={{ color: myActive ? "var(--accent)" : "var(--text-strong)" }}
         >
-          내 정보
+          {SCREEN.settings}
         </span>
       </button>
 

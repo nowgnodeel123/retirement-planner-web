@@ -68,7 +68,6 @@ export default function Step3InvestmentAssets({
             <NumberInput
               value={form.stockEtfMonthlyContribution}
               onChange={(v) => onChange("stockEtfMonthlyContribution", v)}
-              placeholder="예) 50"
               small
               ariaLabel="주식 ETF 월 납입액"
             />
@@ -77,7 +76,6 @@ export default function Step3InvestmentAssets({
             <NumberInput
               value={form.stockEtfReturnRate}
               onChange={(v) => onChange("stockEtfReturnRate", v)}
-              placeholder="예) 7"
               allowDecimal
               maxDigits={2}
               small
@@ -99,7 +97,6 @@ export default function Step3InvestmentAssets({
           <NumberInput
             value={form.stockEtfCurrentBalance}
             onChange={(v) => onChange("stockEtfCurrentBalance", v)}
-            placeholder="예) 3,000"
             small
             ariaLabel="주식 ETF 현재 잔액"
           />

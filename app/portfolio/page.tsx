@@ -28,6 +28,7 @@ import {
   PortfolioSummaryResponse,
   RetirementAgeCardResponse,
 } from "@/app/components/portfolio/types";
+import { ScrollableList } from "@/app/components/portfolio/ScrollableList";
 
 function SortIcon() {
   return (
@@ -84,7 +85,7 @@ function EmptyState() {
         className="leading-relaxed fs-body"
         style={{ marginBottom: "var(--rhythm-section)", color: "var(--text-sub)" }}
       >
-        은행, 증권사, 거래소 계좌를 등록하고
+        증권사, 거래소 계좌를 등록하고
         <br />
         자산을 한곳에 정리해보세요
       </p>
@@ -120,7 +121,7 @@ function sortAccounts(
     const sb = summaries.get(b.id);
     const av = sa ? (key === "profitRate" ? sa.profitRate : sa.totalKrw) : null;
     const bv = sb ? (key === "profitRate" ? sb.profitRate : sb.totalKrw) : null;
-    // 평가금액·손익 정보가 없는 계좌(은행 등)는 방향과 무관하게 항상 뒤로.
+    // 평가금액·손익 정보가 없는 계좌(시세를 못 불러온 경우 등)는 방향과 무관하게 항상 뒤로.
     if (av === null && bv === null) return a.name.localeCompare(b.name, "ko");
     if (av === null) return 1;
     if (bv === null) return -1;
@@ -265,7 +266,7 @@ export default function PortfolioPage() {
   const hasAccounts = accounts !== null && accounts.length > 0;
 
   return (
-    <div className="max-w-[420px] w-full mx-auto px-5 pt-7 pb-24">
+    <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
       <div className="flex items-center justify-between" style={{ marginBottom: "var(--rhythm-section)" }}>
         <div className="flex items-center gap-2 min-w-0">
           <NestMark size={32} />
@@ -344,8 +345,9 @@ export default function PortfolioPage() {
       {hasAccounts && (
         <>
           {/* 정렬 컨트롤 — 파이차트 아래, 계좌 리스트 위. "≡ 금액순" 형태로 현재 정렬을 노출.
-              계좌가 2개 이상일 때만(1개는 정렬 의미 없음). */}
-          {accounts.length >= 2 && (
+              계좌가 1개여도 보여준다 — 정렬 결과는 같지만, 컨트롤이 나타났다 사라지면
+              화면이 흔들리고 "사용자 설정"으로 순서 편집에 들어가는 길도 함께 막힌다. */}
+          {(
             <div className="flex justify-end px-1" style={{ marginBottom: "var(--rhythm-tight)" }}>
               <div className="relative">
                 <button
@@ -377,7 +379,11 @@ export default function PortfolioPage() {
             </div>
           )}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--rhythm-tight)" }}>
+          <ScrollableList
+            padded
+            recomputeKey={`${sortedAccounts.length}-${summaryMap.size}`}
+            style={{ display: "flex", flexDirection: "column", gap: "var(--rhythm-tight)" }}
+          >
             {sortedAccounts.map((account, i) => (
               <div
                 key={account.id}
@@ -398,7 +404,7 @@ export default function PortfolioPage() {
                 </SwipeRow>
               </div>
             ))}
-          </div>
+          </ScrollableList>
         </>
       )}
 

@@ -25,10 +25,13 @@ import {
   AccountResponse,
   AssetHoldingResponse,
   AssetCategory,
+  categoryColor,
+  categoryLabel,
   categoryUnit,
   detailTypeLabel,
   institutionLabel,
 } from "@/app/components/portfolio/types";
+import { ScrollableList } from "@/app/components/portfolio/ScrollableList";
 
 function formatQuantity(qty: number) {
   return qty % 1 === 0 ? qty.toLocaleString() : qty.toString();
@@ -238,6 +241,20 @@ export default function AccountDetailPage() {
     () => sortHoldings(activeHoldings, sortKey, sortDir),
     [activeHoldings, sortKey, sortDir],
   );
+
+  // 시세 기준 안내 문구 — 보유 자산 구성에 따라 필요한 것만 적는다.
+  // 예전엔 행마다 "전일 종가 기준"/"(날짜 환율)"을 붙여 목록이 그만큼 길어졌다.
+  const fxBaseDate = activeHoldings.find(
+    (h) => h.currency !== "KRW" && h.exchangeRateBaseDate,
+  )?.exchangeRateBaseDate;
+  const priceBasisNote = [
+    activeHoldings.some((h) => h.category === "DOMESTIC_STOCK")
+      ? "국내주식은 전일 종가 기준"
+      : null,
+    fxBaseDate ? `해외자산 원화환산은 ${fxBaseDate} 환율 기준` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   async function handleAssetRename(name: string) {
     if (!assetRenameTarget) return;
@@ -502,8 +519,11 @@ export default function AccountDetailPage() {
         )}
 
       {activeHoldings.length > 0 && (
-        <div className="space-y-2.5 rise-in">
-          {sortedActiveHoldings.map((h) => {
+        <ScrollableList
+          className="card rise-in"
+          recomputeKey={sortedActiveHoldings.length}
+        >
+          {sortedActiveHoldings.map((h, idx) => {
             const category = h.category as AssetCategory;
             const isCash = category === "CASH";
             // 현금은 시세 조회 대상이 아니라 currentPrice가 원래 null이다 —
@@ -513,42 +533,45 @@ export default function AccountDetailPage() {
 
             const inner = (
                 <div className="flex items-start justify-between gap-3">
-                  {/* 좌: 종목 정보 */}
+                  {/* 좌: 종목 정보 — 2줄.
+                      카테고리는 이름 앞 색상 점(시인성)과 둘째 줄 라벨(명확성)로 나눠 담아
+                      배지 전용 줄을 없앴다. 시세 기준일 안내는 행마다 반복하지 않고
+                      목록 아래 한 줄로 모았다(반복이 카드 높이의 주범이었다). */}
                   <div className="min-w-0">
-                    <p className="truncate">
+                    <p className="truncate flex items-center gap-1.5">
                       <span
-                        className="fs-title font-semibold"
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: categoryColor[category] }}
+                      />
+                      <span
+                        className="fs-title font-semibold truncate"
                         style={{ color: "var(--text-strong)" }}
                       >
                         {h.name}
-                      </span>{" "}
+                      </span>
                       {!isCash && (
-                        <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                        <span
+                          className="text-[12px] flex-shrink-0"
+                          style={{ color: "var(--text-faint)" }}
+                        >
                           {h.symbol}
                         </span>
                       )}
                     </p>
-                    <div className="mt-1 flex items-center gap-2 flex-wrap">
-                      <CategoryBadge category={category} />
-                      {category === "DOMESTIC_STOCK" && (
-                        <span
-                          className="fs-caption"
-                          style={{ color: "var(--text-faint)" }}
-                        >
-                          전일 종가 기준
-                        </span>
+                    <p
+                      className="amount text-[12px] mt-1 truncate"
+                      style={{ color: "var(--text-sub)" }}
+                    >
+                      {categoryLabel[category]}
+                      {!isCash && (
+                        <>
+                          {" · "}
+                          {formatQuantity(h.quantity)}
+                          {categoryUnit[category] ?? ""} · 평단{" "}
+                          {formatMoney(h.averagePrice, h.currency)}
+                        </>
                       )}
-                    </div>
-                    {!isCash && (
-                      <p
-                        className="amount text-[12px] mt-1.5"
-                        style={{ color: "var(--text-sub)" }}
-                      >
-                        {formatQuantity(h.quantity)}
-                        {categoryUnit[category] ?? ""} · 평단{" "}
-                        {formatMoney(h.averagePrice, h.currency)}
-                      </p>
-                    )}
+                    </p>
                   </div>
 
                   {/* 우: 평가금액(주역) + 손익(색상) */}
@@ -595,12 +618,7 @@ export default function AccountDetailPage() {
                                 style={{ color: "var(--text-sub)" }}
                               >
                                 ≈ {formatKrw(h.krwEvaluationAmount)}
-                                {h.exchangeRateBaseDate && (
-                                  <span style={{ color: "var(--text-faint)" }}>
-                                    {" "}
-                                    ({h.exchangeRateBaseDate} 환율)
-                                  </span>
-                                )}
+
                               </p>
                             )}
                         </>
@@ -613,6 +631,7 @@ export default function AccountDetailPage() {
             return (
               <SwipeRow
                 key={h.assetId}
+                flush
                 onEdit={() => {
                   setAssetRenameError(null);
                   setAssetRenameTarget(h);
@@ -621,14 +640,30 @@ export default function AccountDetailPage() {
               >
                 <Link
                   href={`/portfolio/accounts/${accountId}/assets/${h.assetId}`}
-                  className="card px-4 py-4 block active:scale-[0.99] transition-transform"
+                  className="px-4 py-3 block active:opacity-70 transition-opacity"
+                  style={{
+                    background: "var(--surface)",
+                    borderTop: idx === 0 ? "none" : "1px solid var(--border)",
+                  }}
                 >
                   {inner}
                 </Link>
               </SwipeRow>
             );
           })}
-        </div>
+        </ScrollableList>
+      )}
+
+      {/* 시세 기준 안내 — 예전엔 행마다 "전일 종가 기준"/"(날짜 환율)"을 반복해 붙였다.
+          같은 문구가 자산 수만큼 늘어나며 목록을 밀어내서 여기 한 줄로 모았다.
+          표기 자체를 없애지는 않는다 — 국내주식이 D+1 종가라는 사실은 계속 밝혀야 한다. */}
+      {activeHoldings.length > 0 && (priceBasisNote.length > 0) && (
+        <p
+          className="fs-caption mt-2 px-1"
+          style={{ color: "var(--text-faint)" }}
+        >
+          {priceBasisNote}
+        </p>
       )}
 
       {/* M7: D-069 관련 — 정리한 자산(전량매도). 기본 접힘, 개수만 노출. */}
