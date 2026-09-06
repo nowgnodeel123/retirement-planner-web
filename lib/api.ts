@@ -3,6 +3,7 @@
 // refreshToken으로 조용히 갱신 후 원래 요청을 1회 재시도한다(백로그 "401 전역 처리" 해소).
 // 갱신도 실패하면(리프레시 토큰 만료/탈취 감지 등) 토큰을 지우고 /login으로 보낸다.
 import { getToken, getRefreshToken, setTokens, clearTokens } from "./auth";
+import { getCached, setCached, clearCache, dedupe } from "./cache";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
@@ -103,14 +104,38 @@ async function request<T>(
   return body as T;
 }
 
+// 변경 요청은 성공한 뒤 캐시를 통째로 비운다 — 어느 키가 영향받는지 고르지 않는다(lib/cache.ts 참고).
+async function mutate<T>(path: string, options: RequestInit): Promise<T> {
+  const result = await request<T>(path, options);
+  clearCache();
+  return result;
+}
+
 export const api = {
-  get: <T>(path: string) => request<T>(path),
+  /**
+   * 조회는 30초 캐시를 탄다(lib/cache.ts). 화면을 오갈 때 같은 조회를 반복하지 않기 위한 것이다.
+   * 저장 직후처럼 반드시 최신이어야 하는 자리는 `fresh: true`로 건너뛸 수 있지만,
+   * 변경 요청이 이미 캐시를 비우므로 보통은 필요 없다.
+   */
+  get: async <T>(path: string, options?: { fresh?: boolean }): Promise<T> => {
+    if (!options?.fresh) {
+      const hit = getCached<T>(path);
+      if (hit !== undefined) return hit;
+    }
+    // 같은 조회가 이미 떠 있으면 새로 보내지 않고 그 결과를 함께 기다린다.
+    return dedupe(path, async () => {
+      const data = await request<T>(path);
+      // 204(본문 없음)는 캐시하지 않는다 — undefined는 "캐시 없음"과 구분되지 않는다.
+      if (data !== undefined) setCached(path, data);
+      return data;
+    });
+  },
   post: <T>(path: string, body: unknown) =>
-    request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+    mutate<T>(path, { method: "POST", body: JSON.stringify(body) }),
   patch: <T>(path: string, body: unknown) =>
-    request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
+    mutate<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: (path: string, body?: unknown) =>
-    request<void>(path, {
+    mutate<void>(path, {
       method: "DELETE",
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
     }),
