@@ -63,6 +63,9 @@ export interface AssetHoldingResponse {
   // 현금은 매입환율을 안 받아 손익 자체가 없으므로 둘 다 null이다.
   krwProfitAmount: number | null;
   krwProfitRate: number | null;
+  // currentPrice를 실제로 받아온 시각(ISO-8601). 외부 시세 서비스 장애 중에는 마지막으로
+  // 성공한 값을 대신 내려주므로, 이 값이 오늘이 아니면 화면이 기준 시점을 밝혀야 한다.
+  priceAsOf: string | null;
   exchangeRateBaseDate: string | null;
   // 사용자가 끌어서 정한 순서. 아직 지정한 적 없으면 null → 목록에서 뒤로 간다.
   sortOrder: number | null;

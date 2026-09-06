@@ -266,6 +266,22 @@ export default function AccountDetailPage() {
     .filter(Boolean)
     .join(" · ");
 
+  // 외부 시세 서비스가 죽어 있으면 서버가 마지막으로 성공한 값을 대신 내려준다.
+  // 그 값을 오늘 시세인 것처럼 두면 안 되므로, 가장 오래된 조회 시각을 찾아 밝힌다.
+  // "전일 종가 기준"이라는 위 문구가 그 상황에서는 사실이 아니게 되기 때문이다.
+  const stalePriceDate = (() => {
+    const today = new Date().toDateString();
+    const stale = activeHoldings
+      .map((h) => h.priceAsOf)
+      .filter((v): v is string => Boolean(v))
+      .map((v) => new Date(v))
+      .filter((d) => !Number.isNaN(d.getTime()) && d.toDateString() !== today)
+      .sort((a, b) => a.getTime() - b.getTime())[0];
+    return stale
+      ? `${stale.getMonth() + 1}월 ${stale.getDate()}일`
+      : null;
+  })();
+
   async function handleAssetRename(name: string) {
     if (!assetRenameTarget) return;
     setAssetRenaming(true);
@@ -684,6 +700,17 @@ export default function AccountDetailPage() {
           style={{ color: "var(--text-faint)" }}
         >
           {priceBasisNote}
+        </p>
+      )}
+
+      {/* 시세가 오늘 것이 아니면 반드시 밝힌다. 장애 중에 마지막 값을 보여주는 것 자체는
+          빈 화면보다 낫지만, 언제 시세인지 안 밝히면 사용자가 오늘 값으로 읽는다. */}
+      {activeHoldings.length > 0 && stalePriceDate && (
+        <p
+          className="fs-caption mt-1 px-1"
+          style={{ color: "var(--warning)" }}
+        >
+          시세 서비스 장애로 {stalePriceDate}에 받은 값을 보여주고 있어요
         </p>
       )}
 
