@@ -57,6 +57,12 @@ export interface AssetHoldingResponse {
   // M5: 원화가 아닌 자산(해외주식·외화 현금)만 값 존재, 그 외는 항상 null
   exchangeRate: number | null;
   krwEvaluationAmount: number | null;
+  // 원화 기준 평가손익. profitAmount는 표시통화(해외주식이면 USD) 기준이라 환차손익이
+  // 빠져 있으니, 원화로 합산하는 자리에서는 반드시 이 값을 쓴다.
+  // profitAmount에 환율을 곱하면 취득원가까지 오늘 환율로 환산돼 환차손익이 사라진다.
+  // 현금은 매입환율을 안 받아 손익 자체가 없으므로 둘 다 null이다.
+  krwProfitAmount: number | null;
+  krwProfitRate: number | null;
   exchangeRateBaseDate: string | null;
   // 사용자가 끌어서 정한 순서. 아직 지정한 적 없으면 null → 목록에서 뒤로 간다.
   sortOrder: number | null;

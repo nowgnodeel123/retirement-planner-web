@@ -43,8 +43,10 @@ function getSortValue(
   h: AssetHoldingResponse,
   key: HoldingSortKey,
 ): number | null {
-  if (key === "profitRate") return h.profitRate;
-  if (h.category === "FOREIGN_STOCK") return h.krwEvaluationAmount;
+  // 수익률순은 원화 기준으로 줄 세운다 — profitRate(표시통화 기준)로 정렬하면 환차손익이
+  // 빠진 값이라 카테고리가 섞였을 때 순서가 실제 손익과 어긋난다.
+  if (key === "profitRate") return h.krwProfitRate ?? h.profitRate;
+  if (h.currency !== "KRW") return h.krwEvaluationAmount;
   return h.evaluationAmount;
 }
 
@@ -202,15 +204,22 @@ export default function AccountDetailPage() {
     let excluded = 0;
 
     for (const h of holdings) {
-      if (h.category === "FOREIGN_STOCK") {
+      // 전량매도(보유수량 0)는 "정리한 자산"이지 시세를 못 불러온 자산이 아니다.
+      // 제외로 세면 아래 캡션이 "N개가 빠졌어요"라는 거짓 경보를 띄운다.
+      if (h.quantity === 0) continue;
+
+      // 원화환산 여부는 카테고리가 아니라 통화로 판단한다 — 백엔드 DashboardService와
+      // 같은 규칙. 카테고리로 나누면 외화 현금(CASH/USD)이 환산 분기를 못 타서
+      // $1,000이 1,000원으로 더해지고, 이 화면 총액만 대시보드와 어긋난다.
+      if (h.currency !== "KRW") {
         if (h.krwEvaluationAmount !== null && h.exchangeRate !== null) {
           totalKrw += h.krwEvaluationAmount;
-          if (h.profitAmount !== null)
-            profitKrw += h.profitAmount * h.exchangeRate;
+          // krwProfitAmount는 취득원가를 매수 시점 fx로 환산한 값이라 환차손익을 포함한다.
+          if (h.krwProfitAmount !== null) profitKrw += h.krwProfitAmount;
         } else excluded++;
       } else if (h.evaluationAmount !== null) {
         totalKrw += h.evaluationAmount;
-        if (h.profitAmount !== null) profitKrw += h.profitAmount;
+        if (h.krwProfitAmount !== null) profitKrw += h.krwProfitAmount;
       } else excluded++;
     }
 
@@ -221,8 +230,9 @@ export default function AccountDetailPage() {
     return { totalKrw, profitKrw, profitRate, excluded };
   }, [holdings]);
 
-  // M7: quantity===0(전량매도)은 "정리한 자산"으로 분리. 요약(summary)은 위에서
-  // holdings 전체를 그대로 쓰므로(평가금액 없는 자산은 자연히 0으로 반영) 영향 없음.
+  // M7: quantity===0(전량매도)은 "정리한 자산"으로 분리. 요약(summary)도 같은 기준으로
+  // 건너뛴다 — 예전에는 "평가금액이 없으니 자연히 0으로 반영된다"고 봤지만, 실제로는
+  // 제외 카운트가 올라가 없는 경고가 떴다.
   const activeHoldings = useMemo(
     () => (holdings ?? []).filter((h) => h.quantity > 0),
     [holdings],
@@ -618,7 +628,18 @@ export default function AccountDetailPage() {
                                 style={{ color: "var(--text-sub)" }}
                               >
                                 ≈ {formatKrw(h.krwEvaluationAmount)}
-
+                                {/* 위 줄의 손익은 표시통화(USD) 기준이라 환차손익이 빠져 있다.
+                                    원화 줄에 원화 기준 수익률을 같이 둬서 "종목이 얼마 올랐나"와
+                                    "내 돈이 얼마 늘었나"가 다르다는 걸 드러낸다. */}
+                                {h.krwProfitRate !== null && (
+                                  <>
+                                    {" · 원화 "}
+                                    {signed(
+                                      h.krwProfitRate,
+                                      `${Math.abs(h.krwProfitRate).toFixed(2)}%`,
+                                    )}
+                                  </>
+                                )}
                               </p>
                             )}
                         </>
