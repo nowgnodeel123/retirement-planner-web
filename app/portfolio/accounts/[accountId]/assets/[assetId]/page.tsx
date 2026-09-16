@@ -17,6 +17,10 @@ import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { TradeForm } from "@/app/components/portfolio/TradeForm";
+import {
+  formatMoney,
+  formatQuantity,
+} from "@/app/components/portfolio/format";
 import { useDealBasRate } from "@/app/components/portfolio/useDealBasRate";
 import {
   AssetBuyRequest,
@@ -35,23 +39,10 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function formatQuantity(qty: number) {
-  return qty % 1 === 0 ? qty.toLocaleString() : qty.toString();
-}
-
 function fxHintText(touched: boolean, baseDate: string | null) {
   return !touched && baseDate
     ? `${baseDate} 고시 매매기준율로 채웠어요 · 직접 수정 가능`
     : null;
-}
-
-function formatMoney(value: number | null, currency: string) {
-  if (value === null) return "—";
-  if (currency === "KRW") return `${Math.round(value).toLocaleString()}원`;
-  return `$${value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
 }
 
 // M8: 통합 히스토리 항목. 매매(transaction)와 배당(dividend)은 서로 다른 엔티티라

@@ -15,7 +15,13 @@ import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { RenameModal } from "@/app/components/portfolio/RenameModal";
 import { SwipeRow } from "@/app/components/portfolio/SwipeRow";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
-import { formatKrw, formatMoney, profitColor, signed } from "@/app/components/portfolio/format";
+import {
+  formatKrw,
+  formatMoney,
+  formatQuantity,
+  profitColor,
+  signed,
+} from "@/app/components/portfolio/format";
 import {
   HoldingSortKey,
   SortDirection,
@@ -32,10 +38,6 @@ import {
   institutionLabel,
 } from "@/app/components/portfolio/types";
 import { ScrollableList } from "@/app/components/portfolio/ScrollableList";
-
-function formatQuantity(qty: number) {
-  return qty % 1 === 0 ? qty.toLocaleString() : qty.toString();
-}
 
 // M7: 정렬 기준값 추출. 해외주식은 원화환산 평가금액을 기준으로 삼아 카테고리가 섞여도
 // 비교가 성립하게 한다(D-063/D-087 이중표시 원칙과 일관).

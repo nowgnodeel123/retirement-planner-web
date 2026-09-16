@@ -10,6 +10,14 @@ export function formatMoney(value: number | null, currency: string) {
   })}`;
 }
 
+/**
+ * 수량 표시. 정수면 천 단위 콤마를, 소수면 입력한 자릿수를 그대로 보여준다.
+ * 코인처럼 소수 수량이 있어 자릿수를 임의로 고정하지 않는다.
+ */
+export function formatQuantity(qty: number) {
+  return qty % 1 === 0 ? qty.toLocaleString() : qty.toString();
+}
+
 export function formatKrw(value: number) {
   return `${Math.round(value).toLocaleString()}원`;
 }
