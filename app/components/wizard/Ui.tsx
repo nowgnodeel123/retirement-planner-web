@@ -27,12 +27,15 @@ export const smallInputClass =
  * - 숫자 이외 문자 제거 (마이너스, 문자, e/E, 콤마 전부 차단)
  * - allowDecimal이면 소수점 1개만 허용
  * - 앞자리 0 제거: "01" → "1" (단 "0", "0.5"는 유지)
- * - 최대 자릿수 제한 (비현실적 값으로 차트가 깨지는 것 방지)
+ * - maxDigits는 정수부 자릿수 제한 (비현실적 값으로 차트가 깨지는 것 방지)
+ * - decimalPlaces는 소수부 자릿수 제한. 금액·환율은 2자리면 되지만 코인 수량처럼
+ *   더 잘게 쪼개지는 값이 있어 호출부가 정한다.
  */
 function sanitizeNumeric(
   raw: string,
   allowDecimal: boolean,
   maxDigits: number,
+  decimalPlaces: number,
 ): string {
   let s = raw.replace(/,/g, "");
   s = s.replace(allowDecimal ? /[^0-9.]/g : /[^0-9]/g, "");
@@ -46,7 +49,7 @@ function sanitizeNumeric(
   const [intPart, decPart] = s.split(".");
   const cappedInt = intPart.slice(0, maxDigits);
   return decPart !== undefined
-    ? `${cappedInt}.${decPart.slice(0, 2)}`
+    ? `${cappedInt}.${decPart.slice(0, decimalPlaces)}`
     : cappedInt;
 }
 
@@ -75,6 +78,7 @@ export function NumberInput({
   small = false,
   ariaLabel,
   maxDigits = 7,
+  decimalPlaces = 2,
 }: {
   value: number | "";
   onChange: (v: number | "") => void;
@@ -83,6 +87,8 @@ export function NumberInput({
   small?: boolean;
   ariaLabel?: string;
   maxDigits?: number;
+  /** 소수부 최대 자릿수. 기본 2(금액·환율 기준). allowDecimal일 때만 의미가 있다. */
+  decimalPlaces?: number;
 }) {
   // WHY: "부모가 value를 바꾸면 표시 텍스트도 맞춘다"는 동기화 로직을
   // useEffect 안에서 setState로 하면 렌더→이펙트→재렌더의 이중 렌더가
@@ -108,6 +114,7 @@ export function NumberInput({
           e.target.value,
           allowDecimal,
           maxDigits,
+          decimalPlaces,
         );
         setText(cleaned);
         onChange(parseNumeric(cleaned));

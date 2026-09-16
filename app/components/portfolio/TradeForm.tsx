@@ -52,6 +52,13 @@ export function TradeAmountFields({
       {/* Field의 <label>은 htmlFor로 묶여 있지 않아 접근성 이름이 되지 못한다.
           placeholder는 "0"이라 스크린리더가 칸 이름을 "0"으로 읽는다 — 라벨 문구를
           그대로 ariaLabel로 넘겨 눈에 보이는 이름과 읽히는 이름을 맞춘다. */}
+      {/* 수량은 소수 6자리까지 받는다 — 코인은 0.001 BTC처럼 잘게 쪼개 사고,
+          해외주식도 소수점 매수가 있다. NumberInput 기본값 2자리로는 이런 수량을
+          아예 입력할 수 없었다(0.000001을 넣으면 0.00으로 잘려 "수량을 입력해주세요"가 떴다).
+          6자리인 이유: DB가 NUMERIC(20,8), 백엔드 검증이 @DecimalMin("0.00000001")이라
+          8자리까지 수용하지만, 정수부 12자리와 합치면 double 유효자릿수(약 15~17)를
+          넘겨 값이 미세하게 바뀔 수 있다. 업비트 주문 수량 정밀도(8자리)보다 보수적이되
+          실사용 수량을 담기에 충분한 지점으로 6자리를 잡았다. */}
       <Field label={quantityLabel} unit={quantityUnit}>
         <NumberInput
           value={quantity}
@@ -59,6 +66,7 @@ export function TradeAmountFields({
           allowDecimal
           placeholder="0"
           maxDigits={12}
+          decimalPlaces={6}
           ariaLabel={quantityLabel}
         />
       </Field>
