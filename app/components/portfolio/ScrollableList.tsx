@@ -17,6 +17,12 @@
 //   둥근 모서리를 유지하려면 두 축 모두 잘라야 한다.
 // - padded: 카드가 개별로 떠 있는 목록(계좌)은 그림자가 잘리지 않게 안쪽 여백을 주고
 //   같은 크기의 음수 마진으로 상쇄한다. 한 장짜리 카드(보유 자산)는 필요 없다.
+// - maxItems: "N개까지만 보이고 그 다음부터는 목록 안에서 스크롤". 화면에 남은 높이가
+//   아니라 실제 항목 높이를 재서 자른다 — 항목 높이는 손익 줄 유무나 긴 종목명 줄바꿈으로
+//   행마다 다르고, 기기 폭에 따라서도 달라져서 상수로 박으면 N번째 항목이 어중간하게
+//   잘린다. 남은 화면 높이 제한과는 둘 중 작은 쪽을 쓴다(작은 화면에서 목록이 탭바를
+//   덮지 않게). 항목이 N개 이하면 아무것도 자르지 않는다 — 이때 스크롤 컨테이너로
+//   만들어두면 마지막 카드의 그림자가 잘린다.
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +35,8 @@ export function ScrollableList({
   /** 하단 탭바 + 숨 쉴 여백. 목록 바닥이 탭바에 가리지 않도록 빼둔다. */
   bottomInset = 104,
   minHeight = 260,
+  /** N개까지만 보이게 높이를 자른다. 넘기지 않으면 화면에 남은 높이만 제한한다. */
+  maxItems,
   /** 위쪽 콘텐츠 높이가 바뀌는 값(로딩 완료 등)을 넘기면 다시 잰다. */
   recomputeKey,
 }: {
@@ -38,6 +46,7 @@ export function ScrollableList({
   padded?: boolean;
   bottomInset?: number;
   minHeight?: number;
+  maxItems?: number;
   recomputeKey?: unknown;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -50,14 +59,53 @@ export function ScrollableList({
       // 문서 기준 위치로 남은 높이를 잡는다.
       // (getBoundingClientRect().top + scrollY라 페이지가 스크롤돼 있어도 같은 값이 나온다)
       const docTop = el.getBoundingClientRect().top + window.scrollY;
-      setMaxHeight(
-        Math.max(minHeight, window.innerHeight - docTop - bottomInset),
+      const remaining = Math.max(
+        minHeight,
+        window.innerHeight - docTop - bottomInset,
       );
+
+      if (!maxItems) {
+        setMaxHeight(remaining);
+        return;
+      }
+
+      const items = Array.from(el.children) as HTMLElement[];
+      if (items.length <= maxItems) {
+        // 자를 것이 없다 — 제한을 걸지 않아야 카드 그림자가 온전히 보인다.
+        setMaxHeight(null);
+        return;
+      }
+
+      // 실제 항목 높이 + 사이 간격. gap은 인라인 style로 --rhythm-* 토큰이 들어오므로
+      // 계산된 값을 읽는다(px로 해석된 뒤라 parseFloat로 바로 쓸 수 있다).
+      const gap = parseFloat(getComputedStyle(el).rowGap) || 0;
+      let itemsHeight = 0;
+      for (let i = 0; i < maxItems; i++) {
+        itemsHeight += items[i].getBoundingClientRect().height;
+      }
+      itemsHeight += gap * (maxItems - 1);
+      // 다음 항목이 살짝 걸쳐 보이게 gap의 절반을 더한다 — 딱 맞게 자르면 아래에 더
+      // 있다는 신호가 사라져서 스크롤할 생각을 안 하게 된다.
+      itemsHeight += gap / 2;
+
+      setMaxHeight(Math.min(remaining, Math.round(itemsHeight)));
     };
+
     compute();
+    // 항목 높이는 시세·요약이 늦게 도착하면서 바뀐다. resize만 듣고 있으면 처음 잰
+    // 높이에 그대로 머물러 3번째 카드가 잘린 채로 남는다.
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(compute) : null;
+    if (ro && ref.current) {
+      ro.observe(ref.current);
+      for (const child of Array.from(ref.current.children)) ro.observe(child);
+    }
     window.addEventListener("resize", compute);
-    return () => window.removeEventListener("resize", compute);
-  }, [bottomInset, minHeight, recomputeKey]);
+    return () => {
+      window.removeEventListener("resize", compute);
+      ro?.disconnect();
+    };
+  }, [bottomInset, minHeight, maxItems, recomputeKey]);
 
   return (
     <div

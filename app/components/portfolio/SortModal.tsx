@@ -55,7 +55,7 @@ export function SortModal({
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-full mt-1.5 z-30 w-[168px] rounded-xl overflow-hidden"
+      className="absolute right-0 top-full mt-2 z-30 w-[168px] rounded-xl overflow-hidden"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -69,7 +69,7 @@ export function SortModal({
             key={`${opt.key}-${opt.dir}`}
             type="button"
             onClick={() => onApply(opt.key, opt.dir)}
-            className="w-full text-left px-3.5 py-2.5 fs-body font-medium transition-colors"
+            className="w-full text-left px-3 py-2 fs-body font-medium transition-colors"
             style={
               active
                 ? { color: "var(--accent)", background: "var(--accent-soft)" }

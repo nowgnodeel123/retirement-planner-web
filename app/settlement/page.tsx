@@ -51,7 +51,7 @@ export default function SettlementPage() {
                 key={s.key}
                 type="button"
                 onClick={() => setSection(s.key)}
-                className="flex-1 text-center py-2.5 fs-body font-semibold relative"
+                className="flex-1 text-center py-2 fs-body font-semibold relative"
                 style={{
                   color:
                     section === s.key ? "var(--text-strong)" : "var(--text-faint)",

@@ -43,6 +43,8 @@ export default function RetirementWizard() {
   // D-218: 포트폴리오에서 채워진 필드와, 채우면서 빠진 금액에 대한 안내.
   const [prefilled, setPrefilled] = useState<PrefilledField[]>([]);
   const [prefillNotice, setPrefillNotice] = useState<string | null>(null);
+  // 지난번 시뮬레이션 입력을 되불러왔는지(D-219 저장분). 1단계 안내에만 쓴다.
+  const [restoredFromSaved, setRestoredFromSaved] = useState(false);
 
   // 프리필 응답이 도착한 시점의 최신 폼을 읽기 위한 미러. setForm 업데이터 안에서
   // setPrefilled를 부르면 상태 업데이터가 부수효과를 갖게 되므로(StrictMode 이중 호출)
@@ -70,6 +72,7 @@ export default function RetirementWizard() {
         setForm(next);
         setPrefilled(filled);
         setPrefillNotice(buildPrefillNotice(prefill));
+        setRestoredFromSaved(prefill.savedProfile !== null);
       } catch {
         // 무시 — 수기 입력으로 진행
       }
@@ -110,7 +113,7 @@ export default function RetirementWizard() {
     if (!form.currentAge || form.currentAge < 20)
       return "현재 나이를 20세 이상으로 입력해주세요.";
     if (form.currentAge > 74) return "현재 나이는 74세 이하로 입력해주세요.";
-    if (!form.monthlyIncome) return "현재 월 소득을 입력해주세요.";
+    if (!form.annualIncome) return "연봉(세전)을 입력해주세요.";
     if (!form.targetMonthlyExpense) return "목표 은퇴 생활비를 입력해주세요.";
     // WHY: 국민연금 납입 기간을 비워두면 다른 연금 필드(IRP/연금저축)처럼
     // 0으로 변환돼 전송된다(toRequestPayload). "0년 납입"은 유효한 값이라
@@ -191,6 +194,7 @@ export default function RetirementWizard() {
           onChange={handleChange}
           onNext={() => goToStep(2)}
           prefilled={prefilled}
+          restoredFromSaved={restoredFromSaved}
         />
       )}
       {step === 2 && (

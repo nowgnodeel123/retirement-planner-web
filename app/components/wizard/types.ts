@@ -3,7 +3,9 @@ export type RetirementPensionType = "DB" | "DC";
 
 export interface RetirementFormState {
   currentAge: number | "";
-  monthlyIncome: number | "";
+  /** 세전 **연봉**(만원). 백엔드는 월소득을 받으므로 전송 직전에 12로 나눈다 —
+      이름을 monthlyIncome 그대로 두면 단위를 착각해 12배 틀린 값이 들어간다. */
+  annualIncome: number | "";
   targetMonthlyExpense: number | "";
 
   pensionYearsPaid: number | "";
@@ -28,7 +30,7 @@ export interface RetirementFormState {
 
 export const initialFormState: RetirementFormState = {
   currentAge: "",
-  monthlyIncome: "",
+  annualIncome: "",
   targetMonthlyExpense: "",
   pensionYearsPaid: "",
   retirementPensionType: "DB",
@@ -83,7 +85,9 @@ export function toRequestPayload(
 ): SimulationRequestPayload {
   return {
     currentAge: toNumber(form.currentAge),
-    monthlyIncome: toNumber(form.monthlyIncome),
+    // 화면은 연봉으로 받고 백엔드는 월소득을 기대한다. 이 한 줄이 단위 경계다 —
+    // 여기가 빠지면 화면·DB·계산이 전부 정상으로 보이면서 답만 12배 틀린다.
+    monthlyIncome: toNumber(form.annualIncome) / 12,
     pensionYearsPaid: toNumber(form.pensionYearsPaid),
     pensionType: form.retirementPensionType,
     // DB형이면 dcCurrentBalance는 백엔드에서 무시되고, DC형이면 yearsOfService가 0이어도 무해함
@@ -96,13 +100,15 @@ export function toRequestPayload(
     ),
     currentPensionSavingsBalance: toNumber(form.pensionSavingsCurrentBalance),
     targetMonthlyExpense: toNumber(form.targetMonthlyExpense),
-    // 기본값은 백엔드 SimulationRequestDto의 필드 기본값과 동일하게 맞춘다(5/4/6/7%).
-    irpReturnRate: toDecimalRate(form.irpReturnRate, 5),
+    // 기본값은 백엔드 SimulationRequestDto의 필드 기본값과 동일하게 맞춘다(IRP 6 / DC 4 /
+    // 연금저축 8 / 주식 10%). 입력칸 placeholder에도 같은 숫자를 적어둔다 — 셋이 어긋나면
+    // "화면이 말하는 값"과 "실제 계산에 들어가는 값"이 달라진다.
+    irpReturnRate: toDecimalRate(form.irpReturnRate, 6),
     // DB형이면 이 값은 백엔드에서 아예 안 쓰이지만, 필드 자체는 항상 보냄
     pensionReturnRate: toDecimalRate(form.dcReturnRate, 4),
-    pensionSavingsReturnRate: toDecimalRate(form.pensionSavingsReturnRate, 6),
+    pensionSavingsReturnRate: toDecimalRate(form.pensionSavingsReturnRate, 8),
     stockAssetBalance: toNumber(form.stockEtfCurrentBalance),
-    stockReturnRate: toDecimalRate(form.stockEtfReturnRate, 7),
+    stockReturnRate: toDecimalRate(form.stockEtfReturnRate, 10),
     monthlyStockInvestment: toNumber(form.stockEtfMonthlyContribution),
   };
 }
@@ -117,6 +123,31 @@ export interface SimulationPrefillResponse {
   stockAssetBalance: number;
   excludedCount: number;
   excludedCashAmount: number;
+  /** 지난번 시뮬레이션 때 사용자가 직접 입력한 값. 한 번도 안 돌렸으면 null. */
+  savedProfile: SavedSimulationProfile | null;
+}
+
+/**
+ * 백엔드 SimulationPrefillResponseDto.SavedProfile과 정확히 매칭.
+ * 수익률은 소수(0.07)로 내려온다 — 폼은 %(7)를 쓰므로 여기서 100을 곱한다.
+ */
+export interface SavedSimulationProfile {
+  monthlyIncome: number | null;
+  targetMonthlyExpense: number | null;
+  pensionYearsPaid: number | null;
+  pensionType: string | null;
+  yearsOfService: number | null;
+  monthlyIrpContribution: number | null;
+  monthlyPensionSavingsContribution: number | null;
+  monthlyStockInvestment: number | null;
+  irpReturnRate: number | null;
+  pensionReturnRate: number | null;
+  pensionSavingsReturnRate: number | null;
+  stockReturnRate: number | null;
+  dcCurrentBalance: number | null;
+  irpBalanceManual: number | null;
+  pensionSavingsBalanceManual: number | null;
+  stockAssetBalanceManual: number | null;
 }
 
 /**
@@ -155,10 +186,51 @@ export function applyPrefill(
     prefilled.push(key);
   };
 
+  // 순서가 규칙이다: 포트폴리오에서 나온 값을 먼저 채우고, 그 다음에 저장된 손입력이
+  // 남은 빈칸을 채운다. fill이 이미 값이 있는 칸을 건드리지 않으므로 결과적으로
+  // "포트폴리오 우선, 없으면 저장값"이 되고, 이는 대시보드 카드가 쓰는 규칙
+  // (RetirementProfileService.resolveBalance)과 정확히 같다 — 두 경로가 갈라지면
+  // 카드에 뜬 은퇴 나이와 위저드를 열어 그대로 제출한 답이 서로 달라진다.
   fill("currentAge", prefill.currentAge);
   fill("irpCurrentBalance", prefill.currentIrpBalance);
   fill("pensionSavingsCurrentBalance", prefill.currentPensionSavingsBalance);
   fill("stockEtfCurrentBalance", prefill.stockAssetBalance);
+
+  const saved = prefill.savedProfile;
+  if (saved) {
+    // 수익률은 소수 → %. 0%는 사용자가 실제로 0을 고른 것일 수 있어 의미가 있는 값이라,
+    // 금액과 달리 0도 그대로 복원한다(fillRate는 0을 허용한다).
+    const fillRate = (key: PrefilledField, rate: number | null) => {
+      if (rate === null) return;
+      if (numericFields[key] !== "") return;
+      numericFields[key] = Math.round(rate * 1000) / 10;
+      prefilled.push(key);
+    };
+
+    // 저장된 값은 월소득이므로 연봉으로 되돌려 채운다(위 나눗셈의 역방향).
+    fill("annualIncome", saved.monthlyIncome === null ? null : saved.monthlyIncome * 12);
+    fill("targetMonthlyExpense", saved.targetMonthlyExpense);
+    fill("pensionYearsPaid", saved.pensionYearsPaid);
+    fill("yearsOfService", saved.yearsOfService);
+    fill("irpMonthlyContribution", saved.monthlyIrpContribution);
+    fill("pensionSavingsMonthlyContribution", saved.monthlyPensionSavingsContribution);
+    fill("stockEtfMonthlyContribution", saved.monthlyStockInvestment);
+    fill("dcCurrentBalance", saved.dcCurrentBalance);
+    fill("irpCurrentBalance", saved.irpBalanceManual);
+    fill("pensionSavingsCurrentBalance", saved.pensionSavingsBalanceManual);
+    fill("stockEtfCurrentBalance", saved.stockAssetBalanceManual);
+
+    fillRate("irpReturnRate", saved.irpReturnRate);
+    fillRate("dcReturnRate", saved.pensionReturnRate);
+    fillRate("pensionSavingsReturnRate", saved.pensionSavingsReturnRate);
+    fillRate("stockEtfReturnRate", saved.stockReturnRate);
+
+    // 퇴직연금 유형은 숫자가 아니라 PrefilledField에 들어가지 않는다("불러옴" 배지 없음).
+    // 값 자체는 복원해야 한다 — DB/DC에 따라 2단계에서 묻는 항목이 통째로 달라진다.
+    if (saved.pensionType === "DB" || saved.pensionType === "DC") {
+      next.retirementPensionType = saved.pensionType;
+    }
+  }
 
   return { form: next, prefilled };
 }

@@ -29,6 +29,7 @@ import {
   RetirementAgeCardResponse,
 } from "@/app/components/portfolio/types";
 import { ScrollableList } from "@/app/components/portfolio/ScrollableList";
+import { Section } from "@/app/components/ui/Section";
 
 function SortIcon() {
   return (
@@ -46,6 +47,44 @@ function SortIcon() {
     </svg>
   );
 }
+
+function GearIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+/** 계좌 목록에서 한 화면에 보여줄 개수. 그 이상은 목록 안에서 스크롤한다. */
+const ACCOUNTS_VISIBLE = 3;
 
 const SORT_LABEL: Record<HoldingSortKey, string> = {
   value: "금액순",
@@ -76,7 +115,7 @@ function EmptyState() {
         </svg>
       </div>
       <p
-        className="font-bold mb-1.5 fs-title"
+        className="font-bold mb-2 fs-title"
         style={{ color: "var(--text-strong)" }}
       >
         등록된 계좌가 없어요
@@ -91,7 +130,7 @@ function EmptyState() {
       </p>
       <Link
         href="/portfolio/accounts/new"
-        className="pressable rounded-2xl text-white px-6 py-3.5 font-semibold fs-title"
+        className="pressable rounded-2xl text-white px-6 py-3 font-semibold fs-title"
         style={{ background: "var(--accent)" }}
       >
         첫 계좌 등록하기
@@ -286,24 +325,16 @@ export default function PortfolioPage() {
           )}
         </div>
 
+        {/* 계좌 추가(+)는 "내 계좌" 섹션 헤더로 내려갔다 — 추가되는 대상이 계좌 목록이므로
+            목록 바로 위에 있어야 무엇에 작용하는지가 위치로 설명된다. 비워진 이 자리에는
+            화면 전체에 걸리는 조작인 설정을 둔다. */}
         <Link
-          href="/portfolio/accounts/new"
-          aria-label="계좌 추가"
-          className="p-2 rounded-lg flex-shrink-0"
+          href="/my"
+          aria-label="설정"
+          className="pressable p-2 rounded-lg flex-shrink-0"
           style={{ color: "var(--text-sub)" }}
         >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+          <GearIcon />
         </Link>
       </div>
 
@@ -312,7 +343,15 @@ export default function PortfolioPage() {
       {accounts !== null && (
         <>
           <PortfolioSummary summary={summary} />
-          <RetirementAgeCard card={retirementCard} />
+          {/* 은퇴 가능 나이 카드는 라벨 없는 카드라 총자산과 비중 사이에서 무엇인지
+              드러나지 않았다. 도넛의 "비중"과 같은 섹션 헤더를 붙여 위계를 맞춘다.
+              카드가 통째로 빠지는 조회 실패("hidden")일 때는 헤더도 같이 빼야 한다 —
+              안 그러면 아무것도 없는 "은퇴 준비" 제목만 남는다. */}
+          {retirementCard !== "hidden" && (
+            <Section label="은퇴 준비" first>
+              <RetirementAgeCard card={retirementCard} />
+            </Section>
+          )}
           <HoldingsDonutChart
             holdings={summary?.holdings ?? null}
             totalAssetKrw={summary?.totalKrw ?? null}
@@ -343,17 +382,20 @@ export default function PortfolioPage() {
       {accounts !== null && accounts.length === 0 && <EmptyState />}
 
       {hasAccounts && (
-        <>
-          {/* 정렬 컨트롤 — 파이차트 아래, 계좌 리스트 위. "≡ 금액순" 형태로 현재 정렬을 노출.
-              계좌가 1개여도 보여준다 — 정렬 결과는 같지만, 컨트롤이 나타났다 사라지면
-              화면이 흔들리고 "사용자 설정"으로 순서 편집에 들어가는 길도 함께 막힌다. */}
-          {(
-            <div className="flex justify-end px-1" style={{ marginBottom: "var(--rhythm-tight)" }}>
+        /* 정렬·추가 컨트롤은 섹션 헤더로 올렸다 — 둘 다 작용 대상이 아래 계좌 목록이라
+           목록 바로 위에 나란히 있는 편이 무엇에 대한 조작인지 분명하다.
+           정렬은 계좌가 1개여도 보여준다: 정렬 결과는 같지만 컨트롤이 나타났다 사라지면
+           화면이 흔들리고 "사용자 설정"으로 순서 편집에 들어가는 길도 함께 막힌다. */
+        <Section
+          label="내 계좌"
+          hint={accounts.length > ACCOUNTS_VISIBLE ? `${accounts.length}개 · 스크롤해서 더 보기` : undefined}
+          action={
+            <>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setSortOpen((v) => !v)}
-                  className="pressable flex items-center gap-1.5 font-semibold px-2 py-1 rounded-lg fs-body"
+                  className="pressable flex items-center gap-2 font-semibold px-2 py-1 rounded-lg fs-body"
                   style={{ color: "var(--text-sub)" }}
                 >
                   <SortIcon />
@@ -376,11 +418,21 @@ export default function PortfolioPage() {
                   />
                 )}
               </div>
-            </div>
-          )}
-
+              <Link
+                href="/portfolio/accounts/new"
+                aria-label="계좌 추가"
+                className="pressable flex items-center gap-1 font-semibold px-2 py-1 rounded-lg fs-body"
+                style={{ color: "var(--accent)" }}
+              >
+                <PlusIcon />
+                추가
+              </Link>
+            </>
+          }
+        >
           <ScrollableList
             padded
+            maxItems={ACCOUNTS_VISIBLE}
             recomputeKey={`${sortedAccounts.length}-${summaryMap.size}`}
             style={{ display: "flex", flexDirection: "column", gap: "var(--rhythm-tight)" }}
           >
@@ -405,7 +457,7 @@ export default function PortfolioPage() {
               </div>
             ))}
           </ScrollableList>
-        </>
+        </Section>
       )}
 
       {pendingDelete && (

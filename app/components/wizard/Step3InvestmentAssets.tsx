@@ -46,30 +46,31 @@ export default function Step3InvestmentAssets({
 
       <SectionCard>
         <p
-          className="text-lg font-semibold mb-1"
+          className="fs-metric font-semibold mb-1"
           style={{ color: "var(--text-strong)" }}
         >
           투자 자산을 입력해주세요
         </p>
-        <p className="text-sm mb-5" style={{ color: "var(--text-faint)" }}>
+        <p className="fs-title mb-5" style={{ color: "var(--text-faint)" }}>
           나이 제한 없이 언제든 꺼내 쓸 수 있는 자산이에요. 조기은퇴의
           핵심이에요.
         </p>
 
         <p
-          className="text-sm font-semibold mb-2.5"
+          className="fs-title font-semibold mb-2"
           style={{ color: "var(--text)" }}
         >
           주식 / ETF
         </p>
 
-        <div className="grid grid-cols-2 gap-2.5 mb-1.5">
+        <div className="grid grid-cols-2 gap-2 mb-2">
           <SmallField label="월 납입액" unit="만원">
             <NumberInput
               value={form.stockEtfMonthlyContribution}
               onChange={(v) => onChange("stockEtfMonthlyContribution", v)}
               small
               ariaLabel="주식 ETF 월 납입액"
+              placeholder="0"
             />
           </SmallField>
           <SmallField label="기대 수익률" unit="%">
@@ -80,11 +81,12 @@ export default function Step3InvestmentAssets({
               maxDigits={2}
               small
               ariaLabel="주식 ETF 기대 수익률"
+              placeholder="10"
             />
           </SmallField>
         </div>
-        <div className="mb-3.5">
-          <Hint>모르겠다면 연 7% 정도가 무난해요.</Hint>
+        <div className="mb-3">
+          <Hint>비워두면 연 10%로 계산해요.</Hint>
         </div>
 
         <SmallField
@@ -99,6 +101,7 @@ export default function Step3InvestmentAssets({
             onChange={(v) => onChange("stockEtfCurrentBalance", v)}
             small
             ariaLabel="주식 ETF 현재 잔액"
+            placeholder="0"
           />
         </SmallField>
       </SectionCard>
@@ -111,7 +114,7 @@ export default function Step3InvestmentAssets({
           화면 이동이나 스크롤 없이 무엇이 문제인지 바로 보인다. */}
       {error && <ErrorBanner message={error} />}
 
-      <div className="flex gap-2.5">
+      <div className="flex gap-2">
         <SecondaryButton onClick={onBack} className="w-[35%]">
           이전
         </SecondaryButton>

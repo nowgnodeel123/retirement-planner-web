@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { Avatar } from "@/app/components/profile/Avatar";
 import { Toast } from "@/app/components/portfolio/Toast";
+import { SectionLabel } from "@/app/components/ui/Section";
 import {
   ErrorBanner,
   inputClass,
@@ -64,17 +65,6 @@ function sanitizePhone(raw: string): string {
   return raw.replace(/[^0-9]/g, "").slice(0, 11);
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      className="text-[12px] font-semibold px-1 mb-2 mt-6 first:mt-0"
-      style={{ color: "var(--text-faint)" }}
-    >
-      {children}
-    </p>
-  );
-}
-
 function GenderToggle({
   value,
   onChange,
@@ -89,7 +79,7 @@ function GenderToggle({
           key={g}
           type="button"
           onClick={() => onChange(g)}
-          className={`rounded-xl border py-3 text-sm font-medium transition-all ${
+          className={`rounded-xl border py-3 fs-title font-medium transition-all ${
             value === g
               ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
               : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-sub)] hover:border-[var(--text-faint)]"
@@ -150,7 +140,7 @@ function PasswordInput({
         </button>
       </div>
       {capsLockOn && !show && (
-        <p className="text-xs mt-1.5 ml-1" style={{ color: "var(--accent)" }}>
+        <p className="fs-body mt-2 ml-1" style={{ color: "var(--accent)" }}>
           Caps Lock이 켜져 있어요
         </p>
       )}
@@ -259,7 +249,7 @@ function PhoneVerificationField({
             type="button"
             onClick={handleSendCode}
             disabled={phone.length < 10 || submitting}
-            className="shrink-0 rounded-xl px-4 text-sm font-medium transition-all
+            className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
               hover:brightness-95 disabled:opacity-40 whitespace-nowrap"
             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
           >
@@ -267,7 +257,7 @@ function PhoneVerificationField({
           </button>
         )}
         {verified && (
-          <span className="shrink-0 flex items-center gap-1 text-[var(--accent)] text-sm font-medium px-2">
+          <span className="shrink-0 flex items-center gap-1 text-[var(--accent)] fs-title font-medium px-2">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
               <path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -279,7 +269,7 @@ function PhoneVerificationField({
       {codeSent && !verified && (
         <>
           {devCode && (
-            <p className="text-xs text-[var(--text-faint)] ml-1">
+            <p className="fs-body text-[var(--text-faint)] ml-1">
               개발용 인증번호: <span className="font-semibold text-[var(--text-sub)]">{devCode}</span>
               {" "}— 실제 서비스에서는 SMS로 발송됩니다.
             </p>
@@ -303,7 +293,7 @@ function PhoneVerificationField({
                 autoFocus
               />
               <span
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium tabular-nums"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 fs-body font-medium tabular-nums"
                 style={{ color: codeExpired ? "var(--error)" : "var(--text-faint)" }}
               >
                 {codeExpired ? "만료됨" : remainingLabel}
@@ -313,7 +303,7 @@ function PhoneVerificationField({
               type="button"
               onClick={handleVerifyCode}
               disabled={code.length === 0 || submitting || codeExpired}
-              className="shrink-0 rounded-xl px-4 text-sm font-medium transition-all
+              className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
                 hover:brightness-95 disabled:opacity-40"
               style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
             >
@@ -321,12 +311,12 @@ function PhoneVerificationField({
             </button>
           </div>
           {codeExpired && (
-            <p className="text-xs text-[var(--error)] ml-1">인증번호가 만료됐어요. 재발송해주세요.</p>
+            <p className="fs-body text-[var(--error)] ml-1">인증번호가 만료됐어요. 재발송해주세요.</p>
           )}
         </>
       )}
 
-      {error && <p className="text-xs text-[var(--error)] ml-1">{error}</p>}
+      {error && <p className="fs-body text-[var(--error)] ml-1">{error}</p>}
     </div>
   );
 }
@@ -499,7 +489,7 @@ export default function ProfileEditPage() {
         className="rounded-2xl border p-4 mb-2"
         style={{ borderColor: "var(--border)", background: "var(--surface)" }}
       >
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-3">
           {me ? (
             <Avatar avatarId={me.avatarId} size={48} />
           ) : (
@@ -512,12 +502,12 @@ export default function ProfileEditPage() {
                 onChange={(e) => setNickname(e.target.value)}
                 maxLength={20}
                 autoFocus
-                className="w-full rounded-lg border px-2.5 py-1.5 fs-title"
+                className="w-full rounded-lg border px-2 py-2 fs-title"
                 style={{ borderColor: "var(--border)", background: "var(--bg)", color: "var(--text-strong)" }}
               />
             ) : (
               <div className="flex items-center gap-2">
-                <span className="text-[16px] font-bold truncate" style={{ color: "var(--text-strong)" }}>
+                <span className="fs-title font-bold truncate" style={{ color: "var(--text-strong)" }}>
                   {me?.nickname ?? " "}
                 </span>
                 <button
@@ -528,7 +518,7 @@ export default function ProfileEditPage() {
                     setEditingNickname(true);
                   }}
                   aria-label="닉네임 수정"
-                  className="flex items-center gap-1 flex-shrink-0 text-[12px] font-medium px-2 py-1 rounded-lg"
+                  className="flex items-center gap-1 flex-shrink-0 fs-body font-medium px-2 py-1 rounded-lg"
                   style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
                 >
                   <PencilIcon />
@@ -537,7 +527,7 @@ export default function ProfileEditPage() {
               </div>
             )}
             {me?.email && (
-              <p className="text-[12px] mt-0.5 truncate" style={{ color: "var(--text-faint)" }}>
+              <p className="fs-body mt-1 truncate" style={{ color: "var(--text-faint)" }}>
                 {me.email}
               </p>
             )}
@@ -547,7 +537,7 @@ export default function ProfileEditPage() {
         {editingNickname && (
           <div className="mt-3">
             {nicknameError && (
-              <div className="mb-2.5">
+              <div className="mb-2">
                 <ErrorBanner message={nicknameError} />
               </div>
             )}
@@ -569,7 +559,7 @@ export default function ProfileEditPage() {
       </div>
 
       {!isLocal && me && (
-        <p className="text-[12px] px-1 mt-3 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+        <p className="fs-body px-1 mt-3 leading-relaxed" style={{ color: "var(--text-faint)" }}>
           카카오 로그인 계정이에요. 이름·생년월일·비밀번호 같은 개인정보는 카카오 계정에서 관리돼요.
         </p>
       )}
@@ -632,7 +622,7 @@ export default function ProfileEditPage() {
                     setEmailError(null);
                     setChangingEmail(true);
                   }}
-                  className="text-[12px] font-medium"
+                  className="fs-body font-medium"
                   style={{ color: "var(--accent)" }}
                 >
                   변경
@@ -694,7 +684,7 @@ export default function ProfileEditPage() {
                 <button
                   type="button"
                   onClick={() => setChangingPhone(true)}
-                  className="text-[12px] font-medium"
+                  className="fs-body font-medium"
                   style={{ color: "var(--accent)" }}
                 >
                   변경

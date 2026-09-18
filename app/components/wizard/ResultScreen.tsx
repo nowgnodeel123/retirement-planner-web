@@ -91,19 +91,19 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             예상 은퇴 가능 나이
           </p>
           <p
-            className="text-7xl font-extrabold tracking-tight tabular-nums mt-2.5"
+            className="text-7xl font-extrabold tracking-tight tabular-nums mt-2"
             style={{ color: "var(--text-strong)" }}
           >
             {animatedAge}
             <span
-              className="text-2xl font-bold ml-1"
+              className="fs-metric font-bold ml-1"
               style={{ color: "var(--text-sub)" }}
             >
               세
             </span>
           </p>
           <p
-            className="fs-body font-semibold mt-3.5"
+            className="fs-body font-semibold mt-3"
             style={{ color: "var(--text-sub)" }}
           >
             지금부터{" "}
@@ -112,16 +112,16 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             </span>{" "}
             뒤예요
           </p>
-          <p className="text-xs mt-2" style={{ color: "var(--text-faint)" }}>
+          <p className="fs-body mt-2" style={{ color: "var(--text-faint)" }}>
             {summary.message}
           </p>
         </div>
       ) : (
         <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-center mb-5 rise-in">
-          <p className="fs-body text-amber-700 mb-1.5 font-medium">
+          <p className="fs-body text-amber-700 mb-2 font-medium">
             시뮬레이션 결과
           </p>
-          <p className="text-xl font-bold text-amber-700 leading-snug">
+          <p className="fs-metric font-bold text-amber-700 leading-snug">
             지금 페이스로는 {retirementAge}세까지도
             <br />
             목표를 채우기 어려워요
@@ -138,7 +138,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
           리스크 고지라 D-126에서 제거했던 "절세 팁"류 부가정보와는 다르게 유지한다. */}
       {summary.feasible && dependentStatusWarning?.atRisk && (
         <div
-          className="rounded-xl px-3.5 py-2.5 mb-5 text-[12px] leading-relaxed rise-in"
+          className="rounded-xl px-3 py-2 mb-5 fs-body leading-relaxed rise-in"
           style={{
             background: "var(--warning-soft)",
             color: "var(--warning)",
@@ -213,7 +213,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
                 style={{ borderColor: "var(--border)" }}
               >
                 <div
-                  className="flex justify-between fs-caption pb-1.5"
+                  className="flex justify-between fs-caption pb-2"
                   style={{ color: "var(--text-faint)" }}
                 >
                   <span>어디서</span>
@@ -244,7 +244,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
                   .map((r) => (
                     <div
                       key={r.label}
-                      className="flex justify-between items-baseline fs-body py-1.5"
+                      className="flex justify-between items-baseline fs-body py-2"
                     >
                       <span style={{ color: "var(--text-sub)" }}>{r.label}</span>
                       <span className="flex gap-4 items-baseline">
@@ -331,8 +331,8 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
           구분이 안 됐다. feasible이면 "공유하기"가 이 화면의 보상 행동이자
           공유를 통한 유입 통로라 Primary로, 아니면 유일한 다음 행동인
           "다시 계산하기"가 Primary가 된다. */}
-      <div className="space-y-2.5 rise-in" style={{ animationDelay: "360ms" }}>
-        <div className="flex gap-2.5">
+      <div className="space-y-2 rise-in" style={{ animationDelay: "360ms" }}>
+        <div className="flex gap-2">
           {summary.feasible ? (
             <>
               <PrimaryButton onClick={handleShare} className="flex-1">
@@ -349,7 +349,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
           )}
         </div>
         <p
-          className="text-[10px] text-center pt-2 leading-relaxed"
+          className="fs-caption text-center pt-2 leading-relaxed"
           style={{ color: "var(--text-faint)" }}
         >
           본 서비스는 투자자문이나 금융상품 권유가 아닌 정보 제공 목적이에요.

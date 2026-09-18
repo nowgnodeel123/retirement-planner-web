@@ -99,7 +99,7 @@ export default function AccountOrderPage() {
               style={{ touchAction: "pan-y" }}
             >
               <InstitutionIcon type={account.institutionType} />
-              <div className="min-w-0 flex-1 flex items-center gap-1.5">
+              <div className="min-w-0 flex-1 flex items-center gap-2">
                 <p
                   className="fs-title font-semibold truncate"
                   style={{ color: "var(--text-strong)" }}
@@ -108,7 +108,7 @@ export default function AccountOrderPage() {
                 </p>
                 {account.detailType !== "NORMAL" && (
                   <span
-                    className="flex-shrink-0 fs-caption font-medium rounded-md px-1.5 py-0.5"
+                    className="flex-shrink-0 fs-caption font-medium rounded-md px-2 py-1"
                     style={{
                       color: "var(--accent)",
                       background: "var(--accent-soft)",

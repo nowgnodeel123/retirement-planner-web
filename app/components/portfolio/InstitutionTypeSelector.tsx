@@ -53,7 +53,7 @@ export function InstitutionTypeSelector({
             key={type}
             type="button"
             onClick={() => onChange(type)}
-            className={`flex flex-col items-center gap-1.5 rounded-2xl border py-3.5 transition-all ${
+            className={`flex flex-col items-center gap-2 rounded-2xl border py-3 transition-all ${
               active
                 ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-4 ring-[var(--accent)]/10"
                 : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-faint)]"

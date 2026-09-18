@@ -128,7 +128,7 @@ function TierHelpModal({
           </svg>
         </button>
         <p
-          className="text-[14px] font-bold"
+          className="fs-title font-bold"
           style={{ color: "var(--text-strong)" }}
         >
           등급 안내
@@ -136,13 +136,13 @@ function TierHelpModal({
         <p className="fs-caption mt-1 mb-3" style={{ color: "var(--text-faint)" }}>
           모든 계좌 평가금액 합계 기준
         </p>
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           {TIERS.map((t) => {
             const active = t.name === currentName;
             return (
               <div
                 key={t.name}
-                className="flex items-center justify-between rounded-lg px-2 py-1.5 text-[12px]"
+                className="flex items-center justify-between rounded-lg px-2 py-2 fs-body"
                 style={active ? { background: "var(--accent-soft)" } : undefined}
               >
                 <span
@@ -176,7 +176,7 @@ export function TierEmblem({ tier, size = 32 }: { tier: Tier; size?: number }) {
         type="button"
         onClick={() => setHelpOpen(true)}
         aria-label={`등급 ${tier.name} · 등급 안내 보기`}
-        className="pointer-events-auto flex flex-col items-center gap-1.5"
+        className="pointer-events-auto flex flex-col items-center gap-2"
       >
         <TierGlyph tier={tier} size={size} />
         <span className="flex items-center gap-1 leading-none">
@@ -184,7 +184,7 @@ export function TierEmblem({ tier, size = 32 }: { tier: Tier; size?: number }) {
             {tier.name}
           </span>
           <span
-            className="flex items-center justify-center rounded-full text-[9px] font-bold leading-none"
+            className="flex items-center justify-center rounded-full fs-caption font-bold leading-none"
             style={{
               width: 13,
               height: 13,

@@ -39,12 +39,12 @@ export default function Step2PensionInfo({
 
       <SectionCard>
         <p
-          className="text-lg font-semibold mb-1"
+          className="fs-metric font-semibold mb-1"
           style={{ color: "var(--text-strong)" }}
         >
           연금 정보를 입력해주세요
         </p>
-        <p className="text-sm mb-5" style={{ color: "var(--text-faint)" }}>
+        <p className="fs-title mb-5" style={{ color: "var(--text-faint)" }}>
           55세부터 받을 수 있는 연금 자산들이에요.
         </p>
 
@@ -54,6 +54,7 @@ export default function Step2PensionInfo({
             onChange={(v) => onChange("pensionYearsPaid", v)}
             maxDigits={2}
             ariaLabel="국민연금 납입 기간"
+            placeholder="9"
           />
         </Field>
 
@@ -63,7 +64,7 @@ export default function Step2PensionInfo({
           style={{ borderColor: "var(--border)" }}
         >
           <p
-            className="text-sm font-semibold mb-2.5"
+            className="fs-title font-semibold mb-2"
             style={{ color: "var(--text)" }}
           >
             퇴직연금
@@ -95,6 +96,7 @@ export default function Step2PensionInfo({
                   onChange={(v) => onChange("yearsOfService", v)}
                   maxDigits={2}
                   ariaLabel="지금까지의 근속연수"
+                  placeholder="7"
                 />
               </Field>
               <div className="-mt-3">
@@ -105,13 +107,14 @@ export default function Step2PensionInfo({
             </>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2.5 mb-1.5">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 <SmallField label="현재 잔액" unit="만원">
                   <NumberInput
                     value={form.dcCurrentBalance}
                     onChange={(v) => onChange("dcCurrentBalance", v)}
                     small
                     ariaLabel="DC 현재 잔액"
+                    placeholder="0"
                   />
                 </SmallField>
                 <SmallField label="기대 수익률" unit="%">
@@ -122,6 +125,7 @@ export default function Step2PensionInfo({
                     maxDigits={2}
                     small
                     ariaLabel="DC 기대 수익률"
+                    placeholder="4"
                   />
                 </SmallField>
               </div>
@@ -139,6 +143,8 @@ export default function Step2PensionInfo({
           rateKey="irpReturnRate"
           balanceKey="irpCurrentBalance"
           hint="월 25만원까지 채우면 세액공제를 최대로 받아요."
+          contributionPlaceholder="25"
+          ratePlaceholder="6"
           form={form}
           onChange={onChange}
           prefilled={prefilled}
@@ -151,6 +157,8 @@ export default function Step2PensionInfo({
           rateKey="pensionSavingsReturnRate"
           balanceKey="pensionSavingsCurrentBalance"
           hint="월 50만원까지 채우면 세액공제를 최대로 받아요."
+          contributionPlaceholder="50"
+          ratePlaceholder="8"
           form={form}
           onChange={onChange}
           prefilled={prefilled}
@@ -158,7 +166,7 @@ export default function Step2PensionInfo({
         />
       </SectionCard>
 
-      <div className="flex gap-2.5">
+      <div className="flex gap-2">
         <SecondaryButton onClick={onBack} className="w-[35%]">
           이전
         </SecondaryButton>
@@ -187,7 +195,7 @@ function PensionTypeButton({
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className="flex-1 rounded-xl py-2.5 border-2 transition-all duration-150 text-left px-3.5"
+      className="flex-1 rounded-xl py-2 border-2 transition-all duration-150 text-left px-3"
       style={
         selected
           ? {
@@ -199,13 +207,13 @@ function PensionTypeButton({
       }
     >
       <span
-        className="block text-sm font-semibold"
+        className="block fs-title font-semibold"
         style={{ color: selected ? "var(--accent)" : "var(--text)" }}
       >
         {label}
       </span>
       <span
-        className="block fs-caption mt-0.5"
+        className="block fs-caption mt-1"
         style={{ color: "var(--text-faint)" }}
       >
         {description}
@@ -220,6 +228,8 @@ function PensionProductFields({
   rateKey,
   balanceKey,
   hint,
+  contributionPlaceholder,
+  ratePlaceholder,
   form,
   onChange,
   prefilled,
@@ -231,6 +241,13 @@ function PensionProductFields({
   rateKey: PrefilledField;
   balanceKey: PrefilledField;
   hint: string;
+  /** 세액공제 한도를 기준점으로 보여준다. 아래 hint에 적는 값과 반드시 같아야 한다 —
+      입력칸과 안내가 다른 숫자를 말하면 어느 쪽이 맞는지 알 수 없다. */
+  contributionPlaceholder: string;
+  /** 빈 칸으로 두면 실제로 적용되는 기본 수익률. toRequestPayload의 defaultPercent와
+      반드시 같아야 한다 — 예전에 빈 칸이 0%로 전송되면서 화면 안내와 정반대 값이
+      계산에 들어가던 버그가 있었다(types.ts 주석 참고). 화면에 그 값을 드러내 둔다. */
+  ratePlaceholder: string;
   form: RetirementFormState;
   onChange: Props["onChange"];
   prefilled: PrefilledField[];
@@ -242,18 +259,19 @@ function PensionProductFields({
       style={{ borderColor: "var(--border)" }}
     >
       <p
-        className="text-sm font-semibold mb-2.5"
+        className="fs-title font-semibold mb-2"
         style={{ color: "var(--text)" }}
       >
         {title}
       </p>
-      <div className="grid grid-cols-2 gap-2.5 mb-1.5">
+      <div className="grid grid-cols-2 gap-2 mb-2">
         <SmallField label="월 납입액" unit="만원">
           <NumberInput
             value={form[contributionKey] as number | ""}
             onChange={(v) => onChange(contributionKey, v as never)}
             small
             ariaLabel={`${title} 월 납입액`}
+            placeholder={contributionPlaceholder}
           />
         </SmallField>
         <SmallField label="기대 수익률" unit="%">
@@ -264,10 +282,11 @@ function PensionProductFields({
             maxDigits={2}
             small
             ariaLabel={`${title} 기대 수익률`}
+            placeholder={ratePlaceholder}
           />
         </SmallField>
       </div>
-      <div className="mb-2.5">
+      <div className="mb-2">
         <Hint>{hint}</Hint>
       </div>
       <SmallField
@@ -280,6 +299,7 @@ function PensionProductFields({
           onChange={(v) => onChange(balanceKey, v as never)}
           small
           ariaLabel={`${title} 기존 잔액`}
+          placeholder="0"
         />
       </SmallField>
     </div>

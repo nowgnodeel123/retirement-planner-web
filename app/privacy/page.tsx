@@ -19,7 +19,7 @@ function Section({
         {title}
       </h2>
       <div
-        className="fs-body leading-relaxed space-y-1.5"
+        className="fs-body leading-relaxed space-y-2"
         style={{ color: "var(--text-sub)" }}
       >
         {children}
@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
       </Link>
 
       <h1
-        className="text-xl font-bold mb-2"
+        className="fs-metric font-bold mb-2"
         style={{ color: "var(--text-strong)" }}
       >
         개인정보처리방침
@@ -53,7 +53,7 @@ export default function PrivacyPolicyPage() {
       </p>
 
       <div
-        className="rounded-xl px-3 py-2.5 mb-7 text-[12px]"
+        className="rounded-xl px-3 py-2 mb-7 fs-body"
         style={{ background: "var(--warning-soft)", color: "var(--warning)" }}
       >
         이 문서는 초안입니다. 실제 서비스로 공개하기 전 반드시 법무 전문가의

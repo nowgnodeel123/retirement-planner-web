@@ -73,13 +73,13 @@ export default function WhatIfSlider({
       style={{ borderColor: "var(--border)", background: "var(--surface)" }}
     >
       <p
-        className="text-xs font-semibold tracking-wide mb-3"
+        className="fs-body font-semibold tracking-wide mb-3"
         style={{ color: "var(--text-faint)" }}
       >
         매달 주식·ETF에 더 투자하면?
       </p>
 
-      <div className="flex gap-1.5" role="group" aria-label="월 추가 투자액 선택">
+      <div className="flex gap-2" role="group" aria-label="월 추가 투자액 선택">
         {PRESETS.map((p) => {
           const selected = extra === p;
           return (
@@ -112,24 +112,24 @@ export default function WhatIfSlider({
               상한(참고용)이라, 그대로 굵게 보여주면 확정 답처럼 읽힌다. */}
           {extra === 0 && baseFeasible && (
             <p
-              className="text-lg font-bold"
+              className="fs-metric font-bold"
               style={{ color: "var(--text-strong)" }}
             >
               {baseRetirementAge}세
             </p>
           )}
           {extra === 0 && !baseFeasible && (
-            <p className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+            <p className="fs-body" style={{ color: "var(--text-faint)" }}>
               아직 부족해요
             </p>
           )}
           {extra > 0 && loading && (
-            <p className="text-lg font-bold" style={{ color: "var(--text-faint)" }}>
+            <p className="fs-metric font-bold" style={{ color: "var(--text-faint)" }}>
               계산 중…
             </p>
           )}
           {extra > 0 && !loading && failed && (
-            <p className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+            <p className="fs-body" style={{ color: "var(--text-faint)" }}>
               계산 실패, 다시 시도해주세요
             </p>
           )}
@@ -137,13 +137,13 @@ export default function WhatIfSlider({
               함께 확인한다 — 그렇지 않으면 "여전히 부족한" 시나리오에도 특정
               나이를 확정 답처럼 보여주게 된다. */}
           {extra > 0 && !loading && !failed && previewAge !== null && !previewFeasible && (
-            <p className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+            <p className="fs-body" style={{ color: "var(--text-faint)" }}>
               여전히 부족해요
             </p>
           )}
           {extra > 0 && !loading && !failed && previewAge !== null && previewFeasible && (
             <>
-              <p className="text-lg font-bold" style={{ color: "var(--accent)" }}>
+              <p className="fs-metric font-bold" style={{ color: "var(--accent)" }}>
                 {previewAge}세
               </p>
               <p

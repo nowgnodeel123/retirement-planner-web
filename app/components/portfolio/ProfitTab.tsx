@@ -20,7 +20,7 @@ import {
 
 function ProfitSkeletonCard() {
   return (
-    <div className="card px-4 py-3.5 animate-pulse">
+    <div className="card px-4 py-3 animate-pulse">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <div className="w-20 h-3.5 rounded" style={{ background: "var(--border)" }} />
@@ -43,15 +43,15 @@ export function ProfitTab() {
 
   return (
     <div className="rise-in">
-      <div className="flex items-center justify-between mb-3 px-1">
-        <p className="fs-body font-semibold" style={{ color: "var(--text-sub)" }}>
+      <div className="flex items-center justify-between px-1" style={{ marginBottom: "var(--rhythm-tight)" }}>
+        <h2 className="fs-body font-semibold" style={{ color: "var(--text-sub)" }}>
           기간별 수익
-        </p>
+        </h2>
         <div className="relative">
           <button
             type="button"
             onClick={() => setPeriodModalOpen((v) => !v)}
-            className="flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg"
+            className="flex items-center gap-1 fs-body font-semibold px-2 py-1 rounded-lg"
             style={{ color: "var(--text-sub)" }}
           >
             {profitPeriodLabel[period]}
@@ -139,7 +139,7 @@ function OutOfRangeNotice({
       <button
         type="button"
         onClick={onShowAll}
-        className="pressable mt-2 fs-caption font-semibold px-2.5 py-1 rounded-lg"
+        className="pressable mt-2 fs-caption font-semibold px-2 py-1 rounded-lg"
         style={{ color: "var(--accent)", background: "var(--surface)" }}
       >
         전체 기간으로 보기
@@ -204,7 +204,7 @@ function ProfitContent({
               </span>
             </div>
             <div
-              className="flex justify-between fs-body mt-1.5"
+              className="flex justify-between fs-body mt-2"
               style={{ color: "var(--text-sub)" }}
             >
               <span>배당수익</span>
@@ -219,7 +219,7 @@ function ProfitContent({
               </span>
             </div>
             <div
-              className="flex justify-between text-[14px] mt-3 pt-3 border-t"
+              className="flex justify-between fs-title mt-3 pt-3 border-t"
               style={{ borderColor: "var(--border)" }}
             >
               <span className="font-semibold" style={{ color: "var(--text-strong)" }}>
@@ -257,9 +257,9 @@ function ProfitContent({
                   }
                 >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       <span
-                        className="fs-caption font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                        className="fs-caption font-semibold px-2 py-1 rounded-md flex-shrink-0"
                         style={
                           item.kind === "DIVIDEND"
                             ? { color: "var(--gain)", background: "var(--gain-soft)" }
@@ -275,7 +275,7 @@ function ProfitContent({
                         {item.assetName}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 min-w-0">
+                    <div className="flex items-center gap-2 mt-1 min-w-0">
                       <CategoryBadge category={item.category as TradableAssetCategory} />
                       <span
                         className="fs-caption truncate"

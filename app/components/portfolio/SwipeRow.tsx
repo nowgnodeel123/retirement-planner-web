@@ -16,13 +16,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const ACTION_WIDTH = 128;
+// 버튼 하나당 40px + 사이 간격 12px + 좌우 여백. 수정 버튼이 없는 목록(종목)은
+// 삭제 하나만 나오므로 서랍 폭도 그만큼 좁혀야 한다 — 128px 그대로 두면 버튼 옆에
+// 빈 공간이 남아 "뭔가 하나 더 있는데 안 보이는" 것처럼 읽힌다.
+const ACTION_WIDTH_BOTH = 128;
+const ACTION_WIDTH_DELETE_ONLY = 76;
 const DRAG_THRESHOLD = 10;
 const WHEEL_SETTLE_MS = 180;
 
 const openRowClosers = new Set<() => void>();
 
-const clamp = (v: number) => Math.min(0, Math.max(-ACTION_WIDTH, v));
+const clamp = (v: number, width: number) => Math.min(0, Math.max(-width, v));
 
 function PencilIcon() {
   return (
@@ -49,7 +53,8 @@ export function SwipeRow({
   flush = false,
 }: {
   children: React.ReactNode;
-  onEdit: () => void;
+  /** 넘기지 않으면 삭제 버튼만 노출한다(서랍 폭도 함께 좁아진다). */
+  onEdit?: () => void;
   onDelete: () => void;
   editLabel?: string;
   deleteLabel?: string;
@@ -58,6 +63,8 @@ export function SwipeRow({
       나눠 쓰므로 true. 켜둔 채로 두면 카드 안에 둥근 카드가 겹쳐 보인다.) */
   flush?: boolean;
 }) {
+  const actionWidth = onEdit ? ACTION_WIDTH_BOTH : ACTION_WIDTH_DELETE_ONLY;
+
   const [tx, setTx] = useState(0);
   const [animate, setAnimate] = useState(true);
   const txRef = useRef(0);
@@ -86,16 +93,19 @@ export function SwipeRow({
     }, 350);
   }, []);
 
-  const snap = useCallback((from: number) => {
-    const open = from < -ACTION_WIDTH / 2;
-    if (open) {
-      openRowClosers.forEach((fn) => {
-        if (fn !== stableClose.current) fn();
-      });
-    }
-    setAnimate(true);
-    setTx(open ? -ACTION_WIDTH : 0);
-  }, []);
+  const snap = useCallback(
+    (from: number) => {
+      const open = from < -actionWidth / 2;
+      if (open) {
+        openRowClosers.forEach((fn) => {
+          if (fn !== stableClose.current) fn();
+        });
+      }
+      setAnimate(true);
+      setTx(open ? -actionWidth : 0);
+    },
+    [actionWidth],
+  );
 
   useEffect(() => {
     const el = fgRef.current;
@@ -135,7 +145,7 @@ export function SwipeRow({
         }
       }
       e.preventDefault();
-      setTx(clamp(st.startTx + dx));
+      setTx(clamp(st.startTx + dx, actionWidth));
     }
     function onPointerUp() {
       const wasActive = st.active;
@@ -157,7 +167,7 @@ export function SwipeRow({
       if (Math.abs(e.deltaX) <= Math.abs(e.deltaY) || Math.abs(e.deltaX) < 1) return;
       e.preventDefault();
       setAnimate(false);
-      setTx(clamp(txRef.current - e.deltaX));
+      setTx(clamp(txRef.current - e.deltaX, actionWidth));
       if (wheelTimer) window.clearTimeout(wheelTimer);
       wheelTimer = window.setTimeout(() => {
         markInteracted();
@@ -181,7 +191,7 @@ export function SwipeRow({
       detach();
       if (wheelTimer) window.clearTimeout(wheelTimer);
     };
-  }, [markInteracted, snap]);
+  }, [markInteracted, snap, actionWidth]);
 
   function handleClickCapture(e: React.MouseEvent) {
     if (justInteractedRef.current || txRef.current !== 0) {
@@ -191,7 +201,7 @@ export function SwipeRow({
     }
   }
 
-  const progress = Math.min(1, Math.abs(tx) / ACTION_WIDTH);
+  const progress = Math.min(1, Math.abs(tx) / actionWidth);
 
   return (
     // 바깥 래퍼: 카드 그림자 담당(안쪽 overflow-hidden에 잘리지 않게).
@@ -209,10 +219,12 @@ export function SwipeRow({
     >
       <div
         className="absolute inset-y-0 right-0 flex items-center justify-center gap-3"
-        style={{ width: ACTION_WIDTH }}
+        style={{ width: actionWidth }}
       >
         {[
-          { label: editLabel, onClick: onEdit, Icon: PencilIcon, bg: "var(--surface-pressed)", fg: "var(--text-sub)" },
+          ...(onEdit
+            ? [{ label: editLabel, onClick: onEdit, Icon: PencilIcon, bg: "var(--surface-pressed)", fg: "var(--text-sub)" }]
+            : []),
           { label: deleteLabel, onClick: onDelete, Icon: TrashIcon, bg: "var(--error)", fg: "#fff" },
         ].map(({ label, onClick, Icon, bg, fg }) => (
           <button

@@ -115,7 +115,7 @@ export default function IncomeTimelineChart({
     <div>
       <div className="flex items-center justify-between mb-3">
         <p
-          className="text-xs font-semibold tracking-wide"
+          className="fs-body font-semibold tracking-wide"
           style={{ color: "var(--text-faint)" }}
         >
           은퇴 후 월 소득 구성 (실제 받는 금액)
@@ -245,7 +245,7 @@ export default function IncomeTimelineChart({
         </span>
         이에요.
       </p>
-      <p className="fs-caption mt-1.5 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+      <p className="fs-caption mt-2 leading-relaxed" style={{ color: "var(--text-faint)" }}>
         차트의 높이는 그 나이에 <b>실제로 받는 금액</b>이에요. 물가가 오르는 만큼
         점선(목표 생활비)도 함께 올라가니, 두 선의 높이를 견주면 해마다 목표를
         채우는지 그대로 보여요. 지금 물가로 치면 월{" "}
@@ -263,11 +263,11 @@ function Legend() {
     { label: "주식/ETF", color: COLORS.liquid },
   ];
   return (
-    <div className="flex flex-wrap gap-x-2.5 gap-y-1 mb-2">
+    <div className="flex flex-wrap gap-x-2 gap-y-1 mb-2">
       {items.map((item) => (
         <span
           key={item.label}
-          className="inline-flex items-center gap-1 text-[10px]"
+          className="inline-flex items-center gap-1 fs-caption"
           style={{ color: "var(--text-faint)" }}
         >
           <span
@@ -278,7 +278,7 @@ function Legend() {
         </span>
       ))}
       <span
-        className="inline-flex items-center gap-1 text-[10px]"
+        className="inline-flex items-center gap-1 fs-caption"
         style={{ color: "var(--text-faint)" }}
       >
         <span
@@ -324,7 +324,7 @@ function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
 
   return (
     <div
-      className="rounded-lg border px-3 py-2 shadow-sm text-xs"
+      className="rounded-lg border px-3 py-2 shadow-sm fs-body"
       style={{ borderColor: "var(--border)", background: "var(--surface)" }}
     >
       <p className="font-medium mb-1" style={{ color: "var(--text)" }}>

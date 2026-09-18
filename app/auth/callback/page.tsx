@@ -25,7 +25,7 @@ function CallbackHandler() {
 
   return (
     <div className="max-w-[420px] mx-auto px-5 pt-24 text-center">
-      <p className="text-sm text-[var(--text-faint)]">로그인 처리 중이에요...</p>
+      <p className="fs-title text-[var(--text-faint)]">로그인 처리 중이에요...</p>
     </div>
   );
 }

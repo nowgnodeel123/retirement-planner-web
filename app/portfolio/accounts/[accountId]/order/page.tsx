@@ -110,7 +110,7 @@ export default function AssetOrderPage() {
                 >
                   {h.name}
                 </p>
-                <div className="mt-0.5">
+                <div className="mt-1">
                   <CategoryBadge category={h.category as AssetCategory} />
                 </div>
               </div>

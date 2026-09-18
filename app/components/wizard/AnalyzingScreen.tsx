@@ -36,7 +36,7 @@ export default function AnalyzingScreen() {
             style={{ borderColor: "var(--border)", borderTopColor: "var(--accent)" }}
           />
         </div>
-        <div className="space-y-3.5 max-w-[280px] mx-auto">
+        <div className="space-y-3 max-w-[280px] mx-auto">
           {STEPS.map((label, i) => {
             const done = i < activeStep;
             const active = i === activeStep;
@@ -44,7 +44,7 @@ export default function AnalyzingScreen() {
             return (
               <div
                 key={label}
-                className="flex items-center gap-2.5 rise-in"
+                className="flex items-center gap-2 rise-in"
                 style={{
                   color: done || active ? "var(--text-strong)" : "var(--text-faint)",
                 }}

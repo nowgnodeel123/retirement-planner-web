@@ -29,7 +29,7 @@ function InfoTerm({ term, explanation }: { term: string; explanation: string }) 
         </button>
       </span>
       {open && (
-        <p className="text-[12px] mt-1" style={{ color: "var(--text-faint)" }}>
+        <p className="fs-body mt-1" style={{ color: "var(--text-faint)" }}>
           {explanation}
         </p>
       )}
@@ -40,7 +40,7 @@ function InfoTerm({ term, explanation }: { term: string; explanation: string }) 
 function DisclaimerBanner() {
   return (
     <div
-      className="rounded-xl px-3 py-2.5 mb-4 text-[12px]"
+      className="rounded-xl px-3 py-2 mb-4 fs-body"
       style={{ background: "var(--error-soft)", color: "var(--error)" }}
     >
       이 화면의 세금 정보는 추정·판정치이며 실제 세액이 아니에요. 신고 전 반드시 세무 전문가 검증을 받으세요.
@@ -75,7 +75,7 @@ export function TaxTab() {
         >
           ‹
         </button>
-        <p className="text-[14px] font-semibold" style={{ color: "var(--text-strong)" }}>
+        <p className="fs-title font-semibold" style={{ color: "var(--text-strong)" }}>
           {year}년
         </p>
         <button
@@ -184,16 +184,16 @@ function TaxContent({ year }: { year: number }) {
             {signed(cg.realizedProfitKrw, formatKrw(Math.abs(cg.realizedProfitKrw)))}
           </span>
         </div>
-        <div className="flex justify-between fs-body mt-1.5" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body mt-2" style={{ color: "var(--text-sub)" }}>
           <span>기본공제</span>
           <span className="amount">-{formatKrw(cg.basicDeductionKrw)}</span>
         </div>
-        <div className="flex justify-between fs-body mt-1.5" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body mt-2" style={{ color: "var(--text-sub)" }}>
           <InfoTerm term="과세표준" explanation="실현손익에서 기본공제(연 250만원)를 뺀 금액이에요. 손실이면 0으로 처리해요." />
           <span className="amount">{formatKrw(cg.taxableBaseKrw)}</span>
         </div>
         <div
-          className="flex justify-between text-[14px] mt-3 pt-3 border-t"
+          className="flex justify-between fs-title mt-3 pt-3 border-t"
           style={{ borderColor: "var(--border)" }}
         >
           <span className="font-semibold" style={{ color: "var(--text-strong)" }}>
@@ -204,7 +204,7 @@ function TaxContent({ year }: { year: number }) {
           </span>
         </div>
 
-        <p className="text-[12px] mt-3" style={{ color: "var(--text-faint)" }}>
+        <p className="fs-body mt-3" style={{ color: "var(--text-faint)" }}>
           국내주식은 이 추정에 포함하지 않아요. 매도 {cg.sellCount}건 기준이에요.
         </p>
       </div>
@@ -223,7 +223,7 @@ function TaxContent({ year }: { year: number }) {
             {formatKrw(di.totalDividendKrw)}
           </span>
         </div>
-        <div className="flex justify-between fs-body mt-1.5" style={{ color: "var(--text-sub)" }}>
+        <div className="flex justify-between fs-body mt-2" style={{ color: "var(--text-sub)" }}>
           <span>금융소득종합과세 기준</span>
           <span className="amount">{formatKrw(di.thresholdKrw)}</span>
         </div>
@@ -237,7 +237,7 @@ function TaxContent({ year }: { year: number }) {
             explanation="이자·배당 등 금융소득이 연 2천만원을 넘으면 분리과세로 끝나지 않고 다른 소득과 합산해 종합소득세로 신고할 가능성이 생겨요."
           />
           <span
-            className="fs-body font-semibold px-2.5 py-1 rounded-lg"
+            className="fs-body font-semibold px-2 py-1 rounded-lg"
             style={
               di.exceedsThreshold
                 ? { color: "var(--error)", background: "var(--error-soft)" }
@@ -250,7 +250,7 @@ function TaxContent({ year }: { year: number }) {
 
         {di.foreignDividendCount > 0 && (
           <p
-            className="text-[12px] mt-3 leading-relaxed"
+            className="fs-body mt-3 leading-relaxed"
             style={{ color: "var(--warning)" }}
           >
             해외주식 배당 {di.foreignDividendCount}건은 <b>세전 환산 없이</b> 그대로 더했어요.
@@ -259,7 +259,7 @@ function TaxContent({ year }: { year: number }) {
           </p>
         )}
 
-        <p className="text-[12px] mt-3" style={{ color: "var(--text-faint)" }}>
+        <p className="fs-body mt-3" style={{ color: "var(--text-faint)" }}>
           실제 종합소득세액은 계산하지 않아요. 이 앱은 예적금 이자소득을 추적하지 않아 실제 금융소득이
           더 클 수 있어요. 배당 {di.dividendCount}건 기준이에요.
         </p>

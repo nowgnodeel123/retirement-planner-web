@@ -24,7 +24,7 @@ export function OrderEditHeader({
     <div className="mb-5">
       <div className="flex items-start justify-between gap-3">
         <h1
-          className="text-[20px] font-bold"
+          className="fs-metric font-bold"
           style={{ color: "var(--text-strong)" }}
         >
           {title}
@@ -35,7 +35,7 @@ export function OrderEditHeader({
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="fs-body font-medium px-1.5 py-1 rounded-lg"
+            className="fs-body font-medium px-2 py-1 rounded-lg"
             style={{ color: "var(--text-sub)", opacity: saving ? 0.5 : 1 }}
           >
             취소
@@ -46,7 +46,7 @@ export function OrderEditHeader({
             onClick={onConfirm}
             disabled={saving || disabled}
             aria-label="이 순서로 저장"
-            className="fs-body font-bold px-2 py-1 rounded-lg flex items-center gap-1.5 transition-transform active:scale-[0.96]"
+            className="fs-body font-bold px-2 py-1 rounded-lg flex items-center gap-2 transition-transform active:scale-[0.96]"
             style={{
               background: "transparent",
               color: disabled ? "var(--text-faint)" : "var(--accent)",

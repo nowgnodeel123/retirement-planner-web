@@ -37,7 +37,7 @@ export function PeriodFilterModal({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full mt-1.5 z-30 w-[120px] rounded-xl overflow-hidden"
+      className="absolute left-0 top-full mt-2 z-30 w-[120px] rounded-xl overflow-hidden"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -51,7 +51,7 @@ export function PeriodFilterModal({
             key={p}
             type="button"
             onClick={() => onApply(p)}
-            className="w-full text-left px-3.5 py-2.5 fs-body font-medium transition-colors"
+            className="w-full text-left px-3 py-2 fs-body font-medium transition-colors"
             style={
               active
                 ? { color: "var(--accent)", background: "var(--accent-soft)" }

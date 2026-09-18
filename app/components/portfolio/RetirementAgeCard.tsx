@@ -37,7 +37,7 @@ export function RetirementAgeCard({
     return (
       <Link
         href="/simulator"
-        className="flex items-center justify-between rounded-2xl px-4 py-3.5 border transition-all
+        className="flex items-center justify-between rounded-2xl px-4 py-3 border transition-all
           hover:brightness-[0.98] active:scale-[0.99]"
         style={{
           marginBottom: "var(--rhythm-section)",
@@ -72,7 +72,7 @@ export function RetirementAgeCard({
   return (
     <Link
       href="/simulator"
-      className="block rounded-2xl px-4 py-3.5 border transition-all
+      className="block rounded-2xl px-4 py-3 border transition-all
         hover:brightness-[0.98] active:scale-[0.99]"
       style={{
         marginBottom: "var(--rhythm-section)",

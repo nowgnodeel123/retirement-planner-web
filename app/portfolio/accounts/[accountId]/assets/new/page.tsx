@@ -148,7 +148,7 @@ function UnifiedStockSearch({
       />
       {open && query.trim().length > 0 && (
         <div
-          className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl border max-h-64 overflow-y-auto shadow-lg"
+          className="absolute z-20 left-0 right-0 mt-2 rounded-xl border max-h-64 overflow-y-auto shadow-lg"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
         >
           {loading && (
@@ -171,13 +171,13 @@ function UnifiedStockSearch({
                   onSelect(item);
                   setOpen(false);
                 }}
-                className="w-full text-left px-4 py-2.5 flex items-center justify-between gap-3 transition-colors hover:bg-[var(--surface-pressed)]"
+                className="w-full text-left px-4 py-2 flex items-center justify-between gap-3 transition-colors hover:bg-[var(--surface-pressed)]"
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <CategoryBadge category={item.category} />
                   <span className="truncate">
                     <span
-                      className="text-[14px] font-medium"
+                      className="fs-title font-medium"
                       style={{ color: "var(--text-strong)" }}
                     >
                       {item.name}
@@ -249,7 +249,7 @@ function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void
       />
       {open && query.trim().length > 0 && (
         <div
-          className="absolute z-20 left-0 right-0 mt-1.5 rounded-xl border max-h-64 overflow-y-auto shadow-lg"
+          className="absolute z-20 left-0 right-0 mt-2 rounded-xl border max-h-64 overflow-y-auto shadow-lg"
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
         >
           {loading && (
@@ -272,9 +272,9 @@ function CryptoSearch({ onSelect }: { onSelect: (item: CryptoSearchItem) => void
                   onSelect(item);
                   setOpen(false);
                 }}
-                className="w-full text-left px-4 py-2.5 transition-colors hover:bg-[var(--surface-pressed)]"
+                className="w-full text-left px-4 py-2 transition-colors hover:bg-[var(--surface-pressed)]"
               >
-                <span className="text-[14px] font-medium" style={{ color: "var(--text-strong)" }}>
+                <span className="fs-title font-medium" style={{ color: "var(--text-strong)" }}>
                   {item.name}
                 </span>{" "}
                 <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
@@ -357,7 +357,7 @@ export default function NewAssetPage() {
   if (account === null) {
     return (
       <div className="max-w-[420px] mx-auto px-5 pt-16 text-center">
-        <p className="text-[14px] mb-4" style={{ color: "var(--text-sub)" }}>
+        <p className="fs-title mb-4" style={{ color: "var(--text-sub)" }}>
           계좌를 찾을 수 없어요.
         </p>
         <button
@@ -468,7 +468,7 @@ export default function NewAssetPage() {
 
   return (
     <div className="max-w-[420px] mx-auto px-5 pt-6">
-      <h1 className="text-[20px] font-bold mb-6" style={{ color: "var(--text-strong)" }}>
+      <h1 className="fs-metric font-bold mb-6" style={{ color: "var(--text-strong)" }}>
         자산 추가
       </h1>
 
@@ -494,7 +494,7 @@ export default function NewAssetPage() {
                   setMode(m);
                   setError(null);
                 }}
-                className="rounded-xl py-2.5 fs-body font-semibold transition-colors"
+                className="rounded-xl py-2 fs-body font-semibold transition-colors"
                 style={{
                   background: activeMode === m ? "var(--surface)" : "transparent",
                   color:
@@ -513,18 +513,18 @@ export default function NewAssetPage() {
           <>
             <div className="mb-4">
               <label
-                className="text-sm font-medium"
+                className="fs-title font-medium"
                 style={{ color: "var(--text-sub)" }}
               >
                 통화
               </label>
-              <div className="mt-1.5 grid grid-cols-2 gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2">
                 {cashCurrencies.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setCashCurrency(c)}
-                    className="rounded-xl border py-3 text-[14px] font-medium transition-colors"
+                    className="rounded-xl border py-3 fs-title font-medium transition-colors"
                     style={{
                       borderColor:
                         cashCurrency === c ? "var(--accent)" : "var(--border)",
@@ -546,12 +546,12 @@ export default function NewAssetPage() {
 
             <div className="mb-4">
               <label
-                className="text-sm font-medium"
+                className="fs-title font-medium"
                 style={{ color: "var(--text-sub)" }}
               >
                 잔액
               </label>
-              <div className="mt-1.5 relative">
+              <div className="mt-2 relative">
                 <input
                   type="text"
                   inputMode="decimal"
@@ -574,7 +574,7 @@ export default function NewAssetPage() {
                 </span>
               </div>
               <p
-                className="fs-caption mt-1.5 leading-relaxed"
+                className="fs-caption mt-2 leading-relaxed"
                 style={{ color: "var(--text-faint)" }}
               >
                 {cashCurrency === "KRW"
@@ -602,13 +602,13 @@ export default function NewAssetPage() {
 
         {useUnifiedSearch ? (
           <div className="mb-4">
-            <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
+            <label className="fs-title font-medium" style={{ color: "var(--text-sub)" }}>
               종목
             </label>
-            <div className="mt-1.5">
+            <div className="mt-2">
               {symbol && name && category ? (
                 <div
-                  className="flex items-center justify-between rounded-xl border px-3.5 py-3"
+                  className="flex items-center justify-between rounded-xl border px-3 py-3"
                   style={{ borderColor: "var(--border)", background: "var(--surface)" }}
                 >
                   <span className="flex items-center gap-2 min-w-0">
@@ -620,7 +620,7 @@ export default function NewAssetPage() {
                       >
                         {name}
                       </span>{" "}
-                      <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                      <span className="fs-body" style={{ color: "var(--text-faint)" }}>
                         {symbol}
                       </span>
                     </span>
@@ -628,7 +628,7 @@ export default function NewAssetPage() {
                   <button
                     type="button"
                     onClick={clearSelection}
-                    className="text-[12px] font-medium flex-shrink-0"
+                    className="fs-body font-medium flex-shrink-0"
                     style={{ color: "var(--accent)" }}
                   >
                     변경
@@ -639,7 +639,7 @@ export default function NewAssetPage() {
               )}
             </div>
             {!(symbol && name && category) && (
-              <p className="fs-caption mt-1.5 leading-relaxed" style={{ color: "var(--text-faint)" }}>
+              <p className="fs-caption mt-2 leading-relaxed" style={{ color: "var(--text-faint)" }}>
                 {isPensionAccount
                   ? "연금저축·IRP는 ETF만 담을 수 있어요. ETF 이름으로 검색해 보세요 (예: KODEX 미국나스닥100). ETF 시세 연동은 아직 준비 중이라 당분간 평가금액이 표시되지 않아요."
                   : "종목명을 검색하면 국내·해외 구분이 자동으로 정해져요."}
@@ -648,13 +648,13 @@ export default function NewAssetPage() {
           </div>
         ) : (
           <div className="mb-4">
-            <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
+            <label className="fs-title font-medium" style={{ color: "var(--text-sub)" }}>
               종목
             </label>
-            <div className="mt-1.5">
+            <div className="mt-2">
               {symbol && name ? (
                 <div
-                  className="flex items-center justify-between rounded-xl border px-3.5 py-3"
+                  className="flex items-center justify-between rounded-xl border px-3 py-3"
                   style={{ borderColor: "var(--border)", background: "var(--surface)" }}
                 >
                   <span className="truncate">
@@ -664,7 +664,7 @@ export default function NewAssetPage() {
                     >
                       {name}
                     </span>{" "}
-                    <span className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+                    <span className="fs-body" style={{ color: "var(--text-faint)" }}>
                       {symbol}
                     </span>
                   </span>
@@ -674,7 +674,7 @@ export default function NewAssetPage() {
                       setSymbol("");
                       setName("");
                     }}
-                    className="text-[12px] font-medium flex-shrink-0"
+                    className="fs-body font-medium flex-shrink-0"
                     style={{ color: "var(--accent)" }}
                   >
                     변경

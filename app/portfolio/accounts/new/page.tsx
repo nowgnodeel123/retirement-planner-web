@@ -60,7 +60,7 @@ export default function NewAccountPage() {
 
   return (
     <div className="max-w-[420px] mx-auto px-5 pt-6">
-      <h1 className="text-[20px] font-bold mb-6" style={{ color: "var(--text-strong)" }}>
+      <h1 className="fs-metric font-bold mb-6" style={{ color: "var(--text-strong)" }}>
         계좌 등록
       </h1>
 
@@ -72,10 +72,10 @@ export default function NewAccountPage() {
           boxShadow: "0 2px 24px rgba(15,23,42,0.06)",
         }}
       >
-        <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
+        <label className="fs-title font-medium" style={{ color: "var(--text-sub)" }}>
           기관 유형
         </label>
-        <div className="mt-1.5 mb-5">
+        <div className="mt-2 mb-5">
           <InstitutionTypeSelector
             value={institutionType}
             onChange={setInstitutionType}
@@ -96,10 +96,10 @@ export default function NewAccountPage() {
 
         {showDetailType && (
           <div className="mt-4">
-            <label className="text-sm font-medium" style={{ color: "var(--text-sub)" }}>
+            <label className="fs-title font-medium" style={{ color: "var(--text-sub)" }}>
               상세 유형
             </label>
-            <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+            <div className="mt-2 grid grid-cols-4 gap-2">
               {DETAIL_TYPES.map((type) => {
                 const active = detailType === type;
                 return (
@@ -107,7 +107,7 @@ export default function NewAccountPage() {
                     key={type}
                     type="button"
                     onClick={() => setDetailType(type)}
-                    className={`rounded-xl border py-2.5 text-[12px] font-medium transition-all ${
+                    className={`rounded-xl border py-2 fs-body font-medium transition-all ${
                       active
                         ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-4 ring-[var(--accent)]/10"
                         : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-faint)]"

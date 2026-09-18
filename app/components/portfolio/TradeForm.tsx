@@ -95,7 +95,7 @@ export function TradeAmountFields({
       )}
       {isForeign && fxHint && (
         <p
-          className="text-[12px] -mt-3 mb-4"
+          className="fs-body -mt-3 mb-4"
           style={{ color: "var(--text-faint)" }}
         >
           {fxHint}
@@ -103,7 +103,7 @@ export function TradeAmountFields({
       )}
       <div className="mb-1">
         <label
-          className="text-sm font-medium"
+          className="fs-title font-medium"
           style={{ color: "var(--text-sub)" }}
         >
           거래일
@@ -114,7 +114,7 @@ export function TradeAmountFields({
           max={todayString()}
           onChange={(e) => onTradeDateChange(e.target.value)}
           aria-label="거래일"
-          className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
+          className="w-full rounded-xl border px-3 py-3 min-h-[44px] fs-input mt-2"
           style={{
             borderColor: "var(--border)",
             background: "var(--surface)",

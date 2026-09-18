@@ -10,12 +10,13 @@ import {
   ErrorBanner,
   Field,
   PrimaryButton,
-  SecondaryButton,
   NumberInput,
 } from "@/app/components/wizard/Ui";
 import { ConfirmModal } from "@/app/components/portfolio/ConfirmModal";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
+import { Section } from "@/app/components/ui/Section";
+import { RenameModal } from "@/app/components/portfolio/RenameModal";
 import { TradeForm } from "@/app/components/portfolio/TradeForm";
 import {
   formatMoney,
@@ -116,6 +117,11 @@ export default function AssetDetailPage() {
   const [dividendFormError, setDividendFormError] = useState<string | null>(
     null,
   );
+
+  // 이름 수정 — 목록 스와이프에서 이리로 옮겨왔다(계좌 상세의 제목 옆 연필과 같은 규칙).
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   // 현금 잔액 수정 — 거래가 아니라 덮어쓰기라 별도 폼
   const [cashOpen, setCashOpen] = useState(false);
@@ -294,6 +300,23 @@ export default function AssetDetailPage() {
     }
   }
 
+  async function handleRename(name: string) {
+    setRenaming(true);
+    setRenameError(null);
+    try {
+      await api.patch(`/api/assets/${assetId}/name`, { name });
+      setRenameOpen(false);
+      setToast("이름이 수정되었어요.");
+      loadAll();
+    } catch (e) {
+      setRenameError(
+        e instanceof ApiError ? e.message : "이름 수정에 실패했어요.",
+      );
+    } finally {
+      setRenaming(false);
+    }
+  }
+
   async function handleSaveCashBalance() {
     if (cashBalance === "" || cashBalance < 0) {
       setCashFormError("잔액을 입력해주세요.");
@@ -462,7 +485,7 @@ export default function AssetDetailPage() {
   if (holding === null) {
     return (
       <div className="max-w-[420px] mx-auto px-5 pt-16 text-center">
-        <p className="text-[14px] mb-4" style={{ color: "var(--text-sub)" }}>
+        <p className="fs-title mb-4" style={{ color: "var(--text-sub)" }}>
           자산을 찾을 수 없어요.
         </p>
         <button
@@ -501,19 +524,49 @@ export default function AssetDetailPage() {
       {holding && (
         <>
           <div className="mb-1">
-            <h1>
-              <span
-                className="text-[17px] font-bold"
-                style={{ color: "var(--text-strong)" }}
+            <div className="flex items-center gap-2">
+              <h1 className="min-w-0">
+                <span
+                  className="fs-title font-bold"
+                  style={{ color: "var(--text-strong)" }}
+                >
+                  {holding.name}
+                </span>{" "}
+                {!isCash && (
+                  <span className="fs-body" style={{ color: "var(--text-faint)" }}>
+                    {holding.symbol}
+                  </span>
+                )}
+              </h1>
+              {/* 이름 수정은 목록 스와이프에서 이리로 옮겨왔다 — 계좌 상세가 이미 쓰는
+                  "제목 옆 연필"과 같은 규칙이라 배우지 않아도 찾을 수 있고, 바꾼 이름이
+                  바로 위에서 그대로 갱신되는 걸 확인할 수 있다.
+                  symbol은 건드리지 않으므로 시세 조회에는 영향이 없다. */}
+              <button
+                type="button"
+                aria-label="이름 수정"
+                onClick={() => {
+                  setRenameError(null);
+                  setRenameOpen(true);
+                }}
+                className="pressable p-2 rounded-lg flex-shrink-0"
+                style={{ color: "var(--text-faint)" }}
               >
-                {holding.name}
-              </span>{" "}
-              {!isCash && (
-                <span className="fs-body" style={{ color: "var(--text-faint)" }}>
-                  {holding.symbol}
-                </span>
-              )}
-            </h1>
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.9}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z" />
+                </svg>
+              </button>
+            </div>
             <div className="mt-1">
               <CategoryBadge
                 category={holding.category as AssetCategory}
@@ -521,12 +574,13 @@ export default function AssetDetailPage() {
             </div>
           </div>
 
-          <div className="mt-4 mb-6 card px-4 py-4">
-            <p className="text-[12px]" style={{ color: "var(--text-sub)" }}>
+          <Section label="보유 현황" className="mt-4">
+          <div className="card px-4 py-4">
+            <p className="fs-body" style={{ color: "var(--text-sub)" }}>
               {isCash ? "잔액" : "보유 수량"}
             </p>
             <p
-              className="amount text-[20px] font-bold mt-0.5"
+              className="amount fs-metric font-bold mt-1"
               style={{ color: "var(--text-strong)" }}
             >
               {isCash
@@ -539,7 +593,7 @@ export default function AssetDetailPage() {
               holding.krwEvaluationAmount !== null &&
               holding.currency !== "KRW" && (
                 <p
-                  className="amount text-[12px] mt-1"
+                  className="amount fs-body mt-1"
                   style={{ color: "var(--text-sub)" }}
                 >
                   ≈ {Math.round(holding.krwEvaluationAmount).toLocaleString()}원
@@ -553,51 +607,61 @@ export default function AssetDetailPage() {
               )
             ) : (
               <p
-                className="amount text-[12px] mt-1"
+                className="amount fs-body mt-1"
                 style={{ color: "var(--text-sub)" }}
               >
                 평단 {formatMoney(holding.averagePrice, holding.currency)}
               </p>
             )}
           </div>
+          </Section>
 
-          <div className="mb-6 flex gap-2">
-            {isCash ? (
-              <SecondaryButton
-                onClick={() => {
-                  setCashOpen((v) => !v);
-                  setCashBalance(cashOpen ? "" : holding.quantity);
-                  setCashFormError(null);
+          {/* 조작 버튼 — 카드 '위에' 올린 게 아니라 카드 '자체'로 만들었다.
+              직전에는 테두리 있는 알약 버튼 세 개를 다시 카드 안에 넣어서 표면이
+              두 겹으로 겹쳤고(카드 안의 카드), 그래서 여전히 떠 보였다.
+              지금은 카드 한 장을 세로 구분선으로 나눈 세그먼트다 — 테두리가 하나뿐이라
+              위아래 카드와 같은 층에 놓이고, "이 종목에 할 수 있는 일"이 한 덩어리로 읽힌다.
+              열려 있는 항목은 배경을 칠해 지금 어느 폼이 떠 있는지 버튼에서 바로 보이게 한다. */}
+          <Section label="거래">
+          <div className="card flex overflow-hidden">
+            {(isCash
+              ? [
+                  {
+                    key: "cash",
+                    label: cashOpen ? "수정 취소" : "잔액 수정",
+                    open: cashOpen,
+                    onClick: () => {
+                      setCashOpen((v) => !v);
+                      setCashBalance(cashOpen ? "" : holding.quantity);
+                      setCashFormError(null);
+                    },
+                  },
+                ]
+              : [
+                  { key: "buy", label: buyOpen ? "매수 취소" : "매수", open: buyOpen, onClick: () => setBuyOpen((v) => !v) },
+                  { key: "sell", label: sellOpen ? "매도 취소" : "매도", open: sellOpen, onClick: () => setSellOpen((v) => !v) },
+                  ...(isDividendEligible
+                    ? [{ key: "dividend", label: dividendOpen ? "배당 취소" : "배당 기록", open: dividendOpen, onClick: () => setDividendOpen((v) => !v) }]
+                    : []),
+                ]
+            ).map((action, i) => (
+              <button
+                key={action.key}
+                type="button"
+                onClick={action.onClick}
+                aria-expanded={action.open}
+                className="pressable flex-1 py-3 fs-title font-medium"
+                style={{
+                  color: action.open ? "var(--accent)" : "var(--text)",
+                  background: action.open ? "var(--accent-soft)" : "transparent",
+                  borderLeft: i === 0 ? "none" : "1px solid var(--border)",
                 }}
-                className="flex-1"
               >
-                {cashOpen ? "수정 취소" : "잔액 수정"}
-              </SecondaryButton>
-            ) : (
-              <>
-            <SecondaryButton
-              onClick={() => setBuyOpen((v) => !v)}
-              className="flex-1"
-            >
-              {buyOpen ? "매수 취소" : "매수"}
-            </SecondaryButton>
-            <SecondaryButton
-              onClick={() => setSellOpen((v) => !v)}
-              className="flex-1"
-            >
-              {sellOpen ? "매도 취소" : "매도"}
-            </SecondaryButton>
-            {isDividendEligible && (
-              <SecondaryButton
-                onClick={() => setDividendOpen((v) => !v)}
-                className="flex-1"
-              >
-                {dividendOpen ? "배당 취소" : "배당 기록"}
-              </SecondaryButton>
-            )}
-              </>
-            )}
+                {action.label}
+              </button>
+            ))}
           </div>
+          </Section>
 
           {cashOpen && (
             <div className="mb-6 card px-4 py-4">
@@ -611,7 +675,7 @@ export default function AssetDetailPage() {
                 />
               </Field>
               <p
-                className="fs-caption mt-1.5 leading-relaxed"
+                className="fs-caption mt-2 leading-relaxed"
                 style={{ color: "var(--text-faint)" }}
               >
                 현재 잔액으로 덮어써요. 거래 이력은 남지 않아요.
@@ -689,7 +753,7 @@ export default function AssetDetailPage() {
             <div className="mb-6 card px-4 py-4">
               <div className="mb-1">
                 <label
-                  className="text-sm font-medium"
+                  className="fs-title font-medium"
                   style={{ color: "var(--text-sub)" }}
                 >
                   지급일
@@ -699,7 +763,7 @@ export default function AssetDetailPage() {
                   value={payDate}
                   max={todayString()}
                   onChange={(e) => setPayDate(e.target.value)}
-                  className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
+                  className="w-full rounded-xl border px-3 py-3 min-h-[44px] fs-input mt-2"
                   style={{
                     borderColor: "var(--border)",
                     background: "var(--surface)",
@@ -709,7 +773,7 @@ export default function AssetDetailPage() {
               </div>
               <div className="mb-1 mt-4">
                 <label
-                  className="text-sm font-medium"
+                  className="fs-title font-medium"
                   style={{ color: "var(--text-sub)" }}
                 >
                   배당락일 <span style={{ color: "var(--text-faint)" }}>(선택, 모르면 비워두세요)</span>
@@ -719,7 +783,7 @@ export default function AssetDetailPage() {
                   value={exDividendDate}
                   max={payDate}
                   onChange={(e) => setExDividendDate(e.target.value)}
-                  className="w-full rounded-xl border px-3.5 py-3 text-base mt-1.5"
+                  className="w-full rounded-xl border px-3 py-3 min-h-[44px] fs-input mt-2"
                   style={{
                     borderColor: "var(--border)",
                     background: "var(--surface)",
@@ -740,7 +804,7 @@ export default function AssetDetailPage() {
                 />
               </Field>
               <p
-                className="text-[12px] -mt-3 mb-4"
+                className="fs-body -mt-3 mb-4"
                 style={{ color: "var(--text-faint)" }}
               >
                 세금을 떼고 실제로 받은 금액을 넣어주세요. 증권사 앱에 찍힌 입금액이면 돼요.
@@ -760,7 +824,7 @@ export default function AssetDetailPage() {
                   </Field>
                   {fxHintText(dividendFxTouched, dividendRate.baseDate) && (
                     <p
-                      className="text-[12px] -mt-3 mb-4"
+                      className="fs-body -mt-3 mb-4"
                       style={{ color: "var(--text-faint)" }}
                     >
                       {fxHintText(dividendFxTouched, dividendRate.baseDate)}
@@ -789,12 +853,12 @@ export default function AssetDetailPage() {
         </>
       )}
 
-      <p
-        className="fs-body font-semibold mb-2.5 px-1"
-        style={{ color: "var(--text-sub)" }}
+      <h2
+        className="fs-body font-semibold px-1"
+        style={{ marginTop: "var(--rhythm-section)", marginBottom: "var(--rhythm-tight)", color: "var(--text-sub)" }}
       >
         거래 내역
-      </p>
+      </h2>
 
       {error && <ErrorBanner message={error} />}
 
@@ -822,9 +886,9 @@ export default function AssetDetailPage() {
                 className="card px-4 py-3 flex items-center justify-between"
               >
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span
-                      className="fs-caption font-semibold px-1.5 py-0.5 rounded-md"
+                      className="fs-caption font-semibold px-2 py-1 rounded-md"
                       style={{
                         color:
                           item.data.type === "BUY"
@@ -839,7 +903,7 @@ export default function AssetDetailPage() {
                       {transactionTypeLabel[item.data.type]}
                     </span>
                     <span
-                      className="text-[12px]"
+                      className="fs-body"
                       style={{ color: "var(--text-faint)" }}
                     >
                       {item.data.tradeDate}
@@ -957,15 +1021,15 @@ export default function AssetDetailPage() {
                 className="card px-4 py-3 flex items-center justify-between"
               >
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <span
-                      className="fs-caption font-semibold px-1.5 py-0.5 rounded-md"
+                      className="fs-caption font-semibold px-2 py-1 rounded-md"
                       style={{ color: "var(--gain)" }}
                     >
                       배당
                     </span>
                     <span
-                      className="text-[12px]"
+                      className="fs-body"
                       style={{ color: "var(--text-faint)" }}
                     >
                       {item.data.payDate}
@@ -973,7 +1037,7 @@ export default function AssetDetailPage() {
                   </div>
                   {item.data.exDividendDate && (
                     <p
-                      className="fs-caption mt-0.5"
+                      className="fs-caption mt-1"
                       style={{ color: "var(--text-faint)" }}
                     >
                       배당락일 {item.data.exDividendDate}
@@ -1013,6 +1077,17 @@ export default function AssetDetailPage() {
             ),
           )}
         </div>
+      )}
+
+      {renameOpen && holding && (
+        <RenameModal
+          title="종목 이름 수정"
+          currentName={holding.name}
+          loading={renaming}
+          error={renameError}
+          onConfirm={handleRename}
+          onCancel={() => setRenameOpen(false)}
+        />
       )}
 
       {deleteTxId !== null && (

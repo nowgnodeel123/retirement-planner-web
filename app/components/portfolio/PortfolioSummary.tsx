@@ -53,7 +53,7 @@ export function PortfolioSummary({
       >
         {formatKrw(summary.totalKrw)}
       </p>
-      <div className="flex items-center gap-1.5 mt-1">
+      <div className="flex items-center gap-2 mt-1">
         <span
           className="amount fs-title font-semibold"
           style={{

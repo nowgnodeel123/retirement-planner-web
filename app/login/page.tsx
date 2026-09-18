@@ -9,6 +9,7 @@ import { api, API_BASE_URL, ApiError } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
 import { ErrorBanner, inputClass, PrimaryButton, SecondaryButton } from "@/app/components/wizard/Ui";
 import { NestMark } from "@/app/components/brand/NestMark";
+import { SectionLabel } from "@/app/components/ui/Section";
 
 type Mode = "login" | "signup" | "findEmail" | "resetPassword";
 type Gender = "MALE" | "FEMALE";
@@ -17,13 +18,23 @@ type SendCodeResponse = { devCode: string };
 type VerifyCodeResponse = { verified: boolean };
 type FindEmailResponse = { maskedEmail: string };
 
-const TODAY = new Date().toISOString().slice(0, 10);
 const CODE_TTL_MS = 5 * 60 * 1000; // 백엔드 PhoneVerificationService.CODE_TTL과 동일(5분)
 
 function KakaoIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.86 1.93 5.37 4.82 6.77-.21.78-.76 2.84-.87 3.28-.14.55.2.55.42.4.17-.12 2.7-1.83 3.8-2.58.59.08 1.2.13 1.83.13 5.523 0 10-3.477 10-7.8C22 6.477 17.523 3 12 3z" />
+    </svg>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.46a5.52 5.52 0 0 1-2.4 3.62v3.01h3.88c2.27-2.09 3.58-5.17 3.58-8.82Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.94-2.91l-3.88-3.01c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.73-4.95H1.26v3.11A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56V6.61H1.26a12 12 0 0 0 0 10.78l4.01-3.11Z" />
+      <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.23 0 12 0A12 12 0 0 0 1.26 6.61l4.01 3.11C6.22 6.86 8.87 4.75 12 4.75Z" />
     </svg>
   );
 }
@@ -47,11 +58,71 @@ function sanitizePhone(raw: string): string {
   return raw.replace(/[^0-9]/g, "").slice(0, 11);
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+/**
+ * 생년월일 — 8자리 숫자로 직접 받는다(예: 19990323).
+ *
+ * WHY <input type="date">에서 바꿨나: 모바일에서 달력 피커가 뜨면 1990년대까지
+ * 거슬러 올라가는 데만 수십 번을 넘겨야 하고, 데스크톱에서는 브라우저·OS마다
+ * 표시 형식(mm/dd/yyyy vs yyyy-mm-dd)이 달라 무엇을 먼저 넣는지가 화면마다 다르다.
+ * 생년월일은 사용자가 이미 외우고 있는 숫자라 그냥 치게 하는 쪽이 빠르다.
+ *
+ * 저장은 계속 ISO(YYYY-MM-DD)다 — 백엔드 LocalDate는 그대로 두고 화면 입력만 바꾼다.
+ */
+function isValidBirth8(digits: string): boolean {
+  if (!/^\d{8}$/.test(digits)) return false;
+  const year = Number(digits.slice(0, 4));
+  const month = Number(digits.slice(4, 6));
+  const day = Number(digits.slice(6, 8));
+  if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return false;
+  // 2월 30일 같은 값을 걸러낸다 — Date가 조용히 3월로 넘겨버리므로 되돌려 비교한다.
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return false;
+  }
+  return date <= new Date();
+}
+
+/** 8자리 → ISO. 유효하지 않으면 빈 문자열(제출 조건에서 걸린다). */
+function birth8ToIso(digits: string): string {
+  if (!isValidBirth8(digits)) return "";
+  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
+}
+
+function BirthDateInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className: string;
+}) {
+  // 8자리를 다 치기 전에는 경고를 띄우지 않는다 — 치는 도중에 빨간 글씨가 떠 있으면
+  // 잘못 입력한 것처럼 읽힌다.
+  const invalid = value.length === 8 && !isValidBirth8(value);
+
   return (
-    <p className="text-xs font-semibold text-[var(--text-faint)] tracking-wide mb-3 mt-6 first:mt-0">
-      {children}
-    </p>
+    <div>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 8))}
+        placeholder="생년월일 8자리 (예: 19990323)"
+        className={className}
+        aria-label="생년월일 8자리"
+        autoComplete="bday"
+      />
+      {invalid && (
+        <p className="fs-body text-[var(--error)] mt-2 ml-1">
+          생년월일을 다시 확인해주세요.
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -62,22 +133,37 @@ function GenderToggle({
   value: Gender | null;
   onChange: (g: Gender) => void;
 }) {
+  // 이전엔 버튼 두 개가 한 줄을 통째로 차지해서, 값이 둘뿐인 입력치고 폼에서 가장
+  // 큰 덩어리였다. 라벨을 왼쪽에 두고 선택지를 오른쪽 세그먼트로 몰아 가로 폭만 줄인다.
+  // 높이(min-h-[44px])는 그대로 둔다 — 모바일이 1차 표면이라 최소 터치영역이 우선이고,
+  // 여기서 높이까지 줄이면 "컴팩트"가 아니라 누르기 어려운 버튼이 된다.
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {(["MALE", "FEMALE"] as const).map((g) => (
-        <button
-          key={g}
-          type="button"
-          onClick={() => onChange(g)}
-          className={`rounded-xl border py-3 text-sm font-medium transition-all ${
-            value === g
-              ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
-              : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-sub)] hover:border-[var(--text-faint)]"
-          }`}
-        >
-          {g === "MALE" ? "남성" : "여성"}
-        </button>
-      ))}
+    // 세로 padding을 두지 않는다 — 안쪽 버튼(44px)이 행 높이를 결정하게 해서
+    // 전체 높이가 기존(46px)과 같게 유지된다. 줄인 건 가로 폭이지 터치 높이가 아니다.
+    <div
+      className="flex items-center justify-between gap-3 rounded-xl border pl-3 pr-1"
+      style={{ borderColor: "var(--border)", background: "var(--surface)" }}
+    >
+      <span className="fs-body" style={{ color: "var(--text-faint)" }}>
+        성별
+      </span>
+      <div className="flex gap-2" role="group" aria-label="성별">
+        {(["MALE", "FEMALE"] as const).map((g) => (
+          <button
+            key={g}
+            type="button"
+            onClick={() => onChange(g)}
+            aria-pressed={value === g}
+            className={`min-h-[44px] px-5 rounded-lg border fs-title font-medium transition-all ${
+              value === g
+                ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-sub)] hover:border-[var(--text-faint)]"
+            }`}
+          >
+            {g === "MALE" ? "남성" : "여성"}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -141,7 +227,7 @@ function PasswordInput({
         </button>
       </div>
       {capsLockOn && !show && (
-        <p className="text-xs mt-1.5 ml-1" style={{ color: "var(--accent)" }}>
+        <p className="fs-body mt-2 ml-1" style={{ color: "var(--accent)" }}>
           Caps Lock이 켜져 있어요
         </p>
       )}
@@ -260,7 +346,7 @@ function PhoneVerificationField({
             type="button"
             onClick={handleSendCode}
             disabled={phone.length < 10 || submitting}
-            className="shrink-0 rounded-xl px-4 text-sm font-medium transition-all
+            className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
               hover:brightness-95 disabled:opacity-40 whitespace-nowrap"
             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
           >
@@ -268,7 +354,7 @@ function PhoneVerificationField({
           </button>
         )}
         {verified && (
-          <span className="shrink-0 flex items-center gap-1 text-[var(--accent)] text-sm font-medium px-2">
+          <span className="shrink-0 flex items-center gap-1 text-[var(--accent)] fs-title font-medium px-2">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
               <path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -280,7 +366,7 @@ function PhoneVerificationField({
       {codeSent && !verified && (
         <>
           {devCode && (
-            <p className="text-xs text-[var(--text-faint)] ml-1">
+            <p className="fs-body text-[var(--text-faint)] ml-1">
               개발용 인증번호: <span className="font-semibold text-[var(--text-sub)]">{devCode}</span>
               {" "}— 실제 서비스에서는 SMS로 발송됩니다.
             </p>
@@ -304,7 +390,7 @@ function PhoneVerificationField({
                 autoFocus
               />
               <span
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-medium tabular-nums"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 fs-body font-medium tabular-nums"
                 style={{ color: codeExpired ? "var(--error)" : "var(--text-faint)" }}
               >
                 {codeExpired ? "만료됨" : remainingLabel}
@@ -314,7 +400,7 @@ function PhoneVerificationField({
               type="button"
               onClick={handleVerifyCode}
               disabled={code.length === 0 || submitting || codeExpired}
-              className="shrink-0 rounded-xl px-4 text-sm font-medium transition-all
+              className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
                 hover:brightness-95 disabled:opacity-40"
               style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
             >
@@ -322,12 +408,12 @@ function PhoneVerificationField({
             </button>
           </div>
           {codeExpired && (
-            <p className="text-xs text-[var(--error)] ml-1">인증번호가 만료됐어요. 재발송해주세요.</p>
+            <p className="fs-body text-[var(--error)] ml-1">인증번호가 만료됐어요. 재발송해주세요.</p>
           )}
         </>
       )}
 
-      {error && <p className="text-xs text-[var(--error)] ml-1">{error}</p>}
+      {error && <p className="fs-body text-[var(--error)] ml-1">{error}</p>}
     </div>
   );
 }
@@ -399,7 +485,7 @@ export default function LoginPage() {
           password.length >= 8 &&
           password === passwordConfirm &&
           name.trim().length > 0 &&
-          birthDate.length > 0 &&
+          isValidBirth8(birthDate) &&
           gender !== null &&
           verifiedPhone !== null &&
           agreedToTerms &&
@@ -427,7 +513,9 @@ export default function LoginPage() {
         // 그대로 초기 닉네임으로 사용한다. 다른 닉네임을 쓰고 싶으면 가입 후
         // 마이페이지에서 바꾸면 된다.
         const res = await api.post<TokenResponse>("/api/auth/signup", {
-          email, password, nickname: name, name, birthDate, gender, phone: verifiedPhone,
+          email, password, nickname: name, name,
+          birthDate: birth8ToIso(birthDate),
+          gender, phone: verifiedPhone,
         });
         setTokens(res.accessToken, res.refreshToken);
         localStorage.setItem(LAST_EMAIL_KEY, email);
@@ -465,13 +553,13 @@ export default function LoginPage() {
       }}
     >
       <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2 mb-2.5">
+        <div className="flex items-center justify-center gap-2 mb-2">
           <NestMark size={34} />
-          <p className="text-2xl font-bold tracking-tight text-[var(--text-strong)]">
+          <p className="fs-metric font-bold tracking-tight text-[var(--text-strong)]">
             NEST
           </p>
         </div>
-        <p className="text-sm text-[var(--text-faint)]">
+        <p className="fs-title text-[var(--text-faint)]">
           지금 자산으로 은퇴가 준비될지 확인해보세요.
         </p>
       </div>
@@ -480,26 +568,47 @@ export default function LoginPage() {
         className="w-full max-w-[380px] bg-[var(--surface)] rounded-3xl p-6 border border-[var(--border)]"
         style={{ boxShadow: "0 8px 32px rgba(49,130,246,0.10)" }}
       >
-        {(mode === "login" || mode === "signup") && (
+        {/* 소셜 로그인은 로그인 화면에만 둔다 — 회원가입을 고른 사용자는 이메일로
+            가입하겠다고 이미 정한 것이라, 그 위에 다른 가입 경로를 다시 얹으면
+            폼을 채우던 흐름이 끊긴다. 카카오로 시작하려는 사용자는 로그인 화면에서
+            바로 누르면 되고, 그 버튼이 곧 가입도 겸한다. */}
+        {mode === "login" && (
           <>
-            <a
-              href={`${API_BASE_URL}/oauth2/authorization/kakao`}
-              className="flex items-center justify-center gap-2 w-full rounded-2xl py-3.5 fs-title font-semibold
-                bg-[#FEE500] text-[#191600] transition-all duration-150 hover:brightness-95 active:scale-[0.98]"
-            >
-              <KakaoIcon />
-              카카오로 시작하기
-            </a>
+            <div className="flex flex-col gap-2">
+              {/* 구글은 자리만 잡아둔 상태다 — OAuth 클라이언트 자격(구글 클라우드
+                  콘솔 발급)이 아직 없어서 누를 수 있게 해두면 실패 화면으로 간다.
+                  비활성으로 두되 위치는 확정해, 자격이 생기면 href만 채우면 되게 한다. */}
+              <button
+                type="button"
+                disabled
+                aria-label="구글로 시작하기 (준비중)"
+                className="flex items-center justify-center gap-2 w-full rounded-2xl py-3 fs-title font-semibold
+                  border border-[var(--border)] bg-[var(--surface)] text-[var(--text-faint)] cursor-not-allowed"
+                style={{ opacity: 0.6 }}
+              >
+                <GoogleIcon />
+                구글로 시작하기
+                <span className="fs-body font-normal">(준비중)</span>
+              </button>
+              <a
+                href={`${API_BASE_URL}/oauth2/authorization/kakao`}
+                className="flex items-center justify-center gap-2 w-full rounded-2xl py-3 fs-title font-semibold
+                  bg-[#FEE500] text-[#191600] transition-all duration-150 hover:brightness-95 active:scale-[0.98]"
+              >
+                <KakaoIcon />
+                카카오로 시작하기
+              </a>
+            </div>
             <div className="flex items-center gap-3 my-5">
               <div className="flex-1 h-px bg-[var(--border)]" />
-              <span className="text-xs text-[var(--text-faint)]">또는</span>
+              <span className="fs-body text-[var(--text-faint)]">또는</span>
               <div className="flex-1 h-px bg-[var(--border)]" />
             </div>
           </>
         )}
 
         {title && (
-          <p className="text-lg font-bold text-[var(--text-strong)] mb-5">{title}</p>
+          <p className="fs-metric font-bold text-[var(--text-strong)] mb-5">{title}</p>
         )}
 
         {error && <ErrorBanner message={error} />}
@@ -553,7 +662,7 @@ export default function LoginPage() {
                   autoComplete="new-password"
                 />
                 {passwordMismatch && (
-                  <p className="text-xs text-[var(--error)] mt-1.5 ml-1">비밀번호가 일치하지 않아요.</p>
+                  <p className="fs-body text-[var(--error)] mt-2 ml-1">비밀번호가 일치하지 않아요.</p>
                 )}
               </div>
             </div>
@@ -569,13 +678,10 @@ export default function LoginPage() {
                 className={inputClass}
                 autoComplete="name"
               />
-              <input
-                type="date"
+              <BirthDateInput
                 value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                max={TODAY}
+                onChange={setBirthDate}
                 className={inputClass}
-                aria-label="생년월일"
               />
               <GenderToggle value={gender} onChange={setGender} />
             </div>
@@ -583,12 +689,12 @@ export default function LoginPage() {
             <SectionLabel>본인 확인</SectionLabel>
             <PhoneVerificationField key={mode} onVerified={setVerifiedPhone} />
 
-            <label className="flex items-start gap-2.5 mt-6 cursor-pointer">
+            <label className="flex items-start gap-2 mt-6 cursor-pointer">
               <input
                 type="checkbox"
                 checked={agreedToTerms}
                 onChange={(e) => setAgreedToTerms(e.target.checked)}
-                className="mt-0.5 w-4 h-4 rounded accent-[var(--accent)] flex-shrink-0"
+                className="mt-1 w-4 h-4 rounded accent-[var(--accent)] flex-shrink-0"
               />
               <span className="fs-body text-[var(--text-sub)] leading-relaxed">
                 (필수){" "}
@@ -621,15 +727,15 @@ export default function LoginPage() {
           <div>
             {foundEmail ? (
               <div className="text-center py-2">
-                <p className="text-sm text-[var(--text-sub)] mb-2">가입하신 이메일이에요</p>
-                <p className="text-lg font-bold text-[var(--text-strong)] mb-6">{foundEmail}</p>
+                <p className="fs-title text-[var(--text-sub)] mb-2">가입하신 이메일이에요</p>
+                <p className="fs-metric font-bold text-[var(--text-strong)] mb-6">{foundEmail}</p>
                 <PrimaryButton onClick={() => switchMode("login")} className="w-full">
                   로그인하러 가기
                 </PrimaryButton>
               </div>
             ) : (
               <>
-                <p className="text-sm text-[var(--text-sub)] mb-4">
+                <p className="fs-title text-[var(--text-sub)] mb-4">
                   가입할 때 인증한 휴대전화번호로 본인 확인 후 이메일을 알려드려요.
                 </p>
                 <PhoneVerificationField key={mode} onVerified={setVerifiedPhone} autoFocus />
@@ -642,7 +748,7 @@ export default function LoginPage() {
           <div>
             {resetDone ? (
               <div className="text-center py-2">
-                <p className="text-sm text-[var(--text-sub)] mb-6">
+                <p className="fs-title text-[var(--text-sub)] mb-6">
                   비밀번호가 재설정됐어요. 새 비밀번호로 로그인해주세요.
                 </p>
                 <PrimaryButton onClick={() => switchMode("login")} className="w-full">
@@ -677,7 +783,7 @@ export default function LoginPage() {
                     autoComplete="new-password"
                   />
                   {resetPasswordMismatch && (
-                    <p className="text-xs text-[var(--error)] mt-1.5 ml-1">비밀번호가 일치하지 않아요.</p>
+                    <p className="fs-body text-[var(--error)] mt-2 ml-1">비밀번호가 일치하지 않아요.</p>
                   )}
                 </div>
               </div>
@@ -707,7 +813,7 @@ export default function LoginPage() {
         </form>
 
         {mode === "login" && (
-          <div className="flex items-center justify-center gap-3 mt-4 text-sm text-[var(--text-faint)]">
+          <div className="flex items-center justify-center gap-3 mt-4 fs-title text-[var(--text-faint)]">
             <button type="button" onClick={() => switchMode("findEmail")} className="hover:text-[var(--text-sub)]">
               아이디 찾기
             </button>
@@ -722,7 +828,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => switchMode(mode === "login" ? "signup" : "login")}
-            className="w-full text-center text-sm text-[var(--text-faint)] mt-4"
+            className="w-full text-center fs-title text-[var(--text-faint)] mt-4"
           >
             {mode === "login" ? (
               <>

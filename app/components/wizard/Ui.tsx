@@ -8,15 +8,19 @@
 // 의사 클래스까지 그대로 살리면서 라이트/다크 전환이 자동으로 따라오게 한다.
 import React, { useState } from "react";
 
+// min-h-[44px]를 명시하는 이유: 예전엔 py-3.5(14px)가 우연히 높이를 44px로 맞춰주고
+// 있었다. 간격을 4의 배수로 정리하면서 그 우연이 깨졌고, 패딩 값을 바꿀 때마다
+// 터치영역이 조용히 44px 밑으로 내려갈 수 있다는 게 드러났다.
+// 최소 높이를 직접 적어두면 패딩과 무관하게 보장된다.
 export const inputClass =
-  "w-full rounded-xl border px-3.5 py-3 text-base transition-all " +
+  "w-full rounded-xl border px-3 py-3 min-h-[44px] fs-input transition-all " +
   "border-[var(--border)] bg-[var(--surface)] text-[var(--text-strong)] " +
   "placeholder:text-[var(--text-faint)] " +
   "focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/10 focus:border-[var(--accent)] " +
   "hover:border-[var(--text-faint)]";
 
 export const smallInputClass =
-  "w-full rounded-lg border px-2.5 py-2.5 text-base transition-all " +
+  "w-full rounded-lg border px-2 py-2 min-h-[44px] fs-input transition-all " +
   "border-[var(--border)] bg-[var(--surface)] text-[var(--text-strong)] " +
   "placeholder:text-[var(--text-faint)] " +
   "focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/10 focus:border-[var(--accent)] " +
@@ -145,7 +149,7 @@ export function SectionCard({ children }: { children: React.ReactNode }) {
 export function ProgressBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="mb-5">
-      <div className="flex gap-1.5">
+      <div className="flex gap-2">
         {Array.from({ length: total }).map((_, i) => (
           <div
             key={i}
@@ -175,16 +179,16 @@ export function Field({
 }) {
   return (
     <div className="mb-4 last:mb-0">
-      <label className="text-sm text-[var(--text-sub)] font-medium">
+      <label className="fs-title text-[var(--text-sub)] font-medium">
         {label}
       </label>
       {badge}
-      <div className="flex items-center gap-2 mt-1.5">
+      <div className="flex items-center gap-2 mt-2">
         {children}
         {/* 단위 폭을 고정한다 — 안 그러면 "세"(1글자)와 "만원"(2글자)의 폭 차이가 그대로
             입력창 폭 차이로 밀려나, 세로로 쌓인 필드들의 오른쪽 끝이 12px씩 어긋난다.
             가장 넓은 단위(만원) 기준. */}
-        <span className="text-sm text-[var(--text-faint)] whitespace-nowrap min-w-[1.75rem]">
+        <span className="fs-title text-[var(--text-faint)] whitespace-nowrap min-w-[1.75rem]">
           {unit}
         </span>
       </div>
@@ -205,14 +209,14 @@ export function SmallField({
 }) {
   return (
     <div>
-      <label className="text-xs text-[var(--text-sub)] font-medium">
+      <label className="fs-body text-[var(--text-sub)] font-medium">
         {label}
       </label>
       {badge}
-      <div className="flex items-center gap-1.5 mt-1">
+      <div className="flex items-center gap-2 mt-1">
         {children}
-        {/* Field와 같은 이유로 폭 고정(위 주석 참조). 이쪽은 text-xs라 기준값이 작다. */}
-        <span className="text-xs text-[var(--text-faint)] whitespace-nowrap min-w-[1.5rem]">
+        {/* Field와 같은 이유로 폭 고정(위 주석 참조). 이쪽은 fs-body라 기준값이 작다. */}
+        <span className="fs-body text-[var(--text-faint)] whitespace-nowrap min-w-[1.5rem]">
           {unit}
         </span>
       </div>
@@ -227,7 +231,7 @@ export function SmallField({
  */
 export function PrefillBadge() {
   return (
-    <span className="inline-flex items-center gap-1 ml-1.5 align-middle rounded-full bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--accent)]">
+    <span className="inline-flex items-center gap-1 ml-2 align-middle rounded-full bg-[var(--accent-soft)] px-2 py-1 fs-caption font-medium text-[var(--accent)]">
       <svg className="w-2.5 h-2.5" viewBox="0 0 20 20" fill="currentColor">
         <path d="M9 2a1 1 0 012 0v9.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 11.586V2z" />
         <path d="M3 15a1 1 0 112 0v1h10v-1a1 1 0 112 0v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1z" />
@@ -247,7 +251,7 @@ export function NoticeBanner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 rounded-xl border border-[var(--warning)]/25 bg-[var(--warning-soft)] px-4 py-3 mb-4">
       <svg
-        className="w-4 h-4 text-[var(--warning)] mt-0.5 flex-shrink-0"
+        className="w-4 h-4 text-[var(--warning)] mt-1 flex-shrink-0"
         viewBox="0 0 20 20"
         fill="currentColor"
       >
@@ -260,6 +264,34 @@ export function NoticeBanner({ children }: { children: React.ReactNode }) {
       <p className="fs-body text-[var(--warning)] leading-relaxed">
         {children}
       </p>
+    </div>
+  );
+}
+
+/**
+ * 경고가 아닌 중립 안내(예: "지난번 입력을 불러왔어요").
+ *
+ * WHY NoticeBanner를 그대로 쓰지 않는가: 그건 호박색 경고 배너이고, globals.css에서
+ * --warning은 "시세 조회 실패처럼 값이 실제와 다를 수 있다"는 신호 전용으로 정해둔
+ * 토큰이다. 값이 채워졌다는 사실을 그 색으로 알리면 사용자는 뭔가 잘못됐다고 읽는다.
+ * 같은 배너 형태를 쓰되 색과 아이콘만 액센트 계열 정보 톤으로 바꾼다.
+ */
+export function InfoBanner({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-4 py-3 mb-4">
+      <svg
+        className="w-4 h-4 text-[var(--accent)] mt-1 flex-shrink-0"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          fillRule="evenodd"
+          d="M18 10A8 8 0 112 10a8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+          clipRule="evenodd"
+        />
+      </svg>
+      <p className="fs-body text-[var(--accent)] leading-relaxed">{children}</p>
     </div>
   );
 }
@@ -292,7 +324,7 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`relative rounded-2xl bg-[var(--accent)] text-white py-3.5 fs-title font-semibold
+      className={`relative rounded-2xl bg-[var(--accent)] text-white py-3 min-h-[44px] fs-title font-semibold
         shadow-[0_4px_14px_rgba(49,130,246,0.3)]
         transition-all duration-150
         hover:brightness-110 active:scale-[0.98] active:brightness-95
@@ -321,7 +353,7 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3.5 fs-title font-medium text-[var(--text)]
+      className={`rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 min-h-[44px] fs-title font-medium text-[var(--text)]
         transition-all duration-150 hover:bg-[var(--surface-pressed)] hover:border-[var(--text-faint)] active:scale-[0.98] ${className}`}
     >
       {children}
@@ -358,7 +390,7 @@ export function ErrorBanner({ message }: { message: string }) {
   return (
     <div className="flex items-start gap-2 rounded-xl border border-[var(--error)]/25 bg-[var(--error-soft)] px-4 py-3 mb-3">
       <svg
-        className="w-4 h-4 text-[var(--error)] mt-0.5 flex-shrink-0"
+        className="w-4 h-4 text-[var(--error)] mt-1 flex-shrink-0"
         viewBox="0 0 20 20"
         fill="currentColor"
       >
@@ -368,7 +400,7 @@ export function ErrorBanner({ message }: { message: string }) {
           clipRule="evenodd"
         />
       </svg>
-      <p className="text-sm text-[var(--error)] leading-relaxed">{message}</p>
+      <p className="fs-title text-[var(--error)] leading-relaxed">{message}</p>
     </div>
   );
 }

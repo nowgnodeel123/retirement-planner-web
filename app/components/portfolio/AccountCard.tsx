@@ -22,7 +22,7 @@ export function AccountCard({
         <InstitutionIcon type={account.institutionType} />
 
         {/* 이름 + 상세유형 배지 — 평가금액과 세로 가운데 정렬 */}
-        <div className="min-w-0 flex-1 flex items-center gap-1.5">
+        <div className="min-w-0 flex-1 flex items-center gap-2">
           <p
             className="font-semibold truncate fs-title"
             style={{ color: "var(--text-strong)" }}
@@ -31,7 +31,7 @@ export function AccountCard({
           </p>
           {account.detailType !== "NORMAL" && (
             <span
-              className="flex-shrink-0 font-medium rounded-md px-1.5 py-0.5 fs-caption"
+              className="flex-shrink-0 font-medium rounded-md px-2 py-1 fs-caption"
               style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
             >
               {detailTypeLabel[account.detailType]}
@@ -49,7 +49,7 @@ export function AccountCard({
               {formatKrw(summary.totalKrw)}
             </p>
             <p
-              className="amount font-medium mt-0.5 whitespace-nowrap fs-caption"
+              className="amount font-medium mt-1 whitespace-nowrap fs-caption"
               style={{ color: profitColor(summary.profitKrw) }}
             >
               {signed(summary.profitKrw, formatKrw(Math.abs(summary.profitKrw)))} (

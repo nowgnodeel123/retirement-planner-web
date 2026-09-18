@@ -10,7 +10,7 @@ export function CategoryBadge({
     // 좁은 자리(종목 검색 결과처럼 긴 이름 옆)에서도 "국내주 / 식"으로 쪼개지지 않도록
     // 줄바꿈을 막고 축소 대상에서 뺀다. 라벨이 짧아 폭을 양보할 이유가 없다.
     <span
-      className="inline-flex items-center gap-1.5 text-[12px] font-medium whitespace-nowrap flex-shrink-0"
+      className="inline-flex items-center gap-2 fs-body font-medium whitespace-nowrap flex-shrink-0"
       style={{ color: "var(--text-sub)" }}
     >
       <span

@@ -61,6 +61,9 @@ const SORT_LABEL: Record<HoldingSortKey, string> = {
   manual: "내 순서",
 };
 
+/** 보유 자산 목록에서 한 화면에 보여줄 개수. 그 이상은 목록 안에서 스크롤한다. */
+const HOLDINGS_VISIBLE = 5;
+
 function sortHoldings(
   list: AssetHoldingResponse[],
   key: HoldingSortKey,
@@ -143,11 +146,8 @@ export default function AccountDetailPage() {
   const [clearedOpen, setClearedOpen] = useState(false);
 
   // D-201: 계좌 이름 수정은 이 화면에서(제목 옆 연필). 포트폴리오 리스트에선 스와이프로 진입.
-  // 종목(자산) 수정/삭제 — 계좌와 동일하게 좌측 스와이프로 노출한다.
-  const [assetRenameTarget, setAssetRenameTarget] =
-    useState<AssetHoldingResponse | null>(null);
-  const [assetRenaming, setAssetRenaming] = useState(false);
-  const [assetRenameError, setAssetRenameError] = useState<string | null>(null);
+  // 종목(자산) 삭제만 좌측 스와이프로 노출한다 — 종목 이름 수정은 종목 상세 화면의
+  // 제목 옆 연필로 옮겼다(계좌와 같은 규칙).
   const [assetDeleteTarget, setAssetDeleteTarget] =
     useState<AssetHoldingResponse | null>(null);
   const [assetDeleting, setAssetDeleting] = useState(false);
@@ -284,23 +284,6 @@ export default function AccountDetailPage() {
       : null;
   })();
 
-  async function handleAssetRename(name: string) {
-    if (!assetRenameTarget) return;
-    setAssetRenaming(true);
-    setAssetRenameError(null);
-    try {
-      await api.patch(`/api/assets/${assetRenameTarget.assetId}/name`, { name });
-      setAssetRenameTarget(null);
-      loadHoldings();
-    } catch (e) {
-      setAssetRenameError(
-        e instanceof ApiError ? e.message : "이름 수정에 실패했어요.",
-      );
-    } finally {
-      setAssetRenaming(false);
-    }
-  }
-
   async function handleAssetDelete() {
     if (!assetDeleteTarget) return;
     setAssetDeleting(true);
@@ -319,7 +302,7 @@ export default function AccountDetailPage() {
   if (account === null) {
     return (
       <div className="max-w-[420px] mx-auto px-5 pt-16 text-center">
-        <p className="text-[14px] mb-4" style={{ color: "var(--text-sub)" }}>
+        <p className="fs-title mb-4" style={{ color: "var(--text-sub)" }}>
           계좌를 찾을 수 없어요.
         </p>
         <button
@@ -358,7 +341,7 @@ export default function AccountDetailPage() {
       <div className="mb-1">
         <div className="flex items-center gap-2">
           <h1
-            className="text-[17px] font-bold"
+            className="fs-title font-bold"
             style={{ color: "var(--text-strong)" }}
           >
             {account?.name ?? (
@@ -397,7 +380,7 @@ export default function AccountDetailPage() {
         </div>
         {account && (
           <p
-            className="text-[12px] mt-0.5"
+            className="fs-body mt-1"
             style={{ color: "var(--text-sub)" }}
           >
             {institutionLabel[account.institutionType]}
@@ -415,14 +398,14 @@ export default function AccountDetailPage() {
             총 평가금액
           </p>
           <p
-            className="amount fs-display font-bold mt-0.5"
+            className="amount fs-display font-bold mt-1"
             style={{ color: "var(--text-strong)" }}
           >
             {formatKrw(summary.totalKrw)}
           </p>
-          <div className="flex items-center gap-1.5 mt-1">
+          <div className="flex items-center gap-2 mt-1">
             <span
-              className="amount text-[14px] font-semibold"
+              className="amount fs-title font-semibold"
               style={{
                 color: profitColor(summary.profitKrw),
               }}
@@ -436,7 +419,7 @@ export default function AccountDetailPage() {
             </span>
           </div>
           <p
-            className="fs-caption mt-1.5"
+            className="fs-caption mt-2"
             style={{ color: "var(--text-faint)" }}
           >
             원화 환산 기준
@@ -447,20 +430,33 @@ export default function AccountDetailPage() {
       )}
       {(!summary || summary.totalKrw === null) && <div className="mb-6" />}
 
-      <div className="flex items-center justify-between mb-2.5 px-1">
-        <p
-          className="fs-body font-semibold"
-          style={{ color: "var(--text-sub)" }}
-        >
-          보유 자산
-        </p>
-        <div className="flex items-center gap-1">
+      {/* 섹션 헤더 — 포트폴리오 메인의 "내 계좌"와 같은 규칙(라벨 + 우측 조작).
+          개수와 "스크롤해서 더 보기"를 여기 적어, 목록이 잘려 보이는 게 사고가 아니라
+          의도라는 걸 밝힌다. */}
+      <div
+        className="flex items-end justify-between gap-2 px-1"
+        style={{ marginBottom: "var(--rhythm-tight)" }}
+      >
+        <div className="min-w-0">
+          <h2
+            className="fs-body font-semibold"
+            style={{ color: "var(--text-sub)" }}
+          >
+            보유 자산
+          </h2>
+          {activeHoldings.length > HOLDINGS_VISIBLE && (
+            <p className="fs-caption mt-1" style={{ color: "var(--text-faint)" }}>
+              {activeHoldings.length}개 · 스크롤해서 더 보기
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
           {activeHoldings.length >= 2 && (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setSortModalOpen((v) => !v)}
-                className="flex items-center gap-1 text-[12px] font-semibold px-2 py-1 rounded-lg"
+                className="flex items-center gap-1 fs-body font-semibold px-2 py-1 rounded-lg"
                 style={{ color: "var(--text-sub)" }}
               >
                 <svg
@@ -497,7 +493,7 @@ export default function AccountDetailPage() {
           )}
           <Link
             href={`/portfolio/accounts/${accountId}/assets/new`}
-            className="text-[12px] font-semibold px-2 py-1 rounded-lg"
+            className="fs-body font-semibold px-2 py-1 rounded-lg"
             style={{ color: "var(--accent)" }}
           >
             + 자산 추가
@@ -508,7 +504,7 @@ export default function AccountDetailPage() {
       {error && <ErrorBanner message={error} />}
 
       {holdings === null && !error && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           <SkeletonCard />
           <SkeletonCard />
         </div>
@@ -540,7 +536,7 @@ export default function AccountDetailPage() {
             >
               현재 보유 중인 자산이 없어요.
             </p>
-            <p className="text-[12px]" style={{ color: "var(--text-faint)" }}>
+            <p className="fs-body" style={{ color: "var(--text-faint)" }}>
               정리한 자산 {clearedHoldings.length}건은 아래에서 볼 수 있어요.
             </p>
           </div>
@@ -549,6 +545,7 @@ export default function AccountDetailPage() {
       {activeHoldings.length > 0 && (
         <ScrollableList
           className="card rise-in"
+          maxItems={HOLDINGS_VISIBLE}
           recomputeKey={sortedActiveHoldings.length}
         >
           {sortedActiveHoldings.map((h, idx) => {
@@ -565,8 +562,16 @@ export default function AccountDetailPage() {
                       카테고리는 이름 앞 색상 점(시인성)과 둘째 줄 라벨(명확성)로 나눠 담아
                       배지 전용 줄을 없앴다. 시세 기준일 안내는 행마다 반복하지 않고
                       목록 아래 한 줄로 모았다(반복이 카드 높이의 주범이었다). */}
-                  <div className="min-w-0">
-                    <p className="truncate flex items-center gap-1.5">
+                  {/* flex-1을 명시해야 오른쪽이 남긴 만큼이 아니라 "제 몫"을 먼저 가져간다.
+                      예전엔 min-w-0만 있어서 오른쪽(flex-shrink-0)이 필요한 폭을 전부 챙기고
+                      남은 것만 이름에 돌아갔다. 손익 문자열이 길어지면
+                      ("+18,564,000원 (+781.31%)") 이름 자리가 17px까지 줄어 "S.."가 됐다. */}
+                  <div className="min-w-0 flex-1">
+                    {/* 종목코드(symbol)를 첫 줄에서 뺐다. 이름과 같은 줄에 두면 코드가
+                        flex-shrink-0으로 45px쯤을 고정으로 챙겨서, 정작 이름이 "S.."까지
+                        줄어드는 일이 생긴다 — 무슨 종목인지 못 읽는 게 코드를 못 읽는 것보다
+                        나쁘다. 코드는 둘째 줄 보조 정보 줄로 내려 이름에 첫 줄 전체를 준다. */}
+                    <p className="truncate flex items-center gap-2">
                       <span
                         className="w-2 h-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: categoryColor[category] }}
@@ -577,19 +582,17 @@ export default function AccountDetailPage() {
                       >
                         {h.name}
                       </span>
-                      {!isCash && (
-                        <span
-                          className="text-[12px] flex-shrink-0"
-                          style={{ color: "var(--text-faint)" }}
-                        >
-                          {h.symbol}
-                        </span>
-                      )}
                     </p>
                     <p
-                      className="amount text-[12px] mt-1 truncate"
+                      className="amount fs-body mt-1 truncate"
                       style={{ color: "var(--text-sub)" }}
                     >
+                      {!isCash && (
+                        <>
+                          {h.symbol}
+                          {" · "}
+                        </>
+                      )}
                       {categoryLabel[category]}
                       {!isCash && (
                         <>
@@ -602,11 +605,14 @@ export default function AccountDetailPage() {
                     </p>
                   </div>
 
-                  {/* 우: 평가금액(주역) + 손익(색상) */}
-                  <div className="text-right flex-shrink-0">
+                  {/* 우: 평가금액(주역) + 손익(색상).
+                      max-w로 상한을 둬서 이름 자리를 굶기지 않는다. 상한에 걸리면 손익줄이
+                      두 줄로 접히는데, 종목명이 "S.."가 되는 것보다 낫다 — 접힌 숫자는
+                      그대로 읽히지만 잘린 이름은 무슨 종목인지 알 수 없다. */}
+                  <div className="text-right flex-shrink-0 max-w-[50%]">
                     {priceUnavailable ? (
                       <p
-                        className="text-[12px] mt-1"
+                        className="fs-body mt-1"
                         style={{ color: "var(--warning)" }}
                       >
                         시세 조회 실패
@@ -622,7 +628,7 @@ export default function AccountDetailPage() {
                           </p>
                           {h.profitAmount !== null && h.profitRate !== null && (
                             <p
-                              className="amount text-[12px] font-semibold mt-0.5"
+                              className="amount fs-body font-semibold mt-1"
                               style={{
                                 color: profitColor(h.profitAmount),
                               }}
@@ -642,7 +648,7 @@ export default function AccountDetailPage() {
                           {h.currency !== "KRW" &&
                             h.krwEvaluationAmount !== null && (
                               <p
-                                className="amount fs-caption mt-0.5"
+                                className="amount fs-caption mt-1"
                                 style={{ color: "var(--text-sub)" }}
                               >
                                 ≈ {formatKrw(h.krwEvaluationAmount)}
@@ -668,13 +674,12 @@ export default function AccountDetailPage() {
             );
 
             return (
+              /* 스와이프는 삭제 하나만 — 이름 수정은 종목 상세 화면 제목 옆 연필로
+                 옮겼다(계좌 상세와 같은 규칙). 목록에서 스와이프로 이름을 고치는 건
+                 바꾼 결과를 그 자리에서 확인하기 어려워 상세 화면 쪽이 맞다. */
               <SwipeRow
                 key={h.assetId}
                 flush
-                onEdit={() => {
-                  setAssetRenameError(null);
-                  setAssetRenameTarget(h);
-                }}
                 onDelete={() => setAssetDeleteTarget(h)}
               >
                 <Link
@@ -722,14 +727,14 @@ export default function AccountDetailPage() {
           <button
             type="button"
             onClick={() => setClearedOpen((v) => !v)}
-            className="w-full flex items-center justify-between px-1 mb-2.5"
+            className="w-full flex items-center justify-between px-1 mb-2"
           >
-            <p
+            <h2
               className="fs-body font-semibold"
               style={{ color: "var(--text-sub)" }}
             >
               정리한 자산 ({clearedHoldings.length})
-            </p>
+            </h2>
             <svg
               width="16"
               height="16"
@@ -756,21 +761,17 @@ export default function AccountDetailPage() {
                 return (
                   <SwipeRow
                     key={h.assetId}
-                    onEdit={() => {
-                      setAssetRenameError(null);
-                      setAssetRenameTarget(h);
-                    }}
                     onDelete={() => setAssetDeleteTarget(h)}
                   >
                   <Link
                     href={`/portfolio/accounts/${accountId}/assets/${h.assetId}`}
-                    className="card px-4 py-3.5 flex items-center justify-between gap-3 active:scale-[0.99] transition-transform"
+                    className="card px-4 py-3 flex items-center justify-between gap-3 active:scale-[0.99] transition-transform"
                     style={{ opacity: 0.75 }}
                   >
                     <div className="min-w-0">
                       <p className="truncate">
                         <span
-                          className="text-[14px] font-semibold"
+                          className="fs-title font-semibold"
                           style={{ color: "var(--text)" }}
                         >
                           {h.name}
@@ -790,7 +791,7 @@ export default function AccountDetailPage() {
                       </div>
                     </div>
                     <p
-                      className="amount text-[12px] flex-shrink-0"
+                      className="amount fs-body flex-shrink-0"
                       style={{ color: "var(--text-faint)" }}
                     >
                       평단 {formatMoney(h.averagePrice, h.currency)}
@@ -804,17 +805,6 @@ export default function AccountDetailPage() {
         </div>
       )}
       </>
-
-      {assetRenameTarget && (
-        <RenameModal
-          title="종목 이름 수정"
-          currentName={assetRenameTarget.name}
-          loading={assetRenaming}
-          error={assetRenameError}
-          onConfirm={handleAssetRename}
-          onCancel={() => setAssetRenameTarget(null)}
-        />
-      )}
 
       {assetDeleteTarget && (
         <ConfirmModal

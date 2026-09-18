@@ -34,7 +34,7 @@ export function RenameModal({
         style={{ background: "var(--surface)" }}
       >
         <p
-          className="text-[16px] font-semibold mb-4"
+          className="fs-title font-semibold mb-4"
           style={{ color: "var(--text-strong)" }}
         >
           {title}
@@ -54,7 +54,7 @@ export function RenameModal({
           className={inputClass}
         />
         {error && (
-          <p className="text-xs mt-2" style={{ color: "var(--error)" }}>
+          <p className="fs-body mt-2" style={{ color: "var(--error)" }}>
             {error}
           </p>
         )}

@@ -1,7 +1,14 @@
 // HoldingsDonutChart.tsx — M9 대시보드 도넛차트, 종목별 비중.
 // D-073(순수 빨강·파랑 제외 팔레트) / D-074(탭으로 하이라이트) 유지.
-// D-201: 범례는 차트 오른쪽에 두 열로. 도넛 가운데는 금액 대신 등급 엠블럼(TierEmblem).
-// 11개 이상이면 상위 9개 + "외 N개". 열 배분은 아래 legendGridStyle 주석 참고.
+// 범례는 도넛 오른쪽에 두 열, 한 열당 5개(열 우선으로 채움). 도넛 가운데는 등급 엠블럼.
+// 11개 이상이면 상위 9개 + "외 N개"(= 10칸 = 5×2).
+//
+// 긴 이름은 잘린다 — 열당 폭이 좁아서 "LG에너지솔루션"처럼 긴 이름은 들어가지 않는다.
+// 한 열로 풀거나 도넛 아래로 내리면 잘림은 사라지지만 세로가 길어져서, 이 화면에서는
+// 조밀함을 택했다(사용자 결정). 대신 조각을 탭하면 도넛 가운데에 전체 이름이 뜨므로
+// 잘린 이름을 확인할 경로는 남아 있다.
+// 도넛 지름은 112px — 140px에서 줄여 그만큼(28px)을 범례 폭으로 넘겼다.
+// 열당 폭 96 → 104px이 되어 잘리는 이름이 4개에서 1개로 줄었다.
 "use client";
 
 import { useState } from "react";
@@ -9,6 +16,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { HoldingSummary } from "./types";
 import { tierOf } from "./tier";
 import { TierEmblem } from "./TierEmblem";
+import { SectionHeader } from "@/app/components/ui/Section";
 
 // 범례는 두 열, 위→아래로 채우고 넘치면 오른쪽 열로(열 우선). 이름이 길면 truncate된다.
 // 왼쪽 열을 5개까지 다 채운 뒤에야 오른쪽 열이 하나씩 차는 구조다(실기기 QA 요청으로 변경).
@@ -16,7 +24,8 @@ import { TierEmblem } from "./TierEmblem";
 // 3개만 있어도 2/1로 갈려 "왼쪽이 안 찼는데 옆으로 넘어간다"고 읽혔다. 항목이 적을 때
 // 한 열로 모이는 쪽이 훨씬 자연스럽다는 판단. 대신 7개처럼 애매한 개수에서는 5/2로 갈려
 // 오른쪽 열 아래가 비는데, 이건 감수하기로 한 트레이드오프다.
-// 슬라이스는 최대 10개(상위 9 + "외 N개")라 5행이면 두 열을 넘지 않는다.
+// 왼쪽 열을 5개까지 채운 뒤에야 오른쪽 열이 찬다(열 우선). 행 수를 ceil(count/2)로
+// 잡으면 3개만 있어도 2/1로 갈려 "왼쪽이 안 찼는데 옆으로 넘어간다"고 읽힌다(D-229).
 const LEGEND_MAX_ROWS = 5;
 const legendRowsFor = (count: number) => Math.min(LEGEND_MAX_ROWS, Math.max(1, count));
 const legendGridStyle = (count: number): React.CSSProperties => ({
@@ -27,7 +36,7 @@ const legendGridStyle = (count: number): React.CSSProperties => ({
 });
 
 // D-073: 손익 색상(순수 빨강/파랑)과 혼동되지 않는 채도 상향 팔레트. 범례를 최대 9종목까지
-// 보여주므로(그 이상은 "외 N건"), 5색 순환으로는 인접 슬라이스 색이 겹쳐 10색으로 확장했다.
+// 보여주므로(그 이상은 "외 N개"), 5색 순환으로는 인접 슬라이스 색이 겹쳐 10색으로 확장했다.
 const PALETTE = [
   "#A78BFA", // 보라
   "#2DD4BF", // 청록
@@ -61,7 +70,7 @@ function buildSlices(holdings: HoldingSummary[]): Slice[] {
     value: h.totalKrw,
   });
 
-  // 종목 10개 이하면 전부 표시, 11개 이상이면 상위 9개 + "외 N건"(합계 10칸 = 범례 5×2).
+  // 10개 이하면 전부 표시, 11개 이상이면 상위 9개 + "외 N개"(합계 10칸 = 5행 × 2열).
   if (sorted.length <= MAX_NAMED_SLICES + 1) return sorted.map(toSlice);
 
   const top = sorted.slice(0, MAX_NAMED_SLICES).map(toSlice);
@@ -96,10 +105,10 @@ export function HoldingsDonutChart({
 
   if (holdings === null) {
     return (
-      <div className="flex items-center gap-4" style={{ marginBottom: "var(--rhythm-section)" }}>
+      <div className="flex items-center gap-3" style={{ marginBottom: "var(--rhythm-section)" }}>
         <div
           className="rounded-full animate-pulse flex-shrink-0"
-          style={{ width: 140, height: 140, background: "var(--border)" }}
+          style={{ width: 112, height: 112, background: "var(--border)" }}
         />
         <div className="flex-1 space-y-2">
           {[0, 1, 2].map((i) => (
@@ -119,18 +128,13 @@ export function HoldingsDonutChart({
   if (holdings.length === 0) {
     return (
       <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
-        <p
-          className="font-semibold px-1 fs-body"
-          style={{ marginBottom: "var(--rhythm-tight)", color: "var(--text-sub)" }}
-        >
-          비중
-        </p>
-        <div className="flex items-center gap-4">
+        <SectionHeader label="비중" />
+        <div className="flex items-center gap-3">
           <div
             className="relative flex-shrink-0 rounded-full flex items-center justify-center"
             style={{
-              width: 140,
-              height: 140,
+              width: 112,
+              height: 112,
               border: "14px solid var(--border)",
             }}
           >
@@ -177,17 +181,12 @@ export function HoldingsDonutChart({
 
   return (
     <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
-      <p
-        className="font-semibold px-1 fs-body"
-        style={{ marginBottom: "var(--rhythm-tight)", color: "var(--text-sub)" }}
-      >
-        비중
-      </p>
+      <SectionHeader label="비중" />
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div
           className="relative flex-shrink-0 fade-in"
-          style={{ width: 140, height: 140 }}
+          style={{ width: 112, height: 112 }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -197,8 +196,8 @@ export function HoldingsDonutChart({
                 nameKey="label"
                 cx="50%"
                 cy="50%"
-                innerRadius={44}
-                outerRadius={64}
+                innerRadius={34}
+                outerRadius={50}
                 paddingAngle={slices.length > 1 ? 2 : 0}
                 stroke="none"
                 // 등장 애니메이션 비활성화 — 리사이즈/측정 타이밍과 겹치면 슬라이스가
@@ -233,7 +232,7 @@ export function HoldingsDonutChart({
                   {active.label}
                 </p>
                 <p
-                  className="amount font-bold mt-0.5 fs-body"
+                  className="amount font-bold mt-1 fs-body"
                   style={{ color: "var(--text-strong)" }}
                 >
                   {total > 0 ? `${((active.value / total) * 100).toFixed(1)}%` : "0%"}
@@ -245,10 +244,9 @@ export function HoldingsDonutChart({
           </div>
         </div>
 
-        {/* 범례 — 차트 오른쪽 배치, 두 열 열 우선. 탭으로도 하이라이트 가능.
-            종목명이 길면 truncate, 티커는 공간상 생략. */}
+        {/* 범례 — 도넛 오른쪽, 두 열 × 5행(열 우선). 탭으로도 하이라이트 가능. */}
         <div
-          className="flex-1 min-w-0 gap-x-2.5 gap-y-1"
+          className="flex-1 min-w-0 gap-x-1 gap-y-1"
           style={legendGridStyle(slices.length)}
         >
           {slices.map((s, i) => (
@@ -256,7 +254,7 @@ export function HoldingsDonutChart({
               key={s.key}
               type="button"
               onClick={() => handleClick(i)}
-              className="flex items-center gap-1 min-w-0 py-0.5 rounded transition-opacity"
+              className="flex items-center gap-1 min-w-0 py-1 rounded transition-opacity"
               style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.4 }}
             >
               <span
