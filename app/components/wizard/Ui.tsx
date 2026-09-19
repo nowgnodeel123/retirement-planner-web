@@ -386,7 +386,23 @@ function Spinner() {
  * WHY: 위저드 바깥에 따로 떨어져 있으면 스크롤해야 보이거나, 어느 단계
  * 에러인지 헷갈릴 수 있다. 버튼 바로 위에 둬서 화면 이동 없이 바로 인지되게 한다.
  */
-export function ErrorBanner({ message }: { message: string }) {
+/**
+ * onRetry를 주면 배너 안에 "다시 시도" 버튼이 붙는다.
+ *
+ * WHY: 복구 테스트(백엔드를 죽이고 화면을 확인)에서, 에러 문구는 뜨는데 사용자가
+ * 할 수 있는 게 새로고침밖에 없다는 걸 발견했다. 통신 실패는 대부분 일시적이라
+ * 그 자리에서 한 번 더 시도할 경로가 있어야 한다 — 새로고침은 스크롤 위치와
+ * 화면 상태를 통째로 날린다.
+ */
+export function ErrorBanner({
+  message,
+  onRetry,
+  retrying,
+}: {
+  message: string;
+  onRetry?: () => void;
+  retrying?: boolean;
+}) {
   return (
     <div className="flex items-start gap-2 rounded-xl border border-[var(--error)]/25 bg-[var(--error-soft)] px-4 py-3 mb-3">
       <svg
@@ -400,7 +416,19 @@ export function ErrorBanner({ message }: { message: string }) {
           clipRule="evenodd"
         />
       </svg>
-      <p className="fs-title text-[var(--error)] leading-relaxed">{message}</p>
+      <div className="flex-1 min-w-0">
+        <p className="fs-title text-[var(--error)] leading-relaxed">{message}</p>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            disabled={retrying}
+            className="mt-2 min-h-[44px] px-3 -ml-3 fs-body font-semibold text-[var(--error)] underline underline-offset-2 disabled:opacity-60"
+          >
+            {retrying ? "다시 시도하는 중…" : "다시 시도"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

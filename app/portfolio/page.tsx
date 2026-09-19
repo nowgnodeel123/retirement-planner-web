@@ -179,6 +179,7 @@ export default function PortfolioPage() {
   const [nickname, setNickname] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   // 사용자가 직접 고른 정렬. null이면 아직 안 골랐다는 뜻이라 아래에서 기본값을 정한다.
   const [pickedSort, setPickedSort] = useState<{
@@ -222,22 +223,45 @@ export default function PortfolioPage() {
     [],
   );
 
-  useEffect(() => {
-    api
+  // 재시도 가능하도록 첫 로딩을 함수로 뺀다. 백엔드가 잠깐 죽었을 때 사용자가
+  // 새로고침 말고 그 자리에서 다시 시도할 수 있어야 한다(복구 테스트에서 발견).
+  //
+  // 여기서는 setState를 동기로 부르지 않는다 — 이펙트에서 바로 호출되므로
+  // 연쇄 렌더가 된다(react-hooks 린트가 잡아준다). 배너 초기화와 진행 표시는
+  // 재시도 핸들러(handleRetry)에서만 한다.
+  const loadAll = useCallback(() => {
+    const accountsP = api
       .get<AccountResponse[]>("/api/accounts")
       .then(setAccounts)
-      .catch((e) =>
-        setError(e instanceof ApiError ? e.message : "계좌를 불러오지 못했어요."),
-      );
+      .catch((e) => {
+        setError(e instanceof ApiError ? e.message : "계좌를 불러오지 못했어요.");
+        throw e;
+      });
 
     loadSummary();
     loadRetirementCard();
 
+    // 닉네임은 실패해도 화면을 막지 않는다. 다만 영영 스켈레톤으로 두지는 않는다 —
+    // 로딩이 끝났는데 회색 막대가 남아 있으면 "아직 불러오는 중"으로 읽힌다.
     api
       .get<{ nickname: string }>("/api/users/me")
       .then((me) => setNickname(me.nickname))
-      .catch(() => {});
+      .catch(() => setNickname(""));
+
+    return accountsP;
   }, [loadSummary, loadRetirementCard]);
+
+  useEffect(() => {
+    loadAll().catch(() => {});
+  }, [loadAll]);
+
+  function handleRetry() {
+    setError(null);
+    setRetrying(true);
+    loadAll()
+      .catch(() => {})
+      .finally(() => setRetrying(false));
+  }
 
   const summaryMap = useMemo(() => {
     const m = new Map<number, AccountSummary>();
@@ -331,14 +355,16 @@ export default function PortfolioPage() {
         <Link
           href="/my"
           aria-label="설정"
-          className="pressable p-2 rounded-lg flex-shrink-0"
+          // 아이콘 20px + p-2(8px)로는 36×36이라 최소 터치영역(44px)에 못 미쳤다.
+          // 아이콘 크기는 그대로 두고 눌리는 영역만 44px로 넓힌다.
+          className="pressable rounded-lg flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
           style={{ color: "var(--text-sub)" }}
         >
           <GearIcon />
         </Link>
       </div>
 
-      {error && <ErrorBanner message={error} />}
+      {error && <ErrorBanner message={error} onRetry={handleRetry} retrying={retrying} />}
 
       {accounts !== null && (
         <>

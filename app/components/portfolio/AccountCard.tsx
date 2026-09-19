@@ -40,8 +40,13 @@ export function AccountCard({
         </div>
 
         {/* 평가금액(가운데 기준) + 그 아래 딱 붙는 수익금(수익률) */}
+        {/* 우측 금액 블록에 max-w 상한을 둬서 계좌명 자리를 굶기지 않게 한다.
+            손익줄이 nowrap이면 필요한 만큼 폭을 전부 가져가고, 글자 크기를 "크게"로
+            올리면 계좌명이 "볼륨계좌00"처럼 잘린다(실측 60건).
+            계좌 상세의 종목 행에서 고친 것과 같은 패턴이다 —
+            잘린 금액은 이상해 보일 뿐이지만 잘린 계좌명은 어느 계좌인지를 못 읽게 만든다. */}
         {summary && (
-          <div className="flex flex-col items-end flex-shrink-0 leading-tight -mb-[16px]">
+          <div className="flex flex-col items-end flex-shrink-0 leading-tight -mb-[16px] max-w-[46%]">
             <p
               className="amount font-bold fs-title"
               style={{ color: "var(--text-strong)" }}
@@ -49,7 +54,7 @@ export function AccountCard({
               {formatKrw(summary.totalKrw)}
             </p>
             <p
-              className="amount font-medium mt-1 whitespace-nowrap fs-caption"
+              className="amount font-medium mt-1 fs-caption text-right"
               style={{ color: profitColor(summary.profitKrw) }}
             >
               {signed(summary.profitKrw, formatKrw(Math.abs(summary.profitKrw)))} (

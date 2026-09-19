@@ -8,23 +8,41 @@
 
 export interface Tier {
   name: string;
+  /**
+   * 광물 글리프(그래픽)에 쓰는 색. WCAG 1.4.11(비텍스트 대비 3:1) 대상이라
+   * 원래 광물 느낌을 그대로 유지한다.
+   */
   color: string;
+  /**
+   * **등급 이름 텍스트**용 CSS 클래스. 글리프 색을 그대로 텍스트에 쓰면 AA(4.5:1)에 걸린다 —
+   * 실측 결과 라이트에서 6개(플래티넘 2.48, 다이아몬드 2.31 등), 다크에서 3개가 미달이었다.
+   * 광택 있는 광물색은 원래 밝아서 흰 배경 위 텍스트로는 안 맞는다.
+   *
+   * 실제 색은 globals.css의 `.tier-label-*`에 있다. 인라인 style이 아니라 클래스인 이유:
+   * 테마마다 필요한 방향이 반대(라이트는 어둡게, 다크는 밝게)라 값이 두 벌인데,
+   * JS로 테마를 읽어 고르면 서버 렌더(라이트)와 클라이언트가 달라져 하이드레이션 경고가 난다
+   * (S-041에서 localStorage를 useState 초기값으로 읽다가 같은 문제를 겪었다).
+   * CSS면 `.dark` 선택자가 알아서 처리하고 전환도 즉시 따라온다.
+   */
+  labelClass: string;
   /** 이 등급의 하한(원). 다음 등급까지의 진척도 표시에 쓸 수 있다. */
   floor: number;
   /** 이 등급의 상한(원, 미만). 최상위 등급은 상한이 없어 null. */
   ceiling: number | null;
 }
 
+// labelColor 뒤 괄호는 해당 테마 배경 위 실측 대비. 색을 바꾸면 반드시 다시 잴 것.
 export const TIERS: Tier[] = [
-  { name: "언랭크", color: "#9AA0A6", floor: 0, ceiling: 10_000_000 },
-  { name: "브론즈", color: "#A9714B", floor: 10_000_000, ceiling: 50_000_000 },
-  { name: "실버", color: "#8E99A4", floor: 50_000_000, ceiling: 100_000_000 },
-  { name: "골드", color: "#C79A2E", floor: 100_000_000, ceiling: 500_000_000 },
-  { name: "플래티넘", color: "#3FB6A8", floor: 500_000_000, ceiling: 1_000_000_000 },
-  { name: "다이아몬드", color: "#4FB6E0", floor: 1_000_000_000, ceiling: 3_000_000_000 },
-  { name: "루비", color: "#C2405E", floor: 3_000_000_000, ceiling: 5_000_000_000 },
-  { name: "마스터", color: "#7C5CE6", floor: 5_000_000_000, ceiling: null },
+  { name: "언랭크", color: "#9AA0A6", labelClass: "tier-label-unranked", floor: 0, ceiling: 10_000_000 },
+  { name: "브론즈", color: "#A9714B", labelClass: "tier-label-bronze", floor: 10_000_000, ceiling: 50_000_000 },
+  { name: "실버", color: "#8E99A4", labelClass: "tier-label-silver", floor: 50_000_000, ceiling: 100_000_000 },
+  { name: "골드", color: "#C79A2E", labelClass: "tier-label-gold", floor: 100_000_000, ceiling: 500_000_000 },
+  { name: "플래티넘", color: "#3FB6A8", labelClass: "tier-label-platinum", floor: 500_000_000, ceiling: 1_000_000_000 },
+  { name: "다이아몬드", color: "#4FB6E0", labelClass: "tier-label-diamond", floor: 1_000_000_000, ceiling: 3_000_000_000 },
+  { name: "루비", color: "#C2405E", labelClass: "tier-label-ruby", floor: 3_000_000_000, ceiling: 5_000_000_000 },
+  { name: "마스터", color: "#7C5CE6", labelClass: "tier-label-master", floor: 5_000_000_000, ceiling: null },
 ];
+
 
 export function tierOf(totalAssetKrw: number | null | undefined): Tier {
   if (totalAssetKrw == null || totalAssetKrw < 0) return TIERS[0];

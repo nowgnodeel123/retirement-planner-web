@@ -36,18 +36,30 @@
   --accent: #0f766e;
   --accent-soft: #e8f4f2;
 
-  /* 손익 — 토스 계열 팔레트 (D-049: 빨강=이득/파랑=손실) */
-  --gain: #f04452;
-  --loss: #3182f6;
+  /* 손익 — D-049: 빨강=이득 / 파랑=손실 (서구권 반대 관례 금지).
+     ⚠ 예전 값(#f04452 / #3182f6)은 **WCAG AA 미달**이었다. 라이트모드 실측 결과
+     흰 카드 위 3.71:1, 페이지 배경 위 3.56:1로 본문 기준 4.5:1에 못 미쳤다.
+     이 색이 칠해지는 건 손익금액·손익률 — 이 앱에서 **사용자가 가장 오래 쳐다보는
+     숫자**라, 하필 거기가 제일 안 읽히는 상태였다.
+     색상(hue)은 그대로 두고 명도만 낮춰 통과시킨다. soft 배경 위에서도 재야 한다:
+       --gain #d42839 → bg 4.83 / surface 5.05 / gain-soft 4.61  ✅
+       --loss #1d6ada → bg 4.88 / surface 5.09 / loss-soft 4.53  ✅
+     다크모드는 원래 6.4~7.3:1로 통과라 손대지 않는다 — 라이트만 빠져 있었다.
+     색만으로 이익/손실을 구분하지 않는다는 원칙은 그대로다(부호 +/- 상시 표기). */
+  --gain: #d42839;
+  --loss: #1d6ada;
   --gain-soft: #fef2f2;
   --loss-soft: #e8f3ff;
 
-  /* 에러 배너 전용 — --gain(빨강)과 값은 같아 보여도 의미가 달라 별도 토큰으로 분리 */
-  --error: #f04452;
+  /* 에러 배너 전용 — --gain(빨강)과 값은 같아 보여도 의미가 달라 별도 토큰으로 분리.
+     대비 기준은 --gain과 동일하게 맞춘다(error-soft 위 4.61:1). */
+  --error: #d42839;
   --error-soft: #fef2f2;
 
-  /* 경고(시세 조회 실패 등) 전용 — 호박색 계열, 이익/손실 색상과 혼동 방지 위해 별도 토큰 */
-  --warning: #d97706;
+  /* 경고(시세 조회 실패 등) 전용 — 호박색 계열, 이익/손실 색상과 혼동 방지 위해 별도 토큰.
+     예전 #d97706은 흰 배경 위 3.19:1로 AA 미달이었다(호박색은 원래 대비 확보가 어렵다).
+     #b45309 → bg 4.81 / surface 5.02 / warning-soft 4.84 ✅ */
+  --warning: #b45309;
   --warning-soft: #fffbeb;
 
   /* 카테고리 (D-073 채도 상향 절충안 유지) */
@@ -300,3 +312,30 @@ body {
 .menu-slide-up {
   animation: menu-slide-up 0.18s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
+
+/* ── 등급 이름 텍스트 색 ──────────────────────────────────────────
+   광물 글리프에 쓰는 색(tier.ts의 color)을 텍스트에 그대로 쓰면 AA(4.5:1)에 걸린다.
+   실측: 라이트에서 6개 미달(플래티넘 2.48, 다이아몬드 2.31, 골드 2.60, 언랭크 2.64,
+   실버 2.90, 브론즈 4.08), 다크에서 3개 미달(루비 3.53, 마스터 3.82, 브론즈 4.35).
+   광물색은 원래 밝고 채도가 높아 흰 배경 위 텍스트로는 안 맞는다.
+
+   색상(hue)·채도는 그대로 두고 명도만 옮겨 4.6:1 이상을 맞췄다. 테마마다 옮겨야 할
+   방향이 반대라 두 벌이 필요하고, 그래서 인라인 style이 아니라 클래스로 둔다.
+   괄호 안은 각 테마 카드 배경(#ffffff / #18181b) 위 실측 대비. 색을 바꾸면 다시 잴 것. */
+.tier-label-unranked  { color: #6d757c; } /* 4.68 */
+.tier-label-bronze    { color: #9b6845; } /* 4.71 */
+.tier-label-silver    { color: #697582; } /* 4.70 */
+.tier-label-gold      { color: #917022; } /* 4.62 */
+.tier-label-platinum  { color: #2d8177; } /* 4.65 */
+.tier-label-diamond   { color: #1d7ca2; } /* 4.71 */
+.tier-label-ruby      { color: #C2405E; } /* 5.01 — 원래 색이 이미 통과 */
+.tier-label-master    { color: #7C5CE6; } /* 4.64 — 원래 색이 이미 통과 */
+
+.dark .tier-label-unranked  { color: #9AA0A6; } /* 6.71 — 다크에선 원래 색이 통과 */
+.dark .tier-label-bronze    { color: #b0764e; } /* 4.68 */
+.dark .tier-label-silver    { color: #8E99A4; } /* 6.11 */
+.dark .tier-label-gold      { color: #C79A2E; } /* 6.83 */
+.dark .tier-label-platinum  { color: #3FB6A8; } /* 7.14 */
+.dark .tier-label-diamond   { color: #4FB6E0; } /* 7.68 */
+.dark .tier-label-ruby      { color: #cc5f78; } /* 4.62 */
+.dark .tier-label-master    { color: #8a6ee9; } /* 4.63 */

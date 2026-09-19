@@ -87,7 +87,11 @@ export function RetirementAgeCard({
         >
           지금 자산이면
         </p>
-        <span className="fs-caption" style={{ color: "var(--text-faint)" }}>
+        {/* --text-faint는 흰 배경 기준으로 잡힌 색이라, 이 카드의 accent-soft 위에서는
+            라이트 4.49 / 다크 4.13으로 AA(4.5)에 아슬하게 못 미쳤다(실측).
+            한 단계 진한 --text-sub로 올린다 — 위계상으로도 이 줄은 각주가 아니라
+            "무슨 기준으로 계산했는지"를 밝히는 전제라 각주보다 뚜렷한 게 맞다. */}
+        <span className="fs-caption" style={{ color: "var(--text-sub)" }}>
           월 {card.targetMonthlyExpense?.toLocaleString()}만원 기준
         </span>
       </div>

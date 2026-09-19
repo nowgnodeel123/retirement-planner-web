@@ -180,7 +180,9 @@ export function TierEmblem({ tier, size = 32 }: { tier: Tier; size?: number }) {
       >
         <TierGlyph tier={tier} size={size} />
         <span className="flex items-center gap-1 leading-none">
-          <span className="fs-caption font-bold" style={{ color: tier.color }}>
+          {/* 텍스트 색은 글리프 색(tier.color)과 다르다 — 광물색을 그대로 쓰면
+              AA 미달이라 테마별 대비 보정값을 클래스로 입힌다(globals.css). */}
+          <span className={`fs-caption font-bold ${tier.labelClass}`}>
             {tier.name}
           </span>
           <span
