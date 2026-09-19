@@ -117,16 +117,26 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
           </p>
         </div>
       ) : (
-        <div className="bg-amber-50 rounded-2xl border border-amber-200 p-6 text-center mb-5 rise-in">
-          <p className="fs-body text-amber-700 mb-2 font-medium">
+        /* 경고 카드 — 예전엔 bg-amber-50 / text-amber-700 / text-neutral-500처럼
+           Tailwind 팔레트를 직접 박아 썼다. 그러면 **다크모드에 반응하지 않는다**:
+           페이지가 rgb(10,10,11)인데 이 카드만 밝은 크림색으로 남아 혼자 떠 있었다(실측).
+           --warning 계열 토큰은 라이트/다크 값이 짝으로 정의돼 있으므로 그쪽을 쓴다. */
+        <div
+          className="rounded-2xl border p-6 text-center mb-5 rise-in"
+          style={{
+            background: "var(--warning-soft)",
+            borderColor: "color-mix(in srgb, var(--warning) 25%, transparent)",
+          }}
+        >
+          <p className="fs-body mb-2 font-medium" style={{ color: "var(--warning)" }}>
             시뮬레이션 결과
           </p>
-          <p className="fs-metric font-bold text-amber-700 leading-snug">
+          <p className="fs-metric font-bold leading-snug" style={{ color: "var(--warning)" }}>
             지금 페이스로는 {retirementAge}세까지도
             <br />
             목표를 채우기 어려워요
           </p>
-          <p className="fs-body text-neutral-500 mt-3 leading-relaxed">
+          <p className="fs-body mt-3 leading-relaxed" style={{ color: "var(--text-sub)" }}>
             납입액을 늘리거나 목표 생활비를 낮춰서 다시 계산해보세요. 아래
             그래프에서 어느 시점부터 부족해지는지 볼 수 있어요.
           </p>

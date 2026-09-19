@@ -105,7 +105,7 @@ export interface AssetBuyRequest {
 
 export const institutionLabel: Record<InstitutionType, string> = {
   SECURITIES: "증권사",
-  EXCHANGE: "거래소",
+  EXCHANGE: "코인 거래소",
 };
 
 export const detailTypeLabel: Record<AccountDetailType, string> = {
@@ -113,6 +113,21 @@ export const detailTypeLabel: Record<AccountDetailType, string> = {
   ISA: "ISA",
   IRP: "IRP",
   PENSION_SAVINGS: "연금저축",
+};
+
+/**
+ * 계좌 상세 유형의 한 줄 설명.
+ *
+ * WHY: ISA·IRP는 풀어쓰지 않으면 뜻을 모르는 약어다. 계좌 등록 화면에서 네 개를
+ * 나란히 놓고 고르라고만 하면, 이 제도를 모르는 사용자는 무엇을 골라야 할지 알 수 없고
+ * 잘못 고르면 세금·수익 탭 집계까지 달라진다(D-233/D-234).
+ * 목록·배지에는 짧은 라벨을 쓰고, **고르는 자리에서는** 이 설명을 함께 보여준다.
+ */
+export const detailTypeDescription: Record<AccountDetailType, string> = {
+  NORMAL: "가장 일반적인 계좌예요. 잘 모르겠다면 이걸 고르세요.",
+  ISA: "개인종합자산관리계좌. 여러 상품을 한 계좌에 담고 세금 혜택을 받아요.",
+  IRP: "개인형 퇴직연금. 퇴직금을 넣거나 직접 넣어 노후에 연금으로 받아요.",
+  PENSION_SAVINGS: "연금저축. 매년 넣은 돈만큼 세금을 돌려받고 노후에 연금으로 받아요.",
 };
 
 export const categoryLabel: Record<AssetCategory, string> = {

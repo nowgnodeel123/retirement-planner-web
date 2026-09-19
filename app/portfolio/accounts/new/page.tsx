@@ -15,6 +15,7 @@ import { InstitutionTypeSelector } from "@/app/components/portfolio/InstitutionT
 import {
   AccountDetailType,
   AccountResponse,
+  detailTypeDescription,
   detailTypeLabel,
   InstitutionType,
 } from "@/app/components/portfolio/types";
@@ -119,6 +120,16 @@ export default function NewAccountPage() {
                 );
               })}
             </div>
+            {/* 고른 유형이 뭔지 바로 아래에 한 줄로 밝힌다.
+                ISA·IRP는 풀어쓰지 않으면 뜻을 모르는 약어라, 네 개를 나란히 놓고
+                고르라고만 하면 제도를 모르는 사용자는 무엇을 골라야 할지 알 수 없다.
+                잘못 고르면 세금·수익 집계까지 달라진다(D-233/D-234). */}
+            <p
+              className="fs-body mt-2 leading-relaxed"
+              style={{ color: "var(--text-sub)" }}
+            >
+              {detailTypeDescription[detailType]}
+            </p>
           </div>
         )}
 

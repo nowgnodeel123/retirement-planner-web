@@ -133,7 +133,7 @@ function ScopeNotice({ scope }: { scope: TaxScope }) {
         {cryptoOnly.length > 0 && (
           <>
             {" "}
-            거래소 계좌 {cryptoOnly.length}곳({cryptoOnly.map((a) => a.name).join(", ")})은
+            코인 거래소 계좌 {cryptoOnly.length}곳({cryptoOnly.map((a) => a.name).join(", ")})은
             이 앱이 가상자산 세금을 추정하지 않아 뺐어요.
           </>
         )}

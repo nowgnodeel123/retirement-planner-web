@@ -95,7 +95,7 @@ const SORT_LABEL: Record<HoldingSortKey, string> = {
 
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center text-center pt-20 px-6 rise-in">
+    <div className="flex flex-col items-center text-center pt-4 px-6 rise-in">
       <div
         className="w-16 h-16 rounded-3xl flex items-center justify-center mb-5"
         style={{ background: "var(--accent-soft)" }}
@@ -124,9 +124,9 @@ function EmptyState() {
         className="leading-relaxed fs-body"
         style={{ marginBottom: "var(--rhythm-section)", color: "var(--text-sub)" }}
       >
-        증권사, 거래소 계좌를 등록하고
+        증권사·은행 계좌를 등록하면
         <br />
-        자산을 한곳에 정리해보세요
+        흩어진 자산을 한곳에서 볼 수 있어요
       </p>
       <Link
         href="/portfolio/accounts/new"
@@ -277,6 +277,8 @@ export default function PortfolioPage() {
   const sortKey = pickedSort?.key ?? (hasManualOrder ? "manual" : "value");
   const sortDir = pickedSort?.dir ?? (hasManualOrder ? "asc" : "desc");
 
+  const hasAccounts = accounts !== null && accounts.length > 0;
+
   const sortedAccounts = useMemo(
     () => sortAccounts(accounts ?? [], summaryMap, sortKey, sortDir),
     [accounts, summaryMap, sortKey, sortDir],
@@ -326,8 +328,6 @@ export default function PortfolioPage() {
     }
   }
 
-  const hasAccounts = accounts !== null && accounts.length > 0;
-
   return (
     <div className="max-w-[420px] w-full mx-auto px-5 pt-7">
       <div className="flex items-center justify-between" style={{ marginBottom: "var(--rhythm-section)" }}>
@@ -366,7 +366,13 @@ export default function PortfolioPage() {
 
       {error && <ErrorBanner message={error} onRetry={handleRetry} retrying={retrying} />}
 
-      {accounts !== null && (
+      {/* 계좌가 하나라도 있을 때만 총자산·비중을 그린다.
+          WHY: 가입 직후 화면을 60세 사용자 기준으로 열어보니, "총자산 0원"과 빈 도넛
+          ("언랭크")이 화면을 거의 다 차지하고 정작 해야 할 일인 "첫 계좌 등록하기"가
+          Y=764px — 하단 탭바에 가려 보이지 않았다(실측).
+          처음 온 사람에게 "당신의 자산은 0원, 등급은 언랭크"부터 선언할 이유가 없다.
+          보여줄 자산이 생긴 다음에 보여준다. */}
+      {hasAccounts && (
         <>
           <PortfolioSummary summary={summary} />
           {/* 은퇴 가능 나이 카드는 라벨 없는 카드라 총자산과 비중 사이에서 무엇인지
@@ -405,7 +411,19 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {accounts !== null && accounts.length === 0 && <EmptyState />}
+      {/* 계좌가 없을 때의 화면. 할 일(계좌 등록)을 맨 위에 두고, 그 아래에
+          "계좌가 없어도 지금 해볼 수 있는 것"으로 은퇴 시뮬레이터를 안내한다 —
+          빈 화면에서 아무것도 못 하고 나가는 것보다, 바로 해볼 수 있는 게 하나는 보여야 한다. */}
+      {accounts !== null && accounts.length === 0 && (
+        <>
+          <EmptyState />
+          {retirementCard !== "hidden" && (
+            <Section label="계좌가 없어도 해볼 수 있어요">
+              <RetirementAgeCard card={retirementCard} />
+            </Section>
+          )}
+        </>
+      )}
 
       {hasAccounts && (
         /* 정렬·추가 컨트롤은 섹션 헤더로 올렸다 — 둘 다 작용 대상이 아래 계좌 목록이라
