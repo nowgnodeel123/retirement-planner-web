@@ -13,14 +13,14 @@ import React, { useState } from "react";
 // 터치영역이 조용히 44px 밑으로 내려갈 수 있다는 게 드러났다.
 // 최소 높이를 직접 적어두면 패딩과 무관하게 보장된다.
 export const inputClass =
-  "w-full rounded-xl border px-3 py-3 min-h-[44px] fs-input transition-all " +
+  "w-full rounded-[var(--r-control)] border px-3 py-3 min-h-[48px] fs-input tappable " +
   "border-[var(--border)] bg-[var(--surface)] text-[var(--text-strong)] " +
   "placeholder:text-[var(--text-faint)] " +
   "focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/10 focus:border-[var(--accent)] " +
   "hover:border-[var(--text-faint)]";
 
 export const smallInputClass =
-  "w-full rounded-lg border px-2 py-2 min-h-[44px] fs-input transition-all " +
+  "w-full rounded-[var(--r-chip)] border px-2 py-2 min-h-[48px] fs-input tappable " +
   "border-[var(--border)] bg-[var(--surface)] text-[var(--text-strong)] " +
   "placeholder:text-[var(--text-faint)] " +
   "focus:outline-none focus:ring-4 focus:ring-[var(--accent)]/10 focus:border-[var(--accent)] " +
@@ -324,11 +324,16 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`relative rounded-2xl bg-[var(--accent)] text-[var(--on-accent)] py-3 min-h-[44px] fs-title font-semibold
-        shadow-[0_4px_14px_rgba(49,130,246,0.3)]
-        transition-all duration-150
-        hover:brightness-110 active:scale-[0.98] active:brightness-95
-        disabled:opacity-40 disabled:shadow-none disabled:active:scale-100 ${className}`}
+      // min-h를 44 → 52로 올렸다. 44px은 "닿을 수 있는" 최소치(WCAG AAA)지
+      // "편한" 크기가 아니다. 화면의 주 동작(다음/저장/등록)은 한 화면에 하나뿐이라
+      // 키워도 밀리는 게 없고, 움직이는 버스에서 한 손으로 누르는 상황이 기준이다.
+      // 그림자는 옛 강조색(파랑)이 하드코딩돼 있어 청록 버튼 아래 파란 빛이 번졌다.
+      // --shadow-accent는 --accent에서 파생되므로 강조색을 바꿔도 따라온다.
+      className={`relative rounded-[var(--r-button)] bg-[var(--accent)] text-[var(--on-accent)] py-3 min-h-[52px] fs-title font-semibold
+        shadow-[var(--shadow-accent)]
+        tappable
+        hover:brightness-110 active:brightness-95
+        disabled:shadow-none ${className}`}
     >
       <span className={loading ? "opacity-0" : ""}>{children}</span>
       {loading && (
@@ -353,8 +358,10 @@ export function SecondaryButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-2xl border border-[var(--border)] bg-[var(--surface)] py-3 min-h-[44px] fs-title font-medium text-[var(--text)]
-        transition-all duration-150 hover:bg-[var(--surface-pressed)] hover:border-[var(--text-faint)] active:scale-[0.98] ${className}`}
+      // 주 버튼과 나란히 서는 자리라 높이를 같이 맞춘다 — 1~2px만 어긋나도
+      // 두 버튼이 한 줄에 있을 때 바로 눈에 띈다.
+      className={`rounded-[var(--r-button)] border border-[var(--border)] bg-[var(--surface)] py-3 min-h-[52px] fs-title font-medium text-[var(--text)]
+        tappable hover:bg-[var(--surface-pressed)] hover:border-[var(--text-faint)] ${className}`}
     >
       {children}
     </button>

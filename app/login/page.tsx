@@ -10,6 +10,11 @@ import { setTokens } from "@/lib/auth";
 import { ErrorBanner, inputClass, PrimaryButton, SecondaryButton } from "@/app/components/wizard/Ui";
 import { NestMark } from "@/app/components/brand/NestMark";
 import { SectionLabel } from "@/app/components/ui/Section";
+import {
+  BirthDateInput,
+  birth8ToIso,
+  isValidBirth8,
+} from "@/app/components/ui/BirthDateInput";
 
 type Mode = "login" | "signup" | "findEmail" | "resetPassword";
 type Gender = "MALE" | "FEMALE";
@@ -58,74 +63,6 @@ function sanitizePhone(raw: string): string {
   return raw.replace(/[^0-9]/g, "").slice(0, 11);
 }
 
-/**
- * 생년월일 — 8자리 숫자로 직접 받는다(예: 19990323).
- *
- * WHY <input type="date">에서 바꿨나: 모바일에서 달력 피커가 뜨면 1990년대까지
- * 거슬러 올라가는 데만 수십 번을 넘겨야 하고, 데스크톱에서는 브라우저·OS마다
- * 표시 형식(mm/dd/yyyy vs yyyy-mm-dd)이 달라 무엇을 먼저 넣는지가 화면마다 다르다.
- * 생년월일은 사용자가 이미 외우고 있는 숫자라 그냥 치게 하는 쪽이 빠르다.
- *
- * 저장은 계속 ISO(YYYY-MM-DD)다 — 백엔드 LocalDate는 그대로 두고 화면 입력만 바꾼다.
- */
-function isValidBirth8(digits: string): boolean {
-  if (!/^\d{8}$/.test(digits)) return false;
-  const year = Number(digits.slice(0, 4));
-  const month = Number(digits.slice(4, 6));
-  const day = Number(digits.slice(6, 8));
-  if (year < 1900 || month < 1 || month > 12 || day < 1 || day > 31) return false;
-  // 2월 30일 같은 값을 걸러낸다 — Date가 조용히 3월로 넘겨버리므로 되돌려 비교한다.
-  const date = new Date(year, month - 1, day);
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    return false;
-  }
-  return date <= new Date();
-}
-
-/** 8자리 → ISO. 유효하지 않으면 빈 문자열(제출 조건에서 걸린다). */
-function birth8ToIso(digits: string): string {
-  if (!isValidBirth8(digits)) return "";
-  return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
-}
-
-function BirthDateInput({
-  value,
-  onChange,
-  className,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  className: string;
-}) {
-  // 8자리를 다 치기 전에는 경고를 띄우지 않는다 — 치는 도중에 빨간 글씨가 떠 있으면
-  // 잘못 입력한 것처럼 읽힌다.
-  const invalid = value.length === 8 && !isValidBirth8(value);
-
-  return (
-    <div>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 8))}
-        placeholder="생년월일 8자리 (예: 19990323)"
-        className={className}
-        aria-label="생년월일 8자리"
-        autoComplete="bday"
-      />
-      {invalid && (
-        <p className="fs-body text-[var(--error)] mt-2 ml-1">
-          생년월일을 다시 확인해주세요.
-        </p>
-      )}
-    </div>
-  );
-}
-
 function GenderToggle({
   value,
   onChange,
@@ -154,7 +91,7 @@ function GenderToggle({
             type="button"
             onClick={() => onChange(g)}
             aria-pressed={value === g}
-            className={`min-h-[44px] px-5 rounded-lg border fs-title font-medium transition-all ${
+            className={`min-h-[44px] px-5 rounded-[var(--r-control)] border fs-title font-medium tappable ${
               value === g
                 ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
                 : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-sub)] hover:border-[var(--text-faint)]"
@@ -217,11 +154,17 @@ function PasswordInput({
           // placeholder를 그대로 접근성 이름으로 승격시킨다.
           aria-label={placeholder}
         />
+        {/* 아이콘은 18px 그대로지만 누르는 영역은 44×44로 넓힌다.
+            예전엔 버튼이 아이콘 크기(18×18) 그대로여서 WCAG 2.5.8(AA, 24×24)에
+            한참 못 미쳤다 — 비밀번호를 잘못 쳤는지 확인하려고 누르는 버튼이라
+            정확히 못 누르면 화면을 못 넘어간다. right-0인 이유: 넓힌 44px의
+            가운데가 예전 아이콘 위치(오른쪽에서 21px)와 거의 겹쳐서
+            보이는 모습은 그대로 유지된다. */}
         <button
           type="button"
           onClick={() => setShow((v) => !v)}
           aria-label={show ? "비밀번호 숨기기" : "비밀번호 보기"}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] hover:text-[var(--text-sub)]"
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 inline-flex items-center justify-center text-[var(--text-faint)] hover:text-[var(--text-sub)]"
         >
           <EyeIcon open={show} />
         </button>
@@ -340,13 +283,14 @@ function PhoneVerificationField({
           className={inputClass}
           disabled={verified}
           autoFocus={autoFocus}
+          aria-label="휴대전화번호"
         />
         {!verified && (
           <button
             type="button"
             onClick={handleSendCode}
             disabled={phone.length < 10 || submitting}
-            className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
+            className="shrink-0 rounded-[var(--r-control)] px-4 fs-title font-medium tappable
               hover:brightness-95 disabled:opacity-40 whitespace-nowrap"
             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
           >
@@ -400,7 +344,7 @@ function PhoneVerificationField({
               type="button"
               onClick={handleVerifyCode}
               disabled={code.length === 0 || submitting || codeExpired}
-              className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
+              className="shrink-0 rounded-[var(--r-control)] px-4 fs-title font-medium tappable
                 hover:brightness-95 disabled:opacity-40"
               style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
             >
@@ -566,7 +510,7 @@ export default function LoginPage() {
 
       <div
         className="w-full max-w-[380px] bg-[var(--surface)] rounded-3xl p-6 border border-[var(--border)]"
-        style={{ boxShadow: "0 8px 32px rgba(49,130,246,0.10)" }}
+        style={{ boxShadow: "var(--shadow-float)" }}
       >
         {/* 소셜 로그인은 로그인 화면에만 둔다 — 회원가입을 고른 사용자는 이메일로
             가입하겠다고 이미 정한 것이라, 그 위에 다른 가입 경로를 다시 얹으면
@@ -593,7 +537,7 @@ export default function LoginPage() {
               <a
                 href={`${API_BASE_URL}/oauth2/authorization/kakao`}
                 className="flex items-center justify-center gap-2 w-full rounded-2xl py-3 fs-title font-semibold
-                  bg-[#FEE500] text-[#191600] transition-all duration-150 hover:brightness-95 active:scale-[0.98]"
+                  bg-[#FEE500] text-[#191600] tappable hover:brightness-95"
               >
                 <KakaoIcon />
                 카카오로 시작하기
@@ -624,6 +568,7 @@ export default function LoginPage() {
               className={inputClass}
               autoComplete="email"
               autoFocus
+              aria-label="이메일"
             />
             <PasswordInput
               value={password}
@@ -647,6 +592,9 @@ export default function LoginPage() {
                 className={inputClass}
                 autoComplete="email"
                 autoFocus
+                // placeholder는 값이 들어차면 사라져서 라벨 노릇을 못 한다.
+                // 비밀번호 칸·프로필 화면에서 이미 쓰는 방식으로 맞춘다.
+                aria-label="이메일"
               />
               <PasswordInput
                 value={password}
@@ -677,6 +625,7 @@ export default function LoginPage() {
                 maxLength={50}
                 className={inputClass}
                 autoComplete="name"
+                aria-label="이름"
               />
               <BirthDateInput
                 value={birthDate}
@@ -689,7 +638,11 @@ export default function LoginPage() {
             <SectionLabel>본인 확인</SectionLabel>
             <PhoneVerificationField key={mode} onVerified={setVerifiedPhone} />
 
-            <label className="flex items-start gap-2 mt-6 cursor-pointer">
+            {/* py-1.5인 이유: 체크박스는 16px이지만 label 아무 데나 눌러도 토글되므로
+                실제 터치 대상은 이 줄 전체다. 그런데 그 줄 높이가 20~23px이라
+                WCAG 2.5.8(AA, 24×24)을 아슬아슬하게 못 넘겼다. 동의는 안 하면
+                가입 자체가 막히는 필수 항목이라 여기서 헛손질하면 진행이 멈춘다. */}
+            <label className="flex items-start gap-2 mt-6 py-3 min-h-[44px] cursor-pointer">
               <input
                 type="checkbox"
                 checked={agreedToTerms}
@@ -812,13 +765,20 @@ export default function LoginPage() {
         )}
         </form>
 
+        {/* 계정을 못 찾은 사람이 누르는 줄이라 가장 잘 눌려야 하는데, 글자만 있어
+            높이가 21~23px로 WCAG 2.5.8(AA, 24×24)에 못 미쳤다. py로 높이를 벌리고
+            gap을 줄여 두 버튼이 붙어 보이지 않게 맞춘다.
+
+            구분자 "|"는 --border 색이라 대비가 1.22였다. 다만 이건 뜻을 담은 글자가
+            아니라 두 버튼을 가르는 장식이라, 대비를 억지로 올려 눈에 띄게 만드는 대신
+            실제 구분선(1px 막대)으로 바꾸고 보조기기에는 감춘다. */}
         {mode === "login" && (
-          <div className="flex items-center justify-center gap-3 mt-4 fs-title text-[var(--text-faint)]">
-            <button type="button" onClick={() => switchMode("findEmail")} className="hover:text-[var(--text-sub)]">
+          <div className="flex items-center justify-center gap-1 mt-4 fs-title text-[var(--text-faint)]">
+            <button type="button" onClick={() => switchMode("findEmail")} className="px-3 min-h-[44px] rounded-[var(--r-chip)] tappable hover:text-[var(--text-sub)]">
               아이디 찾기
             </button>
-            <span className="text-[var(--border)]">|</span>
-            <button type="button" onClick={() => switchMode("resetPassword")} className="hover:text-[var(--text-sub)]">
+            <span aria-hidden="true" className="w-px h-3 flex-shrink-0" style={{ background: "var(--border)" }} />
+            <button type="button" onClick={() => switchMode("resetPassword")} className="px-3 min-h-[44px] rounded-[var(--r-chip)] tappable hover:text-[var(--text-sub)]">
               비밀번호 재설정
             </button>
           </div>
@@ -828,7 +788,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => switchMode(mode === "login" ? "signup" : "login")}
-            className="w-full text-center fs-title text-[var(--text-faint)] mt-4"
+            className="w-full text-center fs-title text-[var(--text-faint)] mt-4 min-h-[44px] rounded-[var(--r-chip)] tappable"
           >
             {mode === "login" ? (
               <>

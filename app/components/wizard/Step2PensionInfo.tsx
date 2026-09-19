@@ -195,13 +195,13 @@ function PensionTypeButton({
       role="radio"
       aria-checked={selected}
       onClick={onClick}
-      className="flex-1 rounded-xl py-2 border-2 transition-all duration-150 text-left px-3"
+      className="flex-1 rounded-[var(--r-control)] py-3 border-2 tappable text-left px-3"
       style={
         selected
           ? {
               borderColor: "var(--accent)",
               background: "var(--accent-soft)",
-              boxShadow: "0 2px 8px rgba(49,130,246,0.15)",
+              boxShadow: "var(--shadow-accent)",
             }
           : { borderColor: "var(--border)", background: "var(--surface)" }
       }
@@ -212,9 +212,13 @@ function PensionTypeButton({
       >
         {label}
       </span>
+      {/* --text-faint가 아니라 --text-sub인 이유: 고른 쪽 버튼 배경이 --accent-soft라
+          그 위에서 faint는 라이트 4.49 / 다크 3.46으로 AA(4.5)에 못 미친다(실측).
+          RetirementAgeCard에서 같은 이유로 이미 한 단계 올려놨던 것과 같은 건이다.
+          DB형/DC형은 뜻을 모르면 못 고르는 선택지라, 그 설명이 흐린 쪽이 더 문제다. */}
       <span
         className="block fs-caption mt-1"
-        style={{ color: "var(--text-faint)" }}
+        style={{ color: "var(--text-sub)" }}
       >
         {description}
       </span>

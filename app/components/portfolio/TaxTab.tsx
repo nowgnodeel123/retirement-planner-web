@@ -18,14 +18,21 @@ function InfoTerm({ term, explanation }: { term: string; explanation: string }) 
     <span className="inline-block">
       <span className="inline-flex items-center gap-1">
         {term}
+        {/* 동그라미는 16px 그대로 두고 누르는 영역만 26px로 넓힌다 —
+            버튼 자체가 16×16이라 WCAG 2.5.8(AA, 24×24)에 못 미쳤다.
+            패딩만큼 음수 마진을 줘서 줄 안에서의 위치는 그대로다. */}
         <button
           type="button"
           aria-label={`${term} 설명 보기`}
           onClick={() => setOpen((v) => !v)}
-          className="fs-caption rounded-full w-4 h-4 inline-flex items-center justify-center"
-          style={{ color: "var(--text-faint)", border: "1px solid var(--border)" }}
+          className="inline-flex items-center justify-center p-[5px] -m-[5px]"
         >
-          i
+          <span
+            className="fs-caption rounded-full w-4 h-4 inline-flex items-center justify-center"
+            style={{ color: "var(--text-faint)", border: "1px solid var(--border)" }}
+          >
+            i
+          </span>
         </button>
       </span>
       {open && (
@@ -70,7 +77,7 @@ export function TaxTab() {
           type="button"
           onClick={() => setYear((y) => y - 1)}
           aria-label="이전 연도"
-          className="w-7 h-7 rounded-full flex items-center justify-center"
+          className="w-11 h-11 rounded-full flex items-center justify-center tappable"
           style={{ color: "var(--text-sub)", border: "1px solid var(--border)" }}
         >
           ‹
@@ -83,7 +90,7 @@ export function TaxTab() {
           onClick={() => setYear((y) => y + 1)}
           disabled={year >= currentYear}
           aria-label="다음 연도"
-          className="w-7 h-7 rounded-full flex items-center justify-center"
+          className="w-11 h-11 rounded-full flex items-center justify-center tappable"
           style={{
             color: year >= currentYear ? "var(--text-faint)" : "var(--text-sub)",
             border: "1px solid var(--border)",

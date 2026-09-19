@@ -11,6 +11,12 @@ import { Avatar } from "@/app/components/profile/Avatar";
 import { Toast } from "@/app/components/portfolio/Toast";
 import { SectionLabel } from "@/app/components/ui/Section";
 import {
+  BirthDateInput,
+  birth8ToIso,
+  isValidBirth8,
+  isoToBirth8,
+} from "@/app/components/ui/BirthDateInput";
+import {
   ErrorBanner,
   inputClass,
   PrimaryButton,
@@ -34,7 +40,6 @@ type MeResponse = {
 type SendCodeResponse = { devCode: string };
 type VerifyCodeResponse = { verified: boolean };
 
-const TODAY = new Date().toISOString().slice(0, 10);
 const CODE_TTL_MS = 5 * 60 * 1000; // 백엔드 PhoneVerificationService.CODE_TTL과 동일(5분)
 
 function PencilIcon() {
@@ -79,7 +84,7 @@ function GenderToggle({
           key={g}
           type="button"
           onClick={() => onChange(g)}
-          className={`rounded-xl border py-3 fs-title font-medium transition-all ${
+          className={`rounded-[var(--r-control)] border py-3 fs-title font-medium tappable ${
             value === g
               ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
               : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-sub)] hover:border-[var(--text-faint)]"
@@ -130,11 +135,17 @@ function PasswordInput({
           // placeholder를 그대로 접근성 이름으로 승격시킨다.
           aria-label={placeholder}
         />
+        {/* 아이콘은 18px 그대로지만 누르는 영역은 44×44로 넓힌다.
+            예전엔 버튼이 아이콘 크기(18×18) 그대로여서 WCAG 2.5.8(AA, 24×24)에
+            한참 못 미쳤다 — 비밀번호를 잘못 쳤는지 확인하려고 누르는 버튼이라
+            정확히 못 누르면 화면을 못 넘어간다. right-0인 이유: 넓힌 44px의
+            가운데가 예전 아이콘 위치(오른쪽에서 21px)와 거의 겹쳐서
+            보이는 모습은 그대로 유지된다. */}
         <button
           type="button"
           onClick={() => setShow((v) => !v)}
           aria-label={show ? "비밀번호 숨기기" : "비밀번호 보기"}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)] hover:text-[var(--text-sub)]"
+          className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 inline-flex items-center justify-center text-[var(--text-faint)] hover:text-[var(--text-sub)]"
         >
           <EyeIcon open={show} />
         </button>
@@ -249,7 +260,7 @@ function PhoneVerificationField({
             type="button"
             onClick={handleSendCode}
             disabled={phone.length < 10 || submitting}
-            className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
+            className="shrink-0 rounded-[var(--r-control)] px-4 fs-title font-medium tappable
               hover:brightness-95 disabled:opacity-40 whitespace-nowrap"
             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
           >
@@ -303,7 +314,7 @@ function PhoneVerificationField({
               type="button"
               onClick={handleVerifyCode}
               disabled={code.length === 0 || submitting || codeExpired}
-              className="shrink-0 rounded-xl px-4 fs-title font-medium transition-all
+              className="shrink-0 rounded-[var(--r-control)] px-4 fs-title font-medium tappable
                 hover:brightness-95 disabled:opacity-40"
               style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
             >
@@ -367,7 +378,7 @@ export default function ProfileEditPage() {
       setMe(data);
       setNickname(data.nickname);
       setName(data.name ?? "");
-      setBirthDate(data.birthDate ?? "");
+      setBirthDate(isoToBirth8(data.birthDate));
       setGender(data.gender);
     });
   }, []);
@@ -393,7 +404,8 @@ export default function ProfileEditPage() {
     try {
       const updated = await api.patch<MeResponse>("/api/users/me/profile", {
         name,
-        birthDate,
+        // 화면은 8자리로 받지만 서버(LocalDate)는 ISO만 받는다.
+        birthDate: birth8ToIso(birthDate),
         gender,
       });
       setMe(updated);
@@ -518,7 +530,9 @@ export default function ProfileEditPage() {
                     setEditingNickname(true);
                   }}
                   aria-label="닉네임 수정"
-                  className="flex items-center gap-1 flex-shrink-0 fs-body font-medium px-2 py-1 rounded-lg"
+                  // min-h-[44px]: 28px였다. 닉네임을 바꾸려면 반드시 거쳐야 하는
+                  // 유일한 입구인데 연필 아이콘만 한 크기라 정확히 조준해야 했다.
+                  className="flex items-center gap-1 flex-shrink-0 fs-body font-medium px-3 min-h-[44px] rounded-[var(--r-chip)] tappable"
                   style={{ color: "var(--accent)", background: "var(--accent-soft)" }}
                 >
                   <PencilIcon />
@@ -584,13 +598,13 @@ export default function ProfileEditPage() {
                 // 바로 아래 생년월일과 같은 방식으로 aria-label을 단다.
                 aria-label="이름"
               />
-              <input
-                type="date"
+              {/* 회원가입과 같은 8자리 입력. 예전엔 여기만 type="date"라
+                  같은 값을 두 화면에서 다른 방식으로 받고 있었다 —
+                  달력 피커는 1966년까지 거슬러 올라가기가 특히 괴롭다. */}
+              <BirthDateInput
                 value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                max={TODAY}
+                onChange={setBirthDate}
                 className={inputClass}
-                aria-label="생년월일"
               />
               <GenderToggle value={gender} onChange={setGender} />
             </div>
@@ -602,7 +616,7 @@ export default function ProfileEditPage() {
             <PrimaryButton
               onClick={handleSaveProfile}
               loading={savingProfile}
-              disabled={name.trim().length === 0 || birthDate.length === 0 || gender === null}
+              disabled={name.trim().length === 0 || !isValidBirth8(birthDate) || gender === null}
               className="w-full mt-3"
             >
               저장
@@ -622,7 +636,10 @@ export default function ProfileEditPage() {
                     setEmailError(null);
                     setChangingEmail(true);
                   }}
-                  className="fs-body font-medium"
+                  // 글자만 있던 버튼이라 높이가 18~21px로 WCAG 2.5.8(AA, 24×24)에
+                  // 못 미쳤다. 음수 마진으로 여백만 바깥으로 밀어 넓히면
+                  // 보이는 위치는 그대로면서 누를 수 있는 영역만 커진다.
+                  className="fs-body font-medium px-3 min-h-[44px] inline-flex items-center -mr-3 rounded-[var(--r-chip)] tappable"
                   style={{ color: "var(--accent)" }}
                 >
                   변경
@@ -684,7 +701,10 @@ export default function ProfileEditPage() {
                 <button
                   type="button"
                   onClick={() => setChangingPhone(true)}
-                  className="fs-body font-medium"
+                  // 글자만 있던 버튼이라 높이가 18~21px로 WCAG 2.5.8(AA, 24×24)에
+                  // 못 미쳤다. 음수 마진으로 여백만 바깥으로 밀어 넓히면
+                  // 보이는 위치는 그대로면서 누를 수 있는 영역만 커진다.
+                  className="fs-body font-medium px-3 min-h-[44px] inline-flex items-center -mr-3 rounded-[var(--r-chip)] tappable"
                   style={{ color: "var(--accent)" }}
                 >
                   변경

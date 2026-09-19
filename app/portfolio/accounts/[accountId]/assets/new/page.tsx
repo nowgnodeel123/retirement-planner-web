@@ -494,7 +494,7 @@ export default function NewAssetPage() {
                   setMode(m);
                   setError(null);
                 }}
-                className="rounded-xl py-2 fs-body font-semibold transition-colors"
+                className="rounded-[var(--r-control)] py-2 min-h-[44px] fs-body font-semibold tappable"
                 style={{
                   background: activeMode === m ? "var(--surface)" : "transparent",
                   color:

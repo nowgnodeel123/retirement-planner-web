@@ -549,7 +549,9 @@ export default function AssetDetailPage() {
                   setRenameError(null);
                   setRenameOpen(true);
                 }}
-                className="pressable p-2 rounded-lg flex-shrink-0"
+                // 31×31이었다. .pressable은 카드용이라 작은 아이콘 버튼에서는
+                // 눌림이 거의 안 보여서 .tappable로 바꾼다(scale 0.94).
+                className="tappable w-11 h-11 -m-2 inline-flex items-center justify-center rounded-[var(--r-chip)] flex-shrink-0"
                 style={{ color: "var(--text-faint)" }}
               >
                 <svg

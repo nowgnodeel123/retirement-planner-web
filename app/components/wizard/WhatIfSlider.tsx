@@ -87,7 +87,9 @@ export default function WhatIfSlider({
               key={p}
               type="button"
               onClick={() => setExtra(selected ? 0 : p)}
-              className="flex-1 rounded-xl py-2 fs-body font-semibold border transition-colors"
+              // 네 개가 한 줄에 들어가 칸이 좁은데 높이까지 38px이면 옆 칸을 누르기 쉽다.
+              // 결과를 이리저리 눌러보며 노는 자리라 오조작이 특히 거슬린다.
+              className="flex-1 rounded-[var(--r-control)] py-2 min-h-[44px] fs-body font-semibold border tappable"
               style={
                 selected
                   ? { borderColor: "var(--accent)", background: "var(--accent-soft)", color: "var(--accent)" }

@@ -41,7 +41,9 @@ export function CategoryFilterChips({
             key={opt.key ?? "ALL"}
             type="button"
             onClick={() => onChange(opt.key)}
-            className="px-3 py-2 rounded-full fs-body font-semibold whitespace-nowrap flex-shrink-0 transition-colors"
+            // 가로로 스크롤되는 칩 줄이라 높이가 곧 터치 여유다. 36px이면
+            // 스크롤하려다 칩이 눌리고, 누르려다 스크롤된다.
+            className="px-4 min-h-[44px] rounded-full fs-body font-semibold whitespace-nowrap flex-shrink-0 tappable"
             style={
               active
                 ? { color: "var(--accent)", background: "var(--accent-soft)" }

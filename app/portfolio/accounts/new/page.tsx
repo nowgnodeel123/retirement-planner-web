@@ -108,7 +108,10 @@ export default function NewAccountPage() {
                     key={type}
                     type="button"
                     onClick={() => setDetailType(type)}
-                    className={`rounded-xl border py-2 fs-body font-medium transition-all ${
+                    // min-h-[44px]: 네 개가 한 줄에 나란히 서는 선택지라 칸 하나가
+                    // 좁다. 높이까지 38px이면 옆 칸을 잘못 누르기 쉬운데, 여기서
+                    // 잘못 고르면 세금·수익 집계가 통째로 달라진다(D-233/D-234).
+                    className={`rounded-[var(--r-control)] border py-2 min-h-[44px] fs-body font-medium tappable ${
                       active
                         ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-4 ring-[var(--accent)]/10"
                         : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--text-faint)]"

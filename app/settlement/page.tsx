@@ -51,7 +51,9 @@ export default function SettlementPage() {
                 key={s.key}
                 type="button"
                 onClick={() => setSection(s.key)}
-                className="flex-1 text-center py-2 fs-body font-semibold relative"
+                // min-h-[44px]: 이 화면의 최상위 전환 장치인데 36px이었다.
+                // 가장 자주 누르는 것일수록 크기가 넉넉해야 한다.
+                className="flex-1 text-center py-2 min-h-[44px] fs-body font-semibold relative tappable"
                 style={{
                   color:
                     section === s.key ? "var(--text-strong)" : "var(--text-faint)",

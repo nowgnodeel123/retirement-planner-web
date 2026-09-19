@@ -64,7 +64,7 @@ export default function AssetOrderPage() {
     <div className="max-w-[420px] mx-auto px-5 pt-6">
       <OrderEditHeader
         title="자산 순서"
-        description="손잡이를 잡고 끌어서 원하는 순서로 바꾼 뒤 오른쪽 위 저장을 누르세요."
+        description="손잡이를 잡고 끌거나, 손잡이를 고른 뒤 위아래 화살표 키로 옮긴 다음 오른쪽 위 저장을 누르세요."
         onCancel={() => router.back()}
         onConfirm={handleSave}
         saving={saving}

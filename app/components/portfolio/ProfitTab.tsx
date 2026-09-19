@@ -51,7 +51,7 @@ export function ProfitTab() {
           <button
             type="button"
             onClick={() => setPeriodModalOpen((v) => !v)}
-            className="flex items-center gap-1 fs-body font-semibold px-2 py-1 rounded-lg"
+            className="flex items-center gap-1 fs-body font-semibold px-3 min-h-[44px] rounded-[var(--r-chip)] tappable"
             style={{ color: "var(--text-sub)" }}
           >
             {profitPeriodLabel[period]}

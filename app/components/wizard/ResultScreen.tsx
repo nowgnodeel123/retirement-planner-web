@@ -91,7 +91,7 @@ export default function ResultScreen({ result, onRestart, basePayload }: Props) 
             예상 은퇴 가능 나이
           </p>
           <p
-            className="text-7xl font-extrabold tracking-tight tabular-nums mt-2"
+            className="fs-hero font-extrabold tracking-tight tabular-nums mt-2"
             style={{ color: "var(--text-strong)" }}
           >
             {animatedAge}

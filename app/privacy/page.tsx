@@ -36,7 +36,9 @@ export default function PrivacyPolicyPage() {
     >
       <Link
         href="/"
-        className="fs-body mb-4 inline-block"
+        // 글자만 있어 높이가 18~21px이었다(WCAG 2.5.8 AA 24×24 미달).
+        // 음수 마진으로 여백만 바깥으로 밀어 보이는 위치는 그대로 두고 넓힌다.
+        className="fs-body mb-4 inline-flex items-center px-3 min-h-[44px] -mx-3 rounded-[var(--r-chip)] tappable"
         style={{ color: "var(--text-faint)" }}
       >
         ← 돌아가기

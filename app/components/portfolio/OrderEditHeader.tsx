@@ -35,7 +35,7 @@ export function OrderEditHeader({
             type="button"
             onClick={onCancel}
             disabled={saving}
-            className="fs-body font-medium px-2 py-1 rounded-lg"
+            className="fs-body font-medium px-3 min-h-[44px] inline-flex items-center rounded-[var(--r-chip)] tappable"
             style={{ color: "var(--text-sub)", opacity: saving ? 0.5 : 1 }}
           >
             취소
@@ -46,7 +46,9 @@ export function OrderEditHeader({
             onClick={onConfirm}
             disabled={saving || disabled}
             aria-label="이 순서로 저장"
-            className="fs-body font-bold px-2 py-1 rounded-lg flex items-center gap-2 transition-transform active:scale-[0.96]"
+            // 이 화면에서 바꾼 순서를 확정하는 유일한 수단인데 28px이었다 —
+            // 가장 중요한 버튼이 화면에서 가장 작은 상태였다.
+            className="fs-body font-bold px-3 min-h-[44px] rounded-[var(--r-chip)] flex items-center gap-2 tappable"
             style={{
               background: "transparent",
               color: disabled ? "var(--text-faint)" : "var(--accent)",

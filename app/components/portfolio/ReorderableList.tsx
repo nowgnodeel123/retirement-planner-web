@@ -18,16 +18,21 @@ const EDGE_SPEED = 12;
 
 type Rect = { top: number; height: number };
 
+// 손잡이는 <button>이다. 예전엔 <span>이라 탭으로 닿지도, 키보드로 누를 수도 없었고
+// 순서를 바꿀 방법이 드래그 하나뿐이었다(WCAG 2.1.1 키보드, A등급 위반).
+// 손 떨림이 있거나 마우스를 못 쓰는 사람에게는 계좌/자산 순서 바꾸기가 통째로 막혀 있던 셈이다.
+// 이제 ↑/↓(또는 PageUp/PageDown, Home/End)로도 옮길 수 있다 — ReorderableList가 처리한다.
 export function DragHandle() {
   return (
-    <span
+    <button
+      type="button"
       data-drag-handle
-      aria-label="순서 옮기기"
+      aria-label="순서 옮기기 (위아래 화살표 키로 이동)"
       className="inline-flex items-center justify-center flex-shrink-0"
       style={{
-        width: 40,
-        height: 40,
-        marginRight: -8,
+        width: 44,
+        height: 44,
+        marginRight: -10,
         color: "var(--text-faint)",
         cursor: "grab",
         touchAction: "none",
@@ -36,7 +41,7 @@ export function DragHandle() {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
         <path d="M4 9h16M4 15h16" />
       </svg>
-    </span>
+    </button>
   );
 }
 
@@ -57,6 +62,8 @@ export function ReorderableList<T>({
   const [offsetY, setOffsetY] = useState(0);
   // 자리를 비켜줄 거리. 드래그 시작 시점에 확정해 두면 렌더 중 ref를 읽지 않아도 된다.
   const [activeHeight, setActiveHeight] = useState(0);
+  // 키보드로 옮겼을 때 스크린리더에 읽어줄 문장(aria-live).
+  const [liveMessage, setLiveMessage] = useState("");
 
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const rectsRef = useRef<Rect[]>([]);
@@ -251,13 +258,58 @@ export function ReorderableList<T>({
     return 0;
   }
 
+  /**
+   * 키보드로 한 칸씩 옮기기. 드래그가 유일한 수단이면 키보드 사용자와 손 떨림이 있는
+   * 사람에게는 이 화면 전체가 막힌다(WCAG 2.1.1, A등급).
+   *
+   * 컨테이너에서 위임으로 받는 이유: 손잡이는 renderItem 안에서 호출부가 그리므로
+   * 여기서 직접 핸들러를 달 수 없다. 대신 이벤트가 올라오면 그 행이 몇 번째인지
+   * rowRefs로 되짚는다. 옮긴 뒤에는 포커스를 따라 옮겨 줘야 연달아 누를 수 있다 —
+   * 그러지 않으면 한 칸 옮기고 포커스를 잃어 다시 탭으로 찾아와야 한다.
+   */
+  function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    const handle = (e.target as HTMLElement).closest("[data-drag-handle]");
+    if (!handle) return;
+    const row = handle.closest("[data-reorder-row]");
+    const from = rowRefs.current.findIndex((el) => el === row);
+    if (from < 0) return;
+
+    let to = from;
+    if (e.key === "ArrowUp") to = from - 1;
+    else if (e.key === "ArrowDown") to = from + 1;
+    else if (e.key === "Home" || e.key === "PageUp") to = 0;
+    else if (e.key === "End" || e.key === "PageDown") to = items.length - 1;
+    else return;
+
+    e.preventDefault();
+    if (to < 0 || to >= items.length || to === from) return;
+
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onOrderChange(next);
+    haptic("grab");
+    setLiveMessage(`${items.length}개 중 ${to + 1}번째로 옮겼어요.`);
+
+    // 목록이 새 순서로 다시 그려진 뒤에 포커스를 되찾는다.
+    requestAnimationFrame(() => {
+      const el = rowRefs.current[to]?.querySelector<HTMLElement>("[data-drag-handle]");
+      el?.focus();
+    });
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" onKeyDown={onKeyDown}>
+      {/* 화면에는 안 보이지만 스크린리더는 읽는다 — 순서가 바뀐 걸 알 방법이 그것뿐이다. */}
+      <p aria-live="polite" className="sr-only">
+        {liveMessage}
+      </p>
       {items.map((item, index) => {
         const dragging = index === activeIndex;
         return (
           <div
             key={getId(item)}
+            data-reorder-row
             ref={(el) => {
               rowRefs.current[index] = el;
             }}

@@ -29,7 +29,18 @@
      기준이다. 여기 담기는 건 "전일 종가 기준"·티커·환율 날짜처럼 정보를 전달하는 텍스트라
      1.4.3(일반 텍스트 4.5:1)이 적용된다 — 기준을 잘못 인용한 값이었다.
      실측 결과 기존 #8f8f97은 --bg 3.07:1 / --surface 3.21:1로 AA 미달이라 4.5를 넘도록 낮췄다.
-     현재값: --bg 4.87:1 / --surface 5.05:1. --text-sub도 함께 낮춰 두 단계 위계를 유지한다. */
+     현재값: --bg 4.84 / --surface 5.05 / --surface-pressed 4.60. --text-sub도 함께 낮춰 두 단계 위계를 유지한다.
+
+     **--text-faint는 민무늬 배경(--bg / --surface / --surface-pressed) 전용이다.**
+     색이 깔린 --accent-soft / --warning-soft / --error-soft 위에서는 AA에 못 미친다
+     (실측: accent-soft 라이트 4.49 · 다크 3.70, warning-soft 다크 3.77, error-soft 다크 4.41).
+     그런 배경 위의 보조 텍스트는 한 단계 진한 --text-sub를 쓴다 — --text-sub는 여섯 배경
+     전부에서 5.0 이상이다.
+
+     WHY 토큰을 더 진하게 만들지 않았나: 틴트 배경까지 커버하려면 --text-sub 근처까지
+     와야 해서 두 단계 위계가 사라진다. 실제로 이 조합을 쓰는 자리는 몇 곳뿐이라
+     토큰을 뭉개는 대신 그 자리에서 --text-sub를 쓰는 쪽이 싸다.
+     (위반 전력: RetirementAgeCard의 "월 N만원 기준", Step2PensionInfo의 DB형/DC형 설명) */
   --text-faint: #6e6e76;
 
   --border: #e8e8ec;
@@ -91,6 +102,19 @@
   /* 카드가 배경에서 살짝 떠 보이는 그림자 — 토스식 부드러운 elevation. */
   --card-shadow: 0 1px 2px rgba(23, 32, 54, 0.04), 0 6px 20px -10px rgba(23, 32, 54, 0.12);
 
+  /* ── 그림자 단계 ───────────────────────────────────────────────────
+     실측 결과 서로 다른 그림자 값이 9종 흩어져 있었고, 그중 넷은 **옛 강조색인
+     파랑(rgba(49,130,246,…))**이었다. 강조색이 청록(--accent)으로 바뀐 뒤에도
+     그림자만 남아서, 청록 버튼 아래에 파란 빛이 번지고 있었다.
+     색이 틀렸다고 꼬집기는 어렵지만 "뭔가 싸구려 같다"는 인상은 정확히 여기서 온다.
+
+     떠 있는 정도(높이)로만 구분하고, 강조색이 번지는 건 --shadow-accent 하나로 모은다.
+     --shadow-accent는 color-mix로 --accent에서 파생되므로 강조색을 바꾸면 같이 따라온다. */
+  --shadow-raised: 0 2px 8px rgba(23, 32, 54, 0.08);          /* 살짝 떠 있는 것 */
+  --shadow-float: 0 8px 24px -8px rgba(23, 32, 54, 0.18);     /* 떠 있는 패널 */
+  --shadow-overlay: 0 12px 44px -8px rgba(23, 32, 54, 0.28);  /* 모달·시트 */
+  --shadow-accent: 0 4px 14px -2px color-mix(in srgb, var(--accent) 36%, transparent);
+
   /* ── 타이포 스케일 (5단계 + 입력창 1) ──────────────────────────────
      **이 5개 말고 다른 글자 크기를 쓰지 않는다.** Tailwind의 text-xs/sm/base/
      lg/xl/2xl도 쓰지 않는다 — 그것들은 이 변수를 거치지 않아 글자 크기 설정
@@ -119,6 +143,11 @@
   --fs-title: calc(15px * var(--fs-scale));    /* 항목명, 카드 제목 */
   --fs-metric: calc(21px * var(--fs-scale));   /* 카드 대표 수치 */
   --fs-display: calc(32px * var(--fs-scale));  /* 화면 히어로 숫자 — 34px는 420px 폭에서 1억대 금액이 넘친다 */
+  /* 은퇴 결과 화면의 나이 숫자 하나만 쓰는 크기. 이 앱에서 가장 중요한 숫자라
+     display(32px)보다 훨씬 크게 간다. 원래 Tailwind text-7xl(72px 고정)이었는데,
+     그러면 바로 아래 규칙("이 크기 말고 쓰지 않는다")을 앱에서 유일하게 어기면서
+     글자 크기 설정도 혼자 안 따라왔다. 값은 그대로 두고 배율만 태웠다. */
+  --fs-hero: calc(72px * var(--fs-scale));
 
   /* 입력창 전용. 타이포 스케일이 아니라 **플랫폼 제약**이라 따로 둔다 —
      iOS 사파리는 font-size가 16px 미만인 input에 포커스하면 페이지를 자동 확대하고,
@@ -143,6 +172,30 @@
   --rhythm-group: 12px;    /* 묶음 사이 */
   --rhythm-section: 20px;  /* 섹션 사이 */
   --rhythm-block: 32px;    /* 화면 단위 블록 사이 */
+
+  /* ── 모서리 반경 (역할별) ──────────────────────────────────────────
+     실측해 보니 4 · 6 · 8 · 12 · 16 · 20 · 24px이 규칙 없이 섞여 있었다.
+     한 화면 안에서 반경이 세 종류면 "정리 안 된 느낌"이 나는데, 개별 요소만
+     보면 아무도 틀렸다고 말하지 못한다 — 그래서 눈으로는 안 잡히고 재야 잡힌다.
+
+     크기가 아니라 **역할**로 고른다. 큰 면일수록 반경이 크다는 한 가지 규칙만 지킨다. */
+  --r-chip: 8px;     /* 칩, 배지, 범례처럼 글자에 딱 붙는 작은 것 */
+  --r-control: 12px; /* 입력창, 세그먼트 한 칸, 아이콘 버튼 */
+  --r-button: 16px;  /* 버튼, 카드 안의 작은 카드 */
+  --r-card: 20px;    /* 카드 — .card가 쓰는 값 */
+  --r-sheet: 24px;   /* 모달, 바텀시트처럼 화면을 덮는 면 */
+
+  /* ── 모션 ─────────────────────────────────────────────────────────
+     0.14 · 0.15 · 0.18 · 0.22 · 0.32 · 0.4s가 섞여 있었고 이징도 셋이었다.
+     사람은 개별 속도를 구분하지 못하지만 **서로 다르다는 것**은 느낀다 —
+     같은 성격의 동작이 화면마다 다른 속도로 움직이면 앱이 들떠 보인다.
+
+     셋으로 줄이고 이징은 하나로 고정한다. --ease-out은 이 앱이 이미 쓰던
+     감속 곡선이라 성격을 바꾸지 않고 흩어진 것만 모으는 것이다. */
+  --ease-out: cubic-bezier(0.32, 0.72, 0, 1);
+  --motion-fast: 0.14s;  /* 눌림 — 손가락에 즉시 붙어야 한다 */
+  --motion-base: 0.2s;   /* 상태 변화(색·투명도·선택) */
+  --motion-slow: 0.32s;  /* 등장 */
 }
 
 /* 타이포 토큰을 쓰는 유틸리티. 인라인 style 대신 클래스로 두면 색상처럼 style을 이미
@@ -152,6 +205,7 @@
 .fs-title   { font-size: var(--fs-title); }
 .fs-metric  { font-size: var(--fs-metric); }
 .fs-display { font-size: var(--fs-display); }
+.fs-hero    { font-size: var(--fs-hero); line-height: 1; }
 
 .fs-input   { font-size: var(--fs-input); }
 
@@ -170,7 +224,11 @@
   --text-sub: #a1a1a8;
   /* 라이트와 같은 이유로 4.5:1(WCAG 1.4.3) 기준으로 올렸다 — 기존 #6e6e76은
      --surface 다크 대비 3.51:1로 미달이었다. 현재값: --bg 5.41:1 / --surface 4.84:1. */
-  --text-faint: #85858d;
+  /* #85858d였으나 --surface-pressed(#202024) 위에서 4.44로 AA 미달이었다.
+     세그먼트 탭의 비활성 라벨("종목/현금")이 실제로 그 조합이다.
+     116곳에서 쓰는 토큰이라 인스턴스가 아니라 토큰 자체를 올렸다 —
+     --bg/--surface/--surface-pressed 셋 다에서 최저 4.66. */
+  --text-faint: #898990;
 
   --border: #2a2a2e;
   --accent: #2dd4bf;
@@ -196,6 +254,13 @@
   --foreground: var(--text);
 
   --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.24), 0 8px 22px -12px rgba(0, 0, 0, 0.5);
+
+  /* 다크에서는 그림자를 더 짙게 간다 — 어두운 배경 위에서는 옅은 그림자가 아예 안 보여
+     높이 차이가 사라지고 모든 면이 한 장처럼 납작해진다. */
+  --shadow-raised: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-float: 0 8px 24px -8px rgba(0, 0, 0, 0.6);
+  --shadow-overlay: 0 12px 44px -8px rgba(0, 0, 0, 0.7);
+  --shadow-accent: 0 4px 14px -2px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 @theme inline {
@@ -227,6 +292,40 @@ body {
      "국내주/식"으로 갈라졌다). break-word는 렌더링할 때만 끊고 크기 계산은 건드리지 않는다. */
   word-break: keep-all;
   overflow-wrap: break-word;
+
+}
+
+/* 목록 끝에서 계속 당길 때 브라우저 UI(당겨서 새로고침 등)로 넘어가지 않게 한다.
+   스크롤이 페이지 끝에 닿으면 멈춰야 "화면이 끝났다"가 읽힌다.
+   body가 아니라 html에 거는 이유: 실제로 스크롤하는 요소가 html이라
+   body에 걸면 계산값이 auto로 남아 아무 일도 일어나지 않는다(실측 확인). */
+html {
+  overscroll-behavior-y: none;
+}
+
+/* ── 모바일에서 "앱처럼" 느껴지게 하는 기본값 ────────────────────────
+   아래 두 가지는 데스크톱 브라우저로 보면 아무 차이가 없어서 놓치기 쉬운데,
+   실제 휴대폰에서는 가장 먼저 "이거 그냥 웹페이지구나"를 알아채게 만드는 지점이다.
+
+   1) 탭 하이라이트: iOS/안드로이드는 누른 요소 위에 반투명 회색 사각형을 덧씌운다.
+      우리는 이미 .pressable/.tappable로 눌림 피드백을 직접 그리고 있어서,
+      그 위에 기본 하이라이트까지 겹치면 반응이 두 번 일어난 것처럼 보이고
+      모서리도 사각으로 잘려 둥근 버튼 밖으로 삐져나온다.
+
+   2) 길게 누르기: 버튼 글자를 길게 누르면 텍스트가 선택되거나 iOS 콜아웃 메뉴가 뜬다.
+      스와이프로 수정/삭제를 여는 행에서는 이게 특히 거슬린다 — 끌려다 멈칫하면
+      선택 핸들이 튀어나온다.
+
+   입력칸과 본문 텍스트는 제외한다. 금액이나 종목명을 복사하려는 건 정당한 동작이라
+   막으면 안 된다. */
+button,
+a,
+[role="button"],
+[role="radio"],
+[data-drag-handle] {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 /* 금액 숫자 — 고정폭 숫자로 자릿수 흔들림 방지 + 살짝 좁힌 자간 (토스 숫자 느낌의 핵심) */
@@ -240,19 +339,43 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--r-card);
   box-shadow: var(--card-shadow);
 }
 
-/* 탭 가능한 카드의 눌림 피드백 */
+/* 탭 가능한 카드의 눌림 피드백.
+   transform과 background-color만 고른다 — transition: all이면 레이아웃 속성까지
+   애니메이션 대상이 되어, 내용이 바뀔 때(금액 갱신 등) 폭이 슬금슬금 움직인다. */
 .pressable {
   transition:
-    transform 0.14s cubic-bezier(0.32, 0.72, 0, 1),
-    background-color 0.14s ease;
+    transform var(--motion-fast) var(--ease-out),
+    background-color var(--motion-fast) var(--ease-out);
 }
 .pressable:active {
   transform: scale(0.985);
   background: var(--surface-pressed);
+}
+
+/* 누를 수 있는 작은 것(아이콘 버튼, 칩, 세그먼트 한 칸)의 공통 피드백.
+   .pressable은 카드처럼 큰 면을 위한 것이라 scale(0.985)가 거의 안 보인다 —
+   작은 버튼은 더 많이 줄어야 "눌렸다"가 손끝에 읽힌다.
+
+   WHY 이 클래스가 필요한가: 지금 화면마다 눌림 반응이 제각각이다. 어떤 버튼은
+   hover만 있고(모바일에선 아무 일도 안 일어난다), 어떤 버튼은 아무 반응이 없다.
+   "눌리긴 한 건가?" 하고 한 번 더 누르게 만드는 게 이 앱에서 가장 흔한 불편이었다. */
+.tappable {
+  transition:
+    transform var(--motion-fast) var(--ease-out),
+    background-color var(--motion-base) var(--ease-out),
+    color var(--motion-base) var(--ease-out),
+    border-color var(--motion-base) var(--ease-out),
+    opacity var(--motion-base) var(--ease-out);
+}
+.tappable:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.tappable:disabled {
+  opacity: 0.4;
 }
 
 /* 목록 진입 애니메이션 */
@@ -267,7 +390,7 @@ body {
   }
 }
 .rise-in {
-  animation: rise-in 0.32s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: rise-in var(--motion-slow) var(--ease-out) both;
 }
 
 @keyframes fade-in {
@@ -279,7 +402,7 @@ body {
   }
 }
 .fade-in {
-  animation: fade-in 0.4s ease both;
+  animation: fade-in var(--motion-slow) var(--ease-out) both;
 }
 
 /* 중앙 모달/팝오버 등장 — 살짝 커지며 페이드 */
@@ -294,7 +417,7 @@ body {
   }
 }
 .pop-in {
-  animation: pop-in 0.18s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: pop-in var(--motion-base) var(--ease-out) both;
 }
 
 /* 모션 최소화 선호 시 모든 등장/눌림 연출을 제거한다(접근성). */
@@ -306,7 +429,8 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
-  .pressable:active {
+  .pressable:active,
+  .tappable:active:not(:disabled) {
     transform: none;
   }
 }
@@ -323,7 +447,18 @@ body {
   }
 }
 .menu-slide-up {
-  animation: menu-slide-up 0.18s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: menu-slide-up var(--motion-base) var(--ease-out) both;
+}
+
+/* 기관 아이콘 — 값은 InstitutionIcon.tsx가 인라인 변수로 내려주고, 테마 선택만 여기서 한다.
+   JS로 테마를 읽어 고르면 서버 렌더(라이트)와 클라이언트가 어긋나 하이드레이션 경고가 난다. */
+.institution-icon {
+  background: var(--icon-bg);
+  color: var(--icon-color);
+}
+.dark .institution-icon {
+  background: var(--icon-bg-dark);
+  color: var(--icon-color-dark);
 }
 
 /* ── 등급 이름 텍스트 색 ──────────────────────────────────────────
@@ -335,20 +470,31 @@ body {
    색상(hue)·채도는 그대로 두고 명도만 옮겨 4.6:1 이상을 맞췄다. 테마마다 옮겨야 할
    방향이 반대라 두 벌이 필요하고, 그래서 인라인 style이 아니라 클래스로 둔다.
    괄호 안은 각 테마 카드 배경(#ffffff / #18181b) 위 실측 대비. 색을 바꾸면 다시 잴 것. */
-.tier-label-unranked  { color: #6d757c; } /* 4.68 */
-.tier-label-bronze    { color: #9b6845; } /* 4.71 */
-.tier-label-silver    { color: #697582; } /* 4.70 */
-.tier-label-gold      { color: #917022; } /* 4.62 */
-.tier-label-platinum  { color: #2d8177; } /* 4.65 */
-.tier-label-diamond   { color: #1d7ca2; } /* 4.71 */
-.tier-label-ruby      { color: #C2405E; } /* 5.01 — 원래 색이 이미 통과 */
-.tier-label-master    { color: #7C5CE6; } /* 4.64 — 원래 색이 이미 통과 */
+/* 괄호 안은 --bg(#fafafa) / --surface(#fff) / --surface-pressed(#f4f4f5) 중 **최저** 대비.
+   예전엔 흰 배경(--surface)만 놓고 맞췄는데, 이 라벨이 실제로 얹히는 곳은 도넛 차트이고
+   그 바탕은 --bg(#fafafa)다. 흰색보다 어두운 만큼 대비가 약 0.19 깎여서 8개 중 4개가
+   AA(4.5) 아래로 떨어져 있었다(언랭크 4.26, 골드 4.20, 플래티넘 4.23, 마스터 4.22).
+   그래서 기준을 "가장 불리한 배경"으로 바꾸고 여유분까지 두고 다시 잡았다. */
+.tier-label-unranked  { color: #686f76; } /* 4.63 */
+.tier-label-bronze    { color: #936342; } /* 4.66 */
+.tier-label-silver    { color: #646f7c; } /* 4.65 */
+.tier-label-gold      { color: #886920; } /* 4.67 */
+.tier-label-platinum  { color: #2b7b71; } /* 4.58 */
+.tier-label-diamond   { color: #1c769a; } /* 4.65 */
+.tier-label-ruby      { color: #c03f5d; } /* 4.65 */
+.tier-label-master    { color: #7556d8; } /* 4.67 */
 
-.dark .tier-label-unranked  { color: #9AA0A6; } /* 6.71 — 다크에선 원래 색이 통과 */
-.dark .tier-label-bronze    { color: #b0764e; } /* 4.68 */
-.dark .tier-label-silver    { color: #8E99A4; } /* 6.11 */
-.dark .tier-label-gold      { color: #C79A2E; } /* 6.83 */
-.dark .tier-label-platinum  { color: #3FB6A8; } /* 7.14 */
-.dark .tier-label-diamond   { color: #4FB6E0; } /* 7.68 */
-.dark .tier-label-ruby      { color: #cc5f78; } /* 4.62 */
-.dark .tier-label-master    { color: #8a6ee9; } /* 4.63 */
+/* 라이트와 같은 기준 — 괄호 안은 세 배경 중 **최저** 대비.
+   다크에서 가장 불리한 배경은 --bg가 아니라 가장 밝은 --surface-pressed(#202024)다.
+   흰 배경만 보고 맞췄던 라이트의 실수를, 다크에서는 어두운 --surface(#18181b)만
+   보고 맞추는 형태로 똑같이 반복하고 있었다(브론즈 4.29, 루비 4.23, 마스터 4.24).
+   지금 이 라벨이 실제로 얹히는 곳은 --bg 하나뿐이라 화면상 증상은 없었지만,
+   나중에 카드 위로 옮기면 그때 조용히 깨진다. */
+.dark .tier-label-unranked  { color: #9AA0A6; } /* 6.15 */
+.dark .tier-label-bronze    { color: #b47d57; } /* 4.64 */
+.dark .tier-label-silver    { color: #8E99A4; } /* 5.60 */
+.dark .tier-label-gold      { color: #C79A2E; } /* 6.25 */
+.dark .tier-label-platinum  { color: #3FB6A8; } /* 6.55 */
+.dark .tier-label-diamond   { color: #4FB6E0; } /* 7.04 */
+.dark .tier-label-ruby      { color: #cf6980; } /* 4.62 */
+.dark .tier-label-master    { color: #9177ea; } /* 4.65 */
