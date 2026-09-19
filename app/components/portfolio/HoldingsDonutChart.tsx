@@ -31,6 +31,10 @@ import { SectionHeader } from "@/app/components/ui/Section";
 // 잡으면 3개만 있어도 2/1로 갈려 "왼쪽이 안 찼는데 옆으로 넘어간다"고 읽힌다(D-229).
 const LEGEND_MAX_ROWS = 5;
 
+/** 두 열이 공유하는 행 수. 항목이 5개를 넘으면 5줄로 고정되고, 그 이하면 개수만큼. */
+const legendRowsFor = (count: number) =>
+  Math.min(LEGEND_MAX_ROWS, Math.max(1, count));
+
 // 4 : 3 : 3 — 도넛이 4, 종목 열이 각각 3.
 //
 // flex: 4 / 3 처럼 "남는 폭을 나눠 갖는" 방식이 아니라 폭을 직접 못박는다.
@@ -62,16 +66,36 @@ const legendColumnWidth = (columnCount: number) =>
 const legendColumnAspect = (columnCount: number) =>
   columnCount === 1 ? "6 / 4" : "3 / 4";
 
-/**
- * 범례 한 줄의 최대 높이.
- *
- * 열 높이(도넛과 동일)를 항목들이 나눠 갖되, 항목이 적을 때 한 줄이 46px씩 부풀지 않도록
- * 상한을 둔다. 상한에 걸리면 남는 높이는 아래쪽에 그대로 남고 항목은 위에서부터 쌓인다.
- * 5줄이 꽉 찰 때는 상한에 닿지 않고 (146 - 간격 16) / 5 = 26px로 줄어든다 —
- * WCAG 2.5.8(AA, 24px)은 넘고, 높이가 글자 크기가 아니라 flex로 정해지므로
- * 배율을 "크게"로 올려도 24px 아래로 안 내려간다.
- */
+const LEGEND_ROW_GAP = 4; // gap-y-1
 const LEGEND_ROW_MAX_HEIGHT = 33;
+
+/**
+ * 두 열이 **같은 행 높이**를 쓰게 만드는 격자 정의.
+ *
+ * WHY: 예전엔 열마다 항목을 flex로 높이를 나눠 갖게 했는데, 그러면 열에 든 개수가
+ * 다를 때 행 높이가 서로 달라진다. 9종목이면 1열 5줄(26px) · 2열 4줄(33px)이 되어
+ * 같은 줄인데 좌우 높이가 어긋났다 — 나란히 놓인 목록이 계단처럼 밀려 보인다.
+ *
+ * 그래서 행 수를 **열 중 가장 많은 쪽**(= legendRowsFor)으로 통일해 두 열에 같은
+ * 격자를 준다. 항목이 모자라는 열은 아래쪽 칸이 그냥 비고, 채워진 칸끼리는 정확히
+ * 같은 높이에 선다:
+ *     ㅇ ㅇ
+ *     ㅇ ㅇ
+ *     ㅇ ㅇ
+ *     ㅇ ㅇ
+ *     ㅇ
+ *
+ * 행 높이는 min(33px, 열 높이를 n등분)이다. 5줄이 꽉 차면 (146 - 간격 16) / 5 = 26px로
+ * 줄고, 줄 수가 적으면 33px에서 멈춰 남는 높이는 아래에 남긴다(항목이 부풀지 않는다).
+ * 26px은 WCAG 2.5.8(AA, 24px)을 넘고, 높이를 글자 크기가 아니라 격자가 정하므로
+ * 배율을 "크게"로 올려도 그대로다.
+ */
+const legendGridStyle = (rows: number): React.CSSProperties => ({
+  display: "grid",
+  gridTemplateRows: `repeat(${rows}, min(${LEGEND_ROW_MAX_HEIGHT}px, calc((100% - ${
+    (rows - 1) * LEGEND_ROW_GAP
+  }px) / ${rows})))`,
+});
 
 /**
  * 슬라이스를 열 단위로 쪼갠다. 왼쪽 열을 5개까지 채운 뒤에야 오른쪽 열이 찬다.
@@ -266,6 +290,8 @@ export function HoldingsDonutChart({
   // 열 단위로 미리 쪼갠다 — 열 하나가 flex 형제 하나가 되어야 4:3:3이 정확히 맞는다.
   // 원래 인덱스를 들고 가야 탭 하이라이트(activeIndex)가 어긋나지 않는다.
   const legendColumns = splitIntoColumns(slices);
+  // 두 열이 공유하는 행 수 — 가장 많이 든 열을 기준으로 한다.
+  const legendRows = legendRowsFor(slices.length);
 
   return (
     <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
@@ -339,17 +365,16 @@ export function HoldingsDonutChart({
         </div>
 
         {/* 범례 — 열 하나가 곧 형제 하나다. 도넛과 나란히 놓여 4:3:3을 이룬다.
-            py-2인 이유: 항목이 탭 가능한 버튼이라 터치영역이 필요하다. py-1이면 높이가
-            25px으로, WCAG 2.5.8(AA, 24px)은 간신히 넘지만 여유가 1px뿐이었다.
-            py-2면 33px이 되어 배율을 "작게"로 줄여도 24px 아래로 안 내려간다.
-            그만큼 범례가 세로로 길어지는 건 감수한다 — 못 누르는 버튼보다 낫다. */}
+            두 열 모두 같은 격자(legendGridStyle(legendRows))를 써서 행이 좌우로 맞는다. */}
         {legendColumns.map((column, ci) => (
           <div
             key={ci}
-            className="min-w-0 flex flex-col justify-start gap-y-1"
+            className="min-w-0 gap-y-1"
             style={{
               flex: `0 0 ${legendColumnWidth(legendColumns.length)}`,
               aspectRatio: legendColumnAspect(legendColumns.length),
+              // 두 열이 **같은** rows를 받는다 — 여기가 좌우 행 맞춤의 핵심이다.
+              ...legendGridStyle(legendRows),
             }}
           >
             {column.map(({ slice: s, index: i }) => (
@@ -359,11 +384,9 @@ export function HoldingsDonutChart({
                 onClick={() => handleClick(i)}
                 className="flex items-center gap-1 min-w-0 rounded transition-opacity"
                 style={{
-                  // 높이를 패딩이 아니라 flex로 정한다 — 그래야 열 높이(도넛과 동일)
-                  // 안에서 줄 수에 맞춰 알아서 나뉘고, 글자 배율을 올려도 안 넘친다.
-                  flex: "1 1 0",
+                  // 높이는 격자 칸이 정한다(위 legendGridStyle) — 항목이 스스로
+                  // 높이를 갖지 않아야 두 열의 행이 어긋나지 않는다.
                   minHeight: 0,
-                  maxHeight: LEGEND_ROW_MAX_HEIGHT,
                   opacity: activeIndex === null || activeIndex === i ? 1 : 0.4,
                 }}
               >
