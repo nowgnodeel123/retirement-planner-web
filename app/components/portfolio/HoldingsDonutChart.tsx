@@ -50,6 +50,30 @@ const legendColumnWidth = (columnCount: number) =>
   `calc((100% - ${ROW_GAPS}) * ${columnCount === 1 ? "0.6" : "0.3"})`;
 
 /**
+ * 범례 열의 높이를 **도넛 높이와 똑같이** 맞춘다.
+ *
+ * 도넛은 정사각형이라 높이 = 폭 = 4단위다. 열의 폭은 3단위(2열) 또는 6단위(1열)이므로
+ * aspect-ratio를 (열 단위 / 4)로 주면 높이가 정확히 4단위 = 도넛 높이가 된다.
+ *
+ * WHY 높이를 계산이 아니라 비율로 주나: CSS에서 height에 쓰는 퍼센트는 부모의 **높이**
+ * 기준이라 폭 기반 calc을 그대로 쓸 수 없다. aspect-ratio는 자기 폭에서 높이를 끌어내므로
+ * 폭이 어떻게 바뀌든 도넛과 같은 높이가 유지된다.
+ */
+const legendColumnAspect = (columnCount: number) =>
+  columnCount === 1 ? "6 / 4" : "3 / 4";
+
+/**
+ * 범례 한 줄의 최대 높이.
+ *
+ * 열 높이(도넛과 동일)를 항목들이 나눠 갖되, 항목이 적을 때 한 줄이 46px씩 부풀지 않도록
+ * 상한을 둔다. 상한에 걸리면 남는 높이는 아래쪽에 그대로 남고 항목은 위에서부터 쌓인다.
+ * 5줄이 꽉 찰 때는 상한에 닿지 않고 (146 - 간격 16) / 5 = 26px로 줄어든다 —
+ * WCAG 2.5.8(AA, 24px)은 넘고, 높이가 글자 크기가 아니라 flex로 정해지므로
+ * 배율을 "크게"로 올려도 24px 아래로 안 내려간다.
+ */
+const LEGEND_ROW_MAX_HEIGHT = 33;
+
+/**
  * 슬라이스를 열 단위로 쪼갠다. 왼쪽 열을 5개까지 채운 뒤에야 오른쪽 열이 찬다.
  *
  * WHY 격자가 아니라 배열로 쪼개나: 예전엔 범례 하나를 CSS 격자로 두고
@@ -149,7 +173,7 @@ export function HoldingsDonutChart({
   if (holdings === null) {
     return (
       // 스켈레톤 원도 실제 도넛과 같은 40%를 차지해야 데이터가 들어올 때 화면이 안 튄다.
-      <div className="flex items-center gap-2" style={{ marginBottom: "var(--rhythm-section)" }}>
+      <div className="flex items-start gap-2" style={{ marginBottom: "var(--rhythm-section)" }}>
         <div
           className="rounded-full animate-pulse aspect-square"
           style={{ flex: `0 0 ${DONUT_WIDTH}`, background: "var(--border)" }}
@@ -247,9 +271,13 @@ export function HoldingsDonutChart({
     <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
       <SectionHeader label="비중" />
 
-      {/* 가운데 정렬하지 않는다 — 도넛은 항상 행 왼쪽 끝에 붙어 있어야 한다.
+      {/* items-start인 이유: 가운데 정렬(items-center)이면 도넛(146)과 범례(179)의
+          높이가 달라서 범례만 위아래로 16px씩 삐져나온다 — 왼쪽과 오른쪽의 시작 높이가
+          달라 좌우 균형이 깨져 보인다. 위를 맞추고, 열 높이 자체를 도넛에 맞춘다.
+
+          가운데 정렬하지 않는다(가로) — 도넛은 항상 행 왼쪽 끝에 붙어 있어야 한다.
           가운데로 모으면 열 수에 따라 도넛이 좌우로 밀려서 화면마다 자리가 달라진다. */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <div
           className="relative fade-in aspect-square"
           style={{ flex: `0 0 ${DONUT_WIDTH}` }}
@@ -318,16 +346,26 @@ export function HoldingsDonutChart({
         {legendColumns.map((column, ci) => (
           <div
             key={ci}
-            className="min-w-0 flex flex-col gap-y-1"
-            style={{ flex: `0 0 ${legendColumnWidth(legendColumns.length)}` }}
+            className="min-w-0 flex flex-col justify-start gap-y-1"
+            style={{
+              flex: `0 0 ${legendColumnWidth(legendColumns.length)}`,
+              aspectRatio: legendColumnAspect(legendColumns.length),
+            }}
           >
             {column.map(({ slice: s, index: i }) => (
               <button
                 key={s.key}
                 type="button"
                 onClick={() => handleClick(i)}
-                className="flex items-center gap-1 min-w-0 py-2 rounded transition-opacity"
-                style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.4 }}
+                className="flex items-center gap-1 min-w-0 rounded transition-opacity"
+                style={{
+                  // 높이를 패딩이 아니라 flex로 정한다 — 그래야 열 높이(도넛과 동일)
+                  // 안에서 줄 수에 맞춰 알아서 나뉘고, 글자 배율을 올려도 안 넘친다.
+                  flex: "1 1 0",
+                  minHeight: 0,
+                  maxHeight: LEGEND_ROW_MAX_HEIGHT,
+                  opacity: activeIndex === null || activeIndex === i ? 1 : 0.4,
+                }}
               >
                 <span
                   className="w-1.5 h-1.5 rounded-full flex-shrink-0"
