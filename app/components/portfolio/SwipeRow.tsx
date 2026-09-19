@@ -16,11 +16,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-// 버튼 하나당 40px + 사이 간격 12px + 좌우 여백. 수정 버튼이 없는 목록(종목)은
+// 버튼 하나당 44px(최소 터치영역) + 사이 간격 12px + 좌우 여백. 수정 버튼이 없는 목록(종목)은
 // 삭제 하나만 나오므로 서랍 폭도 그만큼 좁혀야 한다 — 128px 그대로 두면 버튼 옆에
 // 빈 공간이 남아 "뭔가 하나 더 있는데 안 보이는" 것처럼 읽힌다.
-const ACTION_WIDTH_BOTH = 128;
-const ACTION_WIDTH_DELETE_ONLY = 76;
+const ACTION_WIDTH_BOTH = 136;
+const ACTION_WIDTH_DELETE_ONLY = 80;
 const DRAG_THRESHOLD = 10;
 const WHEEL_SETTLE_MS = 180;
 
@@ -235,7 +235,7 @@ export function SwipeRow({
               closeSelf();
               onClick();
             }}
-            className="w-10 h-10 rounded-full flex items-center justify-center pressable"
+            className="w-11 h-11 rounded-full flex items-center justify-center pressable"
             style={{
               background: bg,
               color: fg,

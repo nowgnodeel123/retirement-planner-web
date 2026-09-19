@@ -421,7 +421,7 @@ export default function PortfolioPage() {
                 <button
                   type="button"
                   onClick={() => setSortOpen((v) => !v)}
-                  className="pressable flex items-center gap-2 font-semibold px-2 py-1 rounded-lg fs-body"
+                  className="pressable flex items-center gap-2 font-semibold px-2 min-h-[44px] rounded-lg fs-body"
                   style={{ color: "var(--text-sub)" }}
                 >
                   <SortIcon />
@@ -447,7 +447,7 @@ export default function PortfolioPage() {
               <Link
                 href="/portfolio/accounts/new"
                 aria-label="계좌 추가"
-                className="pressable flex items-center gap-1 font-semibold px-2 py-1 rounded-lg fs-body"
+                className="pressable flex items-center gap-1 font-semibold px-2 min-h-[44px] rounded-lg fs-body"
                 style={{ color: "var(--accent)" }}
               >
                 <PlusIcon />

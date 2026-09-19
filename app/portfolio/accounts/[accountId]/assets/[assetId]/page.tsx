@@ -503,7 +503,7 @@ export default function AssetDetailPage() {
     <div className="max-w-[420px] w-full mx-auto px-5 pt-6">
       <button
         onClick={() => router.push(`/portfolio/accounts/${accountId}`)}
-        className="flex items-center gap-1 fs-body mb-5"
+        className="flex items-center gap-1 fs-body mb-3 min-h-[44px] -ml-1 px-1"
         style={{ color: "var(--text-sub)" }}
       >
         <svg
@@ -940,7 +940,7 @@ export default function AssetDetailPage() {
                         : openEditTransaction(item.data)
                     }
                     aria-label="거래 내역 수정"
-                    className="p-1 rounded-md"
+                    className="rounded-md min-w-[44px] min-h-[44px] flex items-center justify-center"
                     style={{
                       color:
                         editTxId === item.data.transactionId
@@ -965,7 +965,7 @@ export default function AssetDetailPage() {
                   <button
                     onClick={() => setDeleteTxId(item.data.transactionId)}
                     aria-label="거래 내역 삭제"
-                    className="p-1 rounded-md"
+                    className="rounded-md min-w-[44px] min-h-[44px] flex items-center justify-center"
                     style={{ color: "var(--text-faint)" }}
                   >
                     <svg
@@ -1054,7 +1054,7 @@ export default function AssetDetailPage() {
                   <button
                     onClick={() => setDeleteTargetId(item.data.dividendId)}
                     aria-label="배당 기록 삭제"
-                    className="p-1 rounded-md"
+                    className="rounded-md min-w-[44px] min-h-[44px] flex items-center justify-center"
                     style={{ color: "var(--text-faint)" }}
                   >
                     <svg

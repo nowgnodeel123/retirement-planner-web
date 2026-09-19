@@ -320,7 +320,7 @@ export default function AccountDetailPage() {
     <div className="max-w-[420px] w-full mx-auto px-5 pt-6">
       <button
         onClick={() => router.push("/portfolio")}
-        className="flex items-center gap-1 fs-body mb-5"
+        className="flex items-center gap-1 fs-body mb-3 min-h-[44px] -ml-1 px-1"
         style={{ color: "var(--text-sub)" }}
       >
         <svg
@@ -359,7 +359,7 @@ export default function AccountDetailPage() {
                 setRenameOpen(true);
               }}
               aria-label="계좌 이름 수정"
-              className="p-1 rounded-md flex-shrink-0"
+              className="rounded-md flex-shrink-0 min-w-[44px] min-h-[44px] flex items-center justify-center"
               style={{ color: "var(--text-faint)" }}
             >
               <svg
@@ -456,7 +456,7 @@ export default function AccountDetailPage() {
               <button
                 type="button"
                 onClick={() => setSortModalOpen((v) => !v)}
-                className="flex items-center gap-1 fs-body font-semibold px-2 py-1 rounded-lg"
+                className="flex items-center gap-1 fs-body font-semibold px-2 min-h-[44px] rounded-lg"
                 style={{ color: "var(--text-sub)" }}
               >
                 <svg
@@ -493,7 +493,7 @@ export default function AccountDetailPage() {
           )}
           <Link
             href={`/portfolio/accounts/${accountId}/assets/new`}
-            className="fs-body font-semibold px-2 py-1 rounded-lg"
+            className="fs-body font-semibold px-2 min-h-[44px] flex items-center rounded-lg"
             style={{ color: "var(--accent)" }}
           >
             + 자산 추가
@@ -583,8 +583,13 @@ export default function AccountDetailPage() {
                         {h.name}
                       </span>
                     </p>
+                    {/* 보조줄은 자르지 않고 두 줄까지 접는다.
+                        여기 담기는 건 종목코드·카테고리·수량·평단 네 가지인데, 한 줄로
+                        자르면 맨 끝의 평단이 가장 먼저 사라진다 — "얼마에 샀나"는
+                        목록에서 확인하고 싶은 값이라 잘려선 안 된다.
+                        line-clamp-2라 그래도 안 들어가는 극단적인 경우에만 잘린다. */}
                     <p
-                      className="amount fs-body mt-1 truncate"
+                      className="amount fs-body mt-1 line-clamp-2 leading-snug"
                       style={{ color: "var(--text-sub)" }}
                     >
                       {!isCash && (

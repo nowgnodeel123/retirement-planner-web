@@ -244,7 +244,11 @@ export function HoldingsDonutChart({
           </div>
         </div>
 
-        {/* 범례 — 도넛 오른쪽, 두 열 × 5행(열 우선). 탭으로도 하이라이트 가능. */}
+        {/* 범례 — 도넛 오른쪽, 두 열 × 5행(열 우선). 탭으로도 하이라이트 가능.
+            py-2인 이유: 항목이 탭 가능한 버튼이라 터치영역이 필요하다. py-1이면 높이가
+            25px으로, WCAG 2.5.8(AA, 24px)은 간신히 넘지만 여유가 1px뿐이었다.
+            py-2면 33px이 되어 배율을 "작게"로 줄여도 24px 아래로 안 내려간다.
+            그만큼 범례가 세로로 길어지는 건 감수한다 — 못 누르는 버튼보다 낫다. */}
         <div
           className="flex-1 min-w-0 gap-x-1 gap-y-1"
           style={legendGridStyle(slices.length)}
@@ -254,7 +258,7 @@ export function HoldingsDonutChart({
               key={s.key}
               type="button"
               onClick={() => handleClick(i)}
-              className="flex items-center gap-1 min-w-0 py-1 rounded transition-opacity"
+              className="flex items-center gap-1 min-w-0 py-2 rounded transition-opacity"
               style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.4 }}
             >
               <span
