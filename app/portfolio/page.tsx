@@ -130,8 +130,8 @@ function EmptyState() {
       </p>
       <Link
         href="/portfolio/accounts/new"
-        className="pressable rounded-2xl text-white px-6 py-3 font-semibold fs-title"
-        style={{ background: "var(--accent)" }}
+        className="pressable rounded-2xl px-6 py-3 min-h-[44px] font-semibold fs-title"
+        style={{ background: "var(--accent)", color: "var(--on-accent)" }}
       >
         첫 계좌 등록하기
       </Link>

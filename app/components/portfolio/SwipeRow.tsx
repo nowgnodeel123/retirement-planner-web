@@ -225,7 +225,7 @@ export function SwipeRow({
           ...(onEdit
             ? [{ label: editLabel, onClick: onEdit, Icon: PencilIcon, bg: "var(--surface-pressed)", fg: "var(--text-sub)" }]
             : []),
-          { label: deleteLabel, onClick: onDelete, Icon: TrashIcon, bg: "var(--error)", fg: "#fff" },
+          { label: deleteLabel, onClick: onDelete, Icon: TrashIcon, bg: "var(--error)", fg: "var(--on-error)" },
         ].map(({ label, onClick, Icon, bg, fg }) => (
           <button
             key={label}

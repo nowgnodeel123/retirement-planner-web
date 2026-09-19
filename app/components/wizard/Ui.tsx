@@ -324,7 +324,7 @@ export function PrimaryButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`relative rounded-2xl bg-[var(--accent)] text-white py-3 min-h-[44px] fs-title font-semibold
+      className={`relative rounded-2xl bg-[var(--accent)] text-[var(--on-accent)] py-3 min-h-[44px] fs-title font-semibold
         shadow-[0_4px_14px_rgba(49,130,246,0.3)]
         transition-all duration-150
         hover:brightness-110 active:scale-[0.98] active:brightness-95

@@ -71,7 +71,7 @@ export function WithdrawModal({
             type="button"
             onClick={() => onConfirm(isLocal ? password : null)}
             disabled={loading || (isLocal && password.length === 0)}
-            className="flex-1 rounded-2xl text-white py-3 fs-title font-semibold
+            className="flex-1 rounded-2xl text-[var(--on-error)] py-3 min-h-[44px] fs-title font-semibold
               transition-all duration-150 hover:brightness-110 active:scale-[0.98]
               disabled:opacity-40 disabled:active:scale-100"
             style={{ background: "var(--error)" }}
