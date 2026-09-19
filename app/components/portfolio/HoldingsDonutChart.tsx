@@ -1,14 +1,17 @@
-// HoldingsDonutChart.tsx — M9 대시보드 도넛차트, 종목별 비중.
-// D-073(순수 빨강·파랑 제외 팔레트) / D-074(탭으로 하이라이트) 유지.
-// 범례는 도넛 오른쪽에 두 열, 한 열당 5개(열 우선으로 채움). 도넛 가운데는 등급 엠블럼.
-// 11개 이상이면 상위 9개 + "외 N개"(= 10칸 = 5×2).
+// ── 도넛 : 종목1열 : 종목2열 = 4 : 3 : 3 (사용자 지정 비율) ──────────────
+// 픽셀 고정이 아니라 flex 비율로 잡는다. 컨테이너 폭(420px 상한)이 바뀌거나
+// 글자 크기 설정이 바뀌어도 비율 자체는 그대로 유지되고, 픽셀 값을 다시 계산할
+// 일도 없다. 링 반지름도 퍼센트로 줘서 지름에 자동으로 따라온다.
 //
-// 긴 이름은 잘린다 — 열당 폭이 좁아서 "LG에너지솔루션"처럼 긴 이름은 들어가지 않는다.
-// 한 열로 풀거나 도넛 아래로 내리면 잘림은 사라지지만 세로가 길어져서, 이 화면에서는
-// 조밀함을 택했다(사용자 결정). 대신 조각을 탭하면 도넛 가운데에 전체 이름이 뜨므로
-// 잘린 이름을 확인할 경로는 남아 있다.
-// 도넛 지름은 112px — 140px에서 줄여 그만큼(28px)을 범례 폭으로 넘겼다.
-// 열당 폭 96 → 104px이 되어 잘리는 이름이 4개에서 1개로 줄었다.
+// 380px 폭 기준 실측: 도넛 146 · 열당 109px (간격 8px × 2 제외, 정확히 4:3:3).
+// 종목이 5개 이하라 열이 하나뿐이면 그 열이 6을 다 써서 218px이 된다 — 도넛은 그대로 146.
+//
+// ⚠ 이 비율로 감수한 것 — 열 폭이 109px이라 긴 이름이 잘린다. 실측 한계선:
+//     작게 → 잘림 없음
+//     보통 → 8글자부터 잘림("삼성바이오로직스")
+//     크게 → 7글자부터 잘림("LG에너지솔루션")
+//   잘린 이름은 도넛 조각을 탭하면 가운데에 전체가 뜬다. 잘림을 줄이려면 비율을
+//   4:3:3에서 3:3.5:3.5 쪽으로 옮기면 되는데, 그만큼 도넛이 작아진다(사용자 결정 사항).
 "use client";
 
 import { useState } from "react";
@@ -27,13 +30,53 @@ import { SectionHeader } from "@/app/components/ui/Section";
 // 왼쪽 열을 5개까지 채운 뒤에야 오른쪽 열이 찬다(열 우선). 행 수를 ceil(count/2)로
 // 잡으면 3개만 있어도 2/1로 갈려 "왼쪽이 안 찼는데 옆으로 넘어간다"고 읽힌다(D-229).
 const LEGEND_MAX_ROWS = 5;
-const legendRowsFor = (count: number) => Math.min(LEGEND_MAX_ROWS, Math.max(1, count));
-const legendGridStyle = (count: number): React.CSSProperties => ({
-  display: "grid",
-  gridTemplateRows: `repeat(${legendRowsFor(count)}, auto)`,
-  gridAutoFlow: "column",
-  gridAutoColumns: "minmax(0, 1fr)",
-});
+
+// 4 : 3 : 3 — 도넛이 4, 종목 열이 각각 3.
+//
+// flex: 4 / 3 처럼 "남는 폭을 나눠 갖는" 방식이 아니라 폭을 직접 못박는다.
+// 남는 폭을 나누게 두면 형제 수(= 열 수)가 바뀔 때마다 도넛 크기가 같이 움직인다.
+//
+// **도넛은 항상 4, 항상 같은 자리다.** 범례 몫도 항상 6으로 고정이고, 그 6을
+// 열이 둘이면 3:3으로 나누고 하나뿐이면 한 열이 6을 다 쓴다. 종목을 사고팔아
+// 열 수가 바뀌어도 도넛의 크기와 위치는 1px도 변하지 않는다.
+//
+// 16px = 형제 사이 간격(8px) 둘. 열이 하나여서 간격이 하나뿐일 때도 **같은 값**을
+// 빼야 도넛 폭이 똑같이 나온다(8px을 빼면 3px 커지면서 도넛이 미세하게 움직인다).
+// 그래서 1열일 때는 오른쪽 끝에 8px이 남는데, 도넛이 안 움직이는 쪽이 우선이다.
+const ROW_GAPS = "16px";
+const DONUT_WIDTH = `calc((100% - ${ROW_GAPS}) * 0.4)`;
+/** 범례 몫은 항상 6. 열이 둘이면 3씩, 하나면 그 열이 6을 다 쓴다. */
+const legendColumnWidth = (columnCount: number) =>
+  `calc((100% - ${ROW_GAPS}) * ${columnCount === 1 ? "0.6" : "0.3"})`;
+
+/**
+ * 슬라이스를 열 단위로 쪼갠다. 왼쪽 열을 5개까지 채운 뒤에야 오른쪽 열이 찬다.
+ *
+ * WHY 격자가 아니라 배열로 쪼개나: 예전엔 범례 하나를 CSS 격자로 두고
+ * grid-auto-flow: column으로 채웠는데, 그러면 도넛과 범례가 형제 **둘**이라
+ * 열 사이 간격(4px)이 범례 몫 안에서 빠져 실측 비율이 4 : 2.96 : 2.96이 됐다.
+ * 열을 각각 형제로 꺼내면 간격이 형제 사이로 균등하게 빠져 정확히 4:3:3이 된다.
+ *
+ * 원래 인덱스를 함께 들고 간다 — 탭 하이라이트(activeIndex)가 슬라이스 배열 기준이라
+ * 열로 쪼개면서 번호가 어긋나면 엉뚱한 조각이 밝아진다.
+ */
+function splitIntoColumns<T>(items: T[]): { slice: T; index: number }[][] {
+  const columns: { slice: T; index: number }[][] = [];
+  items.forEach((slice, index) => {
+    const col = Math.floor(index / LEGEND_MAX_ROWS);
+    (columns[col] ??= []).push({ slice, index });
+  });
+  return columns;
+}
+
+/**
+ * 링 반지름은 퍼센트로 준다 — recharts는 컨테이너의 min(가로,세로)/2를 100%로 본다.
+ * 예전엔 112px 기준으로 innerRadius=34, outerRadius=50이 박혀 있어서 지름을 바꿀
+ * 때마다 링이 얇아지거나 가운데 등급 아이콘을 덮었다. 비율(50/56, 34/56)만 옮긴 값이라
+ * 보이는 두께감은 그대로다.
+ */
+const RING_OUTER = "89%";
+const RING_INNER = "61%";
 
 // D-073: 손익 색상(순수 빨강/파랑)과 혼동되지 않는 채도 상향 팔레트. 범례를 최대 9종목까지
 // 보여주므로(그 이상은 "외 N개"), 5색 순환으로는 인접 슬라이스 색이 겹쳐 10색으로 확장했다.
@@ -105,12 +148,13 @@ export function HoldingsDonutChart({
 
   if (holdings === null) {
     return (
-      <div className="flex items-center gap-3" style={{ marginBottom: "var(--rhythm-section)" }}>
+      // 스켈레톤 원도 실제 도넛과 같은 40%를 차지해야 데이터가 들어올 때 화면이 안 튄다.
+      <div className="flex items-center gap-2" style={{ marginBottom: "var(--rhythm-section)" }}>
         <div
-          className="rounded-full animate-pulse flex-shrink-0"
-          style={{ width: 112, height: 112, background: "var(--border)" }}
+          className="rounded-full animate-pulse aspect-square"
+          style={{ flex: `0 0 ${DONUT_WIDTH}`, background: "var(--border)" }}
         />
-        <div className="flex-1 space-y-2">
+        <div className="space-y-2" style={{ flex: `0 0 ${legendColumnWidth(1)}` }}>
           {[0, 1, 2].map((i) => (
             <div
               key={i}
@@ -129,22 +173,38 @@ export function HoldingsDonutChart({
     return (
       <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
         <SectionHeader label="비중" />
-        <div className="flex items-center gap-3">
+        {/* 보유 종목이 없으면 범례도 없으니 오른쪽은 안내 문구 한 줄이 그 자리를 대신한다.
+            비율은 4:3:3 그대로 둬서, 종목을 처음 담았을 때 도넛 크기가 튀지 않는다. */}
+        <div className="flex items-center gap-2">
+          {/* 빈 링을 SVG로 그린다 — 실제 도넛과 **같은 기하**를 쓰기 위해서다.
+              viewBox 100 기준 반지름 50에 RING_OUTER 89% / RING_INNER 61%를 적용하면
+              바깥 44.5 · 안쪽 30.5 → 획 중심 37.5, 두께 14. 아래 숫자가 바로 그 값이다.
+
+              CSS로 두 번 실패한 자리다: border-width는 퍼센트를 아예 안 받아 조용히
+              0px가 됐고(링 실종), padding 퍼센트는 자기 폭이 아니라 **부모 행 폭** 기준이라
+              두께가 53px로 부풀고 크기까지 틀어졌다. SVG는 viewBox 안에서 계산되므로
+              지름이 어떻게 바뀌든 비율이 그대로 유지된다. */}
           <div
-            className="relative flex-shrink-0 rounded-full flex items-center justify-center"
-            style={{
-              width: 112,
-              height: 112,
-              border: "14px solid var(--border)",
-            }}
+            className="relative aspect-square"
+            style={{ flex: `0 0 ${DONUT_WIDTH}` }}
           >
-            <div className="flex flex-col items-center px-3 text-center">
+            <svg viewBox="0 0 100 100" className="w-full h-full" aria-hidden="true">
+              <circle
+                cx="50"
+                cy="50"
+                r="37.5"
+                fill="none"
+                stroke="var(--border)"
+                strokeWidth="14"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center px-3 text-center">
               <TierCenter totalAssetKrw={totalAssetKrw} />
             </div>
           </div>
           <p
-            className="flex-1 leading-relaxed fs-body"
-            style={{ color: "var(--text-faint)" }}
+            className="leading-relaxed fs-body"
+            style={{ flex: `0 0 ${legendColumnWidth(1)}`, color: "var(--text-faint)" }}
           >
             아직 등록된 보유 자산이 없어요
           </p>
@@ -179,14 +239,20 @@ export function HoldingsDonutChart({
     setActiveIndex((prev) => (prev === index ? null : index));
   }
 
+  // 열 단위로 미리 쪼갠다 — 열 하나가 flex 형제 하나가 되어야 4:3:3이 정확히 맞는다.
+  // 원래 인덱스를 들고 가야 탭 하이라이트(activeIndex)가 어긋나지 않는다.
+  const legendColumns = splitIntoColumns(slices);
+
   return (
     <div className="rise-in" style={{ marginBottom: "var(--rhythm-section)" }}>
       <SectionHeader label="비중" />
 
-      <div className="flex items-center gap-3">
+      {/* 가운데 정렬하지 않는다 — 도넛은 항상 행 왼쪽 끝에 붙어 있어야 한다.
+          가운데로 모으면 열 수에 따라 도넛이 좌우로 밀려서 화면마다 자리가 달라진다. */}
+      <div className="flex items-center gap-2">
         <div
-          className="relative flex-shrink-0 fade-in"
-          style={{ width: 112, height: 112 }}
+          className="relative fade-in aspect-square"
+          style={{ flex: `0 0 ${DONUT_WIDTH}` }}
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -196,8 +262,8 @@ export function HoldingsDonutChart({
                 nameKey="label"
                 cx="50%"
                 cy="50%"
-                innerRadius={34}
-                outerRadius={50}
+                innerRadius={RING_INNER}
+                outerRadius={RING_OUTER}
                 paddingAngle={slices.length > 1 ? 2 : 0}
                 stroke="none"
                 // 등장 애니메이션 비활성화 — 리사이즈/측정 타이밍과 겹치면 슬라이스가
@@ -244,42 +310,45 @@ export function HoldingsDonutChart({
           </div>
         </div>
 
-        {/* 범례 — 도넛 오른쪽, 두 열 × 5행(열 우선). 탭으로도 하이라이트 가능.
+        {/* 범례 — 열 하나가 곧 형제 하나다. 도넛과 나란히 놓여 4:3:3을 이룬다.
             py-2인 이유: 항목이 탭 가능한 버튼이라 터치영역이 필요하다. py-1이면 높이가
             25px으로, WCAG 2.5.8(AA, 24px)은 간신히 넘지만 여유가 1px뿐이었다.
             py-2면 33px이 되어 배율을 "작게"로 줄여도 24px 아래로 안 내려간다.
             그만큼 범례가 세로로 길어지는 건 감수한다 — 못 누르는 버튼보다 낫다. */}
-        <div
-          className="flex-1 min-w-0 gap-x-1 gap-y-1"
-          style={legendGridStyle(slices.length)}
-        >
-          {slices.map((s, i) => (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => handleClick(i)}
-              className="flex items-center gap-1 min-w-0 py-2 rounded transition-opacity"
-              style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.4 }}
-            >
-              <span
-                className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: s.color }}
-              />
-              <span
-                className="font-medium truncate min-w-0 flex-1 text-left fs-caption"
-                style={{ color: "var(--text-strong)" }}
+        {legendColumns.map((column, ci) => (
+          <div
+            key={ci}
+            className="min-w-0 flex flex-col gap-y-1"
+            style={{ flex: `0 0 ${legendColumnWidth(legendColumns.length)}` }}
+          >
+            {column.map(({ slice: s, index: i }) => (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => handleClick(i)}
+                className="flex items-center gap-1 min-w-0 py-2 rounded transition-opacity"
+                style={{ opacity: activeIndex === null || activeIndex === i ? 1 : 0.4 }}
               >
-                {s.label}
-              </span>
-              <span
-                className="amount flex-shrink-0 fs-caption"
-                style={{ color: "var(--text-sub)" }}
-              >
-                {total > 0 ? `${((s.value / total) * 100).toFixed(1)}%` : "0%"}
-              </span>
-            </button>
-          ))}
-        </div>
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: s.color }}
+                />
+                <span
+                  className="font-medium truncate min-w-0 flex-1 text-left fs-caption"
+                  style={{ color: "var(--text-strong)" }}
+                >
+                  {s.label}
+                </span>
+                <span
+                  className="amount flex-shrink-0 fs-caption"
+                  style={{ color: "var(--text-sub)" }}
+                >
+                  {total > 0 ? `${((s.value / total) * 100).toFixed(1)}%` : "0%"}
+                </span>
+              </button>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
