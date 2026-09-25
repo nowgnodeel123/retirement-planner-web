@@ -1,8 +1,11 @@
 // ScrollableList.tsx — 목록이 길어지면 목록 안에서만 스크롤되게 감싼다.
 //
-// 왜: 계좌나 종목이 늘어나면 화면 위쪽 요약(총자산·도넛·기간 필터)이 전부 밀려 올라가서,
-// 목록을 보려면 매번 페이지를 길게 스크롤해야 했다. 요약은 고정해두고 목록만 움직이는 게
-// 훑어보기에 낫다.
+// 왜: 종목이 늘어나면 화면 위쪽 요약(총평가금액·손익)이 전부 밀려 올라가서, 목록을 보려면
+// 매번 페이지를 길게 스크롤해야 했다. 요약은 고정해두고 목록만 움직이는 게 훑어보기에 낫다.
+//
+// 쓰는 곳은 계좌 상세의 보유 자산 목록 하나다. 포트폴리오 메인의 계좌 목록도 예전엔 이걸
+// 썼는데, 사용자 요청으로 걷어냈다 — 한 화면에 세로 스크롤 영역이 둘이면 어느 쪽이 움직이는지
+// 손가락을 대보기 전엔 알 수 없다.
 //
 // 높이를 왜 재는가: 처음엔 `max(320px, 52vh)` 같은 고정 비율로 잡았는데, 위쪽 요약이
 // 얼마나 차지하는지를 모르니 목록 아래쪽이 그대로 화면 밖으로 나갔다. 그래서 이 요소의
@@ -15,8 +18,6 @@
 //   움직이는 것(스크롤 체이닝)을 막는다. 이게 없으면 목록을 넘길 때마다 화면이 튄다.
 // - overflowX는 hidden. 안쪽 SwipeRow가 가로로 밀리는 걸 자기 안에서 이미 클립하지만,
 //   둥근 모서리를 유지하려면 두 축 모두 잘라야 한다.
-// - padded: 카드가 개별로 떠 있는 목록(계좌)은 그림자가 잘리지 않게 안쪽 여백을 주고
-//   같은 크기의 음수 마진으로 상쇄한다. 한 장짜리 카드(보유 자산)는 필요 없다.
 // - maxItems: "N개까지만 보이고 그 다음부터는 목록 안에서 스크롤". 화면에 남은 높이가
 //   아니라 실제 항목 높이를 재서 자른다 — 항목 높이는 손익 줄 유무나 긴 종목명 줄바꿈으로
 //   행마다 다르고, 기기 폭에 따라서도 달라져서 상수로 박으면 N번째 항목이 어중간하게
@@ -31,7 +32,6 @@ export function ScrollableList({
   children,
   className,
   style,
-  padded = false,
   /** 하단 탭바 + 숨 쉴 여백. 목록 바닥이 탭바에 가리지 않도록 빼둔다. */
   bottomInset = 104,
   minHeight = 260,
@@ -43,7 +43,6 @@ export function ScrollableList({
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
-  padded?: boolean;
   bottomInset?: number;
   minHeight?: number;
   maxItems?: number;
@@ -122,7 +121,6 @@ export function ScrollableList({
               overscrollBehavior: "contain",
             }
           : null),
-        ...(padded ? { padding: "4px 6px", margin: "-4px -6px" } : null),
         ...style,
       }}
     >

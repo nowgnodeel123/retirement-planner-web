@@ -23,6 +23,7 @@ import {
 } from "@/app/components/wizard/Ui";
 import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { TradeAmountFields } from "@/app/components/portfolio/TradeForm";
+import { CashBalanceNote } from "@/app/components/portfolio/CashBalanceNote";
 import {
   CASH_CURRENCIES,
   allowedCategories,
@@ -31,6 +32,7 @@ import { useDealBasRate } from "@/app/components/portfolio/useDealBasRate";
 import {
   AccountResponse,
   AssetBuyRequest,
+  AssetHoldingResponse,
   CashCurrency,
   cashCurrencyLabel,
   categoryUnit,
@@ -308,6 +310,9 @@ export default function NewAssetPage() {
   const [fxBaseDate, setFxBaseDate] = useState<string | null>(null);
   const [fxTouched, setFxTouched] = useState(false);
   const [tradeDate, setTradeDate] = useState(todayString());
+  // D-240: 이 계좌의 통화별 예수금. 매수 대금이 같은 통화 예수금에서 빠지므로
+  // 폼에서 미리 보여준다(없는 통화는 키가 없고, 그때 매매는 예수금을 안 건드린다).
+  const [cashByCurrency, setCashByCurrency] = useState<Record<string, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -316,6 +321,22 @@ export default function NewAssetPage() {
     tradeDate,
     category === "FOREIGN_STOCK" && !fxTouched,
   );
+
+  useEffect(() => {
+    api
+      .get<AssetHoldingResponse[]>(`/api/assets?accountId=${accountId}`)
+      .then((all) =>
+        setCashByCurrency(
+          Object.fromEntries(
+            all
+              .filter((h) => h.category === "CASH")
+              .map((h) => [h.currency, h.quantity]),
+          ),
+        ),
+      )
+      // 예수금 표시는 보조 정보다 — 못 받아와도 매수 자체는 막지 않는다.
+      .catch(() => setCashByCurrency({}));
+  }, [accountId]);
 
   useEffect(() => {
     api.get<AccountResponse[]>("/api/accounts").then((all) => {
@@ -387,6 +408,8 @@ export default function NewAssetPage() {
   const isCryptoOnly = options.length === 1 && options[0] === "CRYPTO";
   const useUnifiedSearch = !isCryptoOnly;
   const isForeign = category === "FOREIGN_STOCK";
+  // 매수 대금이 빠져나가는 통화. 해외주식만 달러고 나머지는 원화다(백엔드 resolveCurrency와 동일).
+  const tradeCurrency = isForeign ? "USD" : "KRW";
 
   // D-170: 종목 하나를 고르는 즉시 카테고리까지 함께 확정된다(수동 토글 없음).
   function selectSearchResult(item: {
@@ -715,6 +738,15 @@ export default function NewAssetPage() {
           }
           tradeDate={tradeDate}
           onTradeDateChange={setTradeDate}
+        />
+
+        <CashBalanceNote
+          balance={cashByCurrency[tradeCurrency] ?? null}
+          currency={tradeCurrency}
+          amount={
+            quantity !== "" && unitPrice !== "" ? quantity * unitPrice : null
+          }
+          kind="buy"
         />
 
         </>

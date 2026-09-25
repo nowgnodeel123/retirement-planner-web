@@ -28,7 +28,6 @@ import {
   PortfolioSummaryResponse,
   RetirementAgeCardResponse,
 } from "@/app/components/portfolio/types";
-import { ScrollableList } from "@/app/components/portfolio/ScrollableList";
 import { Section } from "@/app/components/ui/Section";
 
 function SortIcon() {
@@ -82,9 +81,6 @@ function PlusIcon() {
     </svg>
   );
 }
-
-/** 계좌 목록에서 한 화면에 보여줄 개수. 그 이상은 목록 안에서 스크롤한다. */
-const ACCOUNTS_VISIBLE = 3;
 
 const SORT_LABEL: Record<HoldingSortKey, string> = {
   value: "금액순",
@@ -432,7 +428,7 @@ export default function PortfolioPage() {
            화면이 흔들리고 "사용자 설정"으로 순서 편집에 들어가는 길도 함께 막힌다. */
         <Section
           label="내 계좌"
-          hint={accounts.length > ACCOUNTS_VISIBLE ? `${accounts.length}개 · 스크롤해서 더 보기` : undefined}
+          hint={accounts.length > 1 ? `${accounts.length}개` : undefined}
           action={
             <>
               <div className="relative">
@@ -474,10 +470,10 @@ export default function PortfolioPage() {
             </>
           }
         >
-          <ScrollableList
-            padded
-            maxItems={ACCOUNTS_VISIBLE}
-            recomputeKey={`${sortedAccounts.length}-${summaryMap.size}`}
+          {/* 목록 안 스크롤을 걷어냈다(사용자 요청). 계좌가 늘어나면 페이지가 그만큼
+              길어지고 위쪽 요약은 함께 밀려 올라간다 — 스크롤 영역이 둘로 나뉘어
+              "어느 쪽이 움직이는지" 헷갈리던 것보다 한 방향으로 도는 편이 예측 가능하다. */}
+          <div
             style={{ display: "flex", flexDirection: "column", gap: "var(--rhythm-tight)" }}
           >
             {sortedAccounts.map((account, i) => (
@@ -500,7 +496,7 @@ export default function PortfolioPage() {
                 </SwipeRow>
               </div>
             ))}
-          </ScrollableList>
+          </div>
         </Section>
       )}
 

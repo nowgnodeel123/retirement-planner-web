@@ -18,6 +18,8 @@ import { CategoryBadge } from "@/app/components/portfolio/CategoryBadge";
 import { Section } from "@/app/components/ui/Section";
 import { RenameModal } from "@/app/components/portfolio/RenameModal";
 import { TradeForm } from "@/app/components/portfolio/TradeForm";
+import { SwipeRow } from "@/app/components/portfolio/SwipeRow";
+import { CashBalanceNote } from "@/app/components/portfolio/CashBalanceNote";
 import {
   formatMoney,
   formatQuantity,
@@ -141,6 +143,10 @@ export default function AssetDetailPage() {
   const [deleteTxId, setDeleteTxId] = useState<number | null>(null);
   const [deletingTx, setDeletingTx] = useState(false);
 
+  // D-240: 같은 계좌·같은 통화 예수금 잔액. 미등록 계좌는 null(매매가 예수금을 안 건드린다).
+  // 위 cashBalance(현금 자산 자신의 잔액 입력값)와는 다른 값이라 이름을 분리한다.
+  const [settlementCash, setSettlementCash] = useState<number | null>(null);
+
   // M8: 배당 삭제 확인
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -149,7 +155,18 @@ export default function AssetDetailPage() {
     // 단건 조회 API가 없어 계좌 보유목록에서 찾는다 — 계좌 상세 화면과 동일한 우회 패턴(백로그 항목)
     api
       .get<AssetHoldingResponse[]>(`/api/assets?accountId=${accountId}`)
-      .then((all) => setHolding(all.find((h) => h.assetId === assetId) ?? null))
+      .then((all) => {
+        const target = all.find((h) => h.assetId === assetId) ?? null;
+        setHolding(target);
+        // D-240: 매매가 같은 통화 예수금을 깎는다. 계좌 보유목록을 이미 받고 있으므로
+        // 여기서 같이 뽑는다 — 예수금 조회만을 위한 호출을 따로 추가하지 않는다.
+        const cash = target
+          ? all.find(
+              (h) => h.category === "CASH" && h.currency === target.currency,
+            )
+          : undefined;
+        setSettlementCash(cash ? cash.quantity : null);
+      })
       .catch((e) =>
         setError(
           e instanceof ApiError ? e.message : "자산 정보를 불러오지 못했어요.",
@@ -724,6 +741,18 @@ export default function AssetDetailPage() {
               onSubmit={handleBuy}
             />
           )}
+          {buyOpen && (
+            <CashBalanceNote
+              balance={settlementCash}
+              currency={holding.currency}
+              amount={
+                buyQuantity !== "" && buyUnitPrice !== ""
+                  ? buyQuantity * buyUnitPrice
+                  : null
+              }
+              kind="buy"
+            />
+          )}
 
           {sellOpen && (
             <TradeForm
@@ -748,6 +777,16 @@ export default function AssetDetailPage() {
               submitting={submitting}
               submitLabel="매도 등록"
               onSubmit={handleSell}
+            />
+          )}
+          {sellOpen && (
+            <CashBalanceNote
+              balance={settlementCash}
+              currency={holding.currency}
+              amount={
+                quantity !== "" && unitPrice !== "" ? quantity * unitPrice : null
+              }
+              kind="sell"
             />
           )}
 
@@ -884,6 +923,12 @@ export default function AssetDetailPage() {
           {combinedHistory.map((item) =>
             item.kind === "transaction" ? (
               <div key={`tx-${item.data.transactionId}`}>
+              <SwipeRow
+                onEdit={() => openEditTransaction(item.data)}
+                onDelete={() => setDeleteTxId(item.data.transactionId)}
+                editLabel="거래 내역 수정"
+                deleteLabel="거래 내역 삭제"
+              >
               <div
                 className="card px-4 py-3 flex items-center justify-between"
               >
@@ -928,65 +973,16 @@ export default function AssetDetailPage() {
                     )}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center flex-shrink-0">
                   <p
                     className="amount fs-body font-semibold"
                     style={{ color: "var(--text-strong)" }}
                   >
                     {formatMoney(item.data.amount, holding?.currency ?? "KRW")}
                   </p>
-                  <button
-                    onClick={() =>
-                      editTxId === item.data.transactionId
-                        ? closeEditTransaction()
-                        : openEditTransaction(item.data)
-                    }
-                    aria-label="거래 내역 수정"
-                    className="rounded-md min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    style={{
-                      color:
-                        editTxId === item.data.transactionId
-                          ? "var(--accent)"
-                          : "var(--text-faint)",
-                    }}
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => setDeleteTxId(item.data.transactionId)}
-                    aria-label="거래 내역 삭제"
-                    className="rounded-md min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    style={{ color: "var(--text-faint)" }}
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    </svg>
-                  </button>
                 </div>
               </div>
+              </SwipeRow>
 
               {editTxId === item.data.transactionId && (
                 <div className="mt-2">
@@ -1018,8 +1014,12 @@ export default function AssetDetailPage() {
               )}
               </div>
             ) : (
-              <div
+              <SwipeRow
                 key={`div-${item.data.dividendId}`}
+                onDelete={() => setDeleteTargetId(item.data.dividendId)}
+                deleteLabel="배당 기록 삭제"
+              >
+              <div
                 className="card px-4 py-3 flex items-center justify-between"
               >
                 <div>
@@ -1046,36 +1046,16 @@ export default function AssetDetailPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center">
                   <p
                     className="amount fs-body font-semibold"
                     style={{ color: "var(--gain)" }}
                   >
                     +{formatMoney(item.data.amount, holding?.currency ?? "KRW")}
                   </p>
-                  <button
-                    onClick={() => setDeleteTargetId(item.data.dividendId)}
-                    aria-label="배당 기록 삭제"
-                    className="rounded-md min-w-[44px] min-h-[44px] flex items-center justify-center"
-                    style={{ color: "var(--text-faint)" }}
-                  >
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    </svg>
-                  </button>
                 </div>
               </div>
+              </SwipeRow>
             ),
           )}
         </div>

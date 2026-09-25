@@ -543,8 +543,12 @@ export default function AccountDetailPage() {
         )}
 
       {activeHoldings.length > 0 && (
+        /* overflow-hidden: 행 배경(--surface)이 카드의 둥근 모서리 위로 그대로 칠해져서
+           목록 끝(마지막 행 아래 두 모서리)이 각지게 잘려 보였다. 항목이 많아 목록 안
+           스크롤이 걸릴 때만 우연히 클립돼 둥글어 보였던 것 — 개수와 무관하게 늘 클립한다.
+           카드 그림자는 .card 자신에게 걸려 있어(바깥) 여기서 잘리지 않는다. */
         <ScrollableList
-          className="card rise-in"
+          className="card rise-in overflow-hidden"
           maxItems={HOLDINGS_VISIBLE}
           recomputeKey={sortedActiveHoldings.length}
         >
